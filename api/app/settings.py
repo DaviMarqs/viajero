@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'travelplans',
     'favorites',
+    'usuarios',
 ]
 
 MIDDLEWARE = [
