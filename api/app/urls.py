@@ -9,9 +9,12 @@ from favorites.views import (
     FavoriteRetrieveUpdateDestroy,
 )
 
-from usuarios.views import (
-    PreferenciaUsuarioViewSet,
-    PreferenciaViagemViewSet,
+from user_preferences.views import (
+    UserPreferenceViewSet,
+)
+
+from travel_preferences.views import (
+    TravelPreferenceViewSet
 )
 
 urlpatterns = [
@@ -20,8 +23,8 @@ urlpatterns = [
     path('travel-plans/<int:pk>', TravelPlanRetrieveUpdateDestroy.as_view(), name='travel-plan-detail-view'),
     path('favorites/', FavoriteCreateListView.as_view(), name='favorite-create-list'),
     path('favorites/<int:pk>', FavoriteRetrieveUpdateDestroy.as_view(), name='favorite-detail-view'),
-    path('preferencias-usuario/', PreferenciaUsuarioViewSet.as_view({'get': 'list', 'post': 'create'}), name='preferencia-usuario-list'),
-    path('preferencias-usuario/<int:pk>/', PreferenciaUsuarioViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='preferencia-usuario-detail'),
-    path('preferencias-viagem/', PreferenciaViagemViewSet.as_view({'get': 'list', 'post': 'create'}), name='preferencia-viagem-list'),
-    path('preferencias-viagem/<int:pk>/', PreferenciaViagemViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='preferencia-viagem-detail'),
+    path('user-preferences/', UserPreferenceViewSet.as_view({'get': 'list', 'post': 'create'}), name='user-preferences-list'),
+    path('user-preferences/<int:pk>/', UserPreferenceViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='user-preferences-detail'),
+    path('travel-preferences/', TravelPreferenceViewSet.as_view({'get': 'list', 'post': 'create'}), name='travel-preferences-list'),
+    path('travel-preferences/<int:pk>/', TravelPreferenceViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='travel-preferences-detail'),
 ]
