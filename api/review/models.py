@@ -3,7 +3,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from travelplans.models import TravelPlan
 
 class Review(models.Model):
-    user = models.ForeignKey('auth.User', on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     travel_plan = models.ForeignKey(TravelPlan, on_delete=models.CASCADE)
     
     rating = models.IntegerField(
