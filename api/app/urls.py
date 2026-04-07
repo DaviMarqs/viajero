@@ -1,8 +1,10 @@
 from django.contrib import admin
 from django.urls import path
-from viajero.views import (
+from travelplans.views import (
     TravelPlanCreateListView,
     TravelPlanRetrieveUpdateDestroy,
+)
+from favorites.views import (
     FavoriteCreateListView,
     FavoriteRetrieveUpdateDestroy,
 )

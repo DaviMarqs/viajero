@@ -25,16 +25,4 @@ class Migration(migrations.Migration):
                 ('user', models.ForeignKey(on_delete=models.deletion.CASCADE, to='auth.user')),
             ],
         ),
-        migrations.CreateModel(
-            name='Favorite',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('travel_plan', models.ForeignKey(on_delete=models.deletion.CASCADE, to='viajero.travelplan')),
-                ('user', models.ForeignKey(on_delete=models.deletion.CASCADE, to='auth.user')),
-            ],
-            options={
-                'constraints': [models.UniqueConstraint(fields=('user', 'travel_plan'), name='unique_user_travel_plan_favorite')],
-            },
-        ),
     ]
