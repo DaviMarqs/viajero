@@ -1,0 +1,5 @@
+venv/
+.venv/
+
+db.sqlite3
+db.sqite3-journal
