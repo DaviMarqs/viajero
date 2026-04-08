@@ -2,5 +2,5 @@ venv/
 .venv/
 __pycache__/
 
-db.sqlite3
-db.sqite3-journal
+api/db.sqlite3
+api/db.sqlite3-journal
