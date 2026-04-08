@@ -1,0 +1,6 @@
+venv/
+.venv/
+__pycache__/
+
+db.sqlite3
+db.sqite3-journal
