@@ -7,7 +7,7 @@ from .serializers import TravelerSerializer
 class TravelerCreateListView(generics.ListCreateAPIView):
     queryset = Traveler.objects.all()
     serializer_class = TravelerSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
