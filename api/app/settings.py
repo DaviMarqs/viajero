@@ -36,6 +36,8 @@ INSTALLED_APPS = [
     'review',
     'users',
     'travelers',
+    'user_preferences',
+    'travel_preferences',
 ]
 
 MIDDLEWARE = [

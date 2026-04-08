@@ -11,6 +11,8 @@ from favorites.views import (
 from users.views import UserCreateListView, UserRetrieveUpdateDestroy
 from travelers.views import TravelerCreateListView, TravelerRetrieveUpdateDestroy
 from review.views import (ReviewCreateListView,ReviewRetrieveUpdateDestroy)
+from user_preferences.views import (UserPreferenceViewSet,)
+from travel_preferences.views import (TravelPreferenceViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -24,4 +26,8 @@ urlpatterns = [
     path('travelers/<int:pk>/', TravelerRetrieveUpdateDestroy.as_view(), name='traveler-detail-view'),
     path('reviews/', ReviewCreateListView.as_view(), name='review-create-list'),
     path('reviews/<int:pk>', ReviewRetrieveUpdateDestroy.as_view(), name='review-detail-view'),
+    path('user-preferences/', UserPreferenceViewSet.as_view({'get': 'list', 'post': 'create'}), name='user-preferences-list'),
+    path('user-preferences/<int:pk>/', UserPreferenceViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='user-preferences-detail'),
+    path('travel-preferences/', TravelPreferenceViewSet.as_view({'get': 'list', 'post': 'create'}), name='travel-preferences-list'),
+    path('travel-preferences/<int:pk>/', TravelPreferenceViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='travel-preferences-detail'),
 ]
