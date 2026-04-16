@@ -296,13 +296,6 @@ Rotas definidas em `api/app/urls.py`.
 | GET, POST | `/travel-preferences/` | `TravelPreferenceViewSet` |
 | GET, PUT, DELETE | `/travel-preferences/<int:pk>/` | `TravelPreferenceViewSet` |
 
-## Observações importantes
-
-- Há inconsistência no uso de barra final nas rotas: algumas terminam com `/` e outras não.
-- `TravelerCreateListView` salva o usuário com `self.request.user`.
-- `TravelerRetrieveUpdateDestroy` exige autenticação com `IsAuthenticated`.
-- Não foi encontrado arquivo de dependências como `requirements.txt` ou `pyproject.toml` na raiz.
-
 ## Execução local
 
 Exemplo básico de execução:
