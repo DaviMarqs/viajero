@@ -18,6 +18,7 @@ class TravelPlan(models.Model):
     destino_principal = models.CharField(max_length=255)
     dados = models.JSONField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_DRAFT)
+    preferences = models.ManyToManyField('travel_preferences.TravelPreference', related_name='travel_plans')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -6,3 +6,4 @@ class TravelPlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = TravelPlan
         fields = '__all__'
+        read_only_fields = ['user']
