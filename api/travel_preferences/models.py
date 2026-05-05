@@ -9,5 +9,4 @@ class TravelPreference(models.Model):
     climate = models.CharField(max_length=20)
     interests = models.JSONField()
     restrictions = models.JSONField(blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)

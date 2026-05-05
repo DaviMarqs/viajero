@@ -6,11 +6,10 @@ from favorites.models import Favorite
 class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
-        fields = '__all__'
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Favorite.objects.all(),
-                fields=['user', 'travel_plan'],
-                message='Este roteiro já está nos seus favoritos.'
-            )
+        fields = [
+            'id',
+            'user',
+            'travel_plan',
+            'created_at'
         ]
+        read_only_fields = ['user']
