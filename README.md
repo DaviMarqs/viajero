@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Viajero API
 
 API REST para gerenciamento de usuários, viajantes, planos de viagem, favoritos, avaliações e preferências.
@@ -34,278 +35,74 @@ O projeto está dentro da pasta `api/` e foi dividido em apps Django:
   - `generics.ListCreateAPIView`
   - `generics.RetrieveUpdateDestroyAPIView`
   - `viewsets.ModelViewSet`
+# Viajero
+
+O Viajero é um projeto criado do zero (*greenfield*) com um backend em Django para a geração de itinerários de viagem assistida por IA.
+
+## O que foi implementado
+
+- **Apps modulares de domínio no Django:** Inclui utilizadores, destinos, perfis, itinerários, trabalhos (*jobs*) de LLM, registos de auditoria e ingestão via Firecrawl.
+- **Autenticação JWT:** Endpoints de login e registo configurados com `djangorestframework-simplejwt`.
+- **Serviço de geração de itinerários:** Inclui um gerador determinístico simulado (*mock*) para quando não há uma chave de LLM real configurada.
+- **Serviço de ingestão Firecrawl:** Sistema de segurança com *fallback* simulado quando a `FIRECRAWL_API_KEY` não está presente.
+- **Aplicação React:** Composta por 12 ecrãs ao nível de rota, abrangendo descoberta, autenticação, integração (*onboarding*), geração, revisão de itinerários, favoritos e fluxo de administração do Firecrawl.
+
+## Como rodar localmente (do zero)
+
+1. **Instale as ferramentas basicas**
+   - Git
+   - `uv` (instala o Python e gerencia dependencias)
+
+   Linux/macOS:
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+
+   Windows (PowerShell):
+   ```powershell
+   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+   ```
+
+   Depois, feche e abra o terminal para o `uv` entrar no PATH.
+
+2. **Clone o repositorio**
+   ```bash
+   git clone https://github.com/DaviMarqs/viajero.git
+   cd viajero
+   ```
+
+3. **Configure o backend (SQLite)**
+   ```bash
+   cd backend
+   uv python install 3.12
+   uv sync
+   ```
+
+4. **Crie o arquivo de ambiente**
+   Crie o arquivo `backend/.env` com o basico para SQLite:
+   ```dotenv
+   DJANGO_SECRET_KEY=troque-isto
+   DATABASE_URL=sqlite:///./db.sqlite3
+   DEBUG=true
+   ALLOWED_HOSTS=*
+   CORS_ALLOW_ALL_ORIGINS=true
+   JWT_SECRET_KEY=troque-isto
+   DEFAULT_LLM_PROVIDER=mock
+   DEFAULT_LLM_MODEL=mock-itinerary-v1
+   ```
+
+5. **Crie o banco e rode o servidor**
+   ```bash
+   uv run manage.py migrate
+   uv run manage.py loaddata seed_data.json
+   uv run manage.py runserver
+   ```
+
+   A API fica disponivel em http://127.0.0.1:8000
+
+## Notas
+
+- **Variaveis de ambiente completas:** `FIRECRAWL_API_KEY`, `FIRECRAWL_API_URL`, `DEFAULT_LLM_PROVIDER`, `DEFAULT_LLM_MODEL`, `LLM_API_KEY`, `CORS_ALLOWED_ORIGINS`.
+- **Migracoes:** Rode `uv run manage.py makemigrations` apenas se voce alterar modelos.
+- **Provedor de LLM:** Substitua o gerador simulado em `backend/apps/ai/services.py` por um adaptador real assim que o provedor for escolhido.
 
-## Classes do repositório
-
-### App `users`
-
-**Models**
-
-- `UserManager`
-- `User`
-
-**Serializers**
-
-- `UserSerializer`
-
-**Views**
-
-- `UserCreateListView`
-- `UserRetrieveUpdateDestroy`
-
-**Apps**
-
-- `UsersConfig`
-
-### App `travelers`
-
-**Models**
-
-- `Traveler`
-
-**Serializers**
-
-- `TravelerSerializer`
-
-**Views**
-
-- `TravelerCreateListView`
-- `TravelerRetrieveUpdateDestroy`
-
-**Apps**
-
-- `TravelersConfig`
-
-### App `travelplans`
-
-**Models**
-
-- `TravelPlan`
-
-**Serializers**
-
-- `TravelPlanSerializer`
-
-**Views**
-
-- `TravelPlanCreateListView`
-- `TravelPlanRetrieveUpdateDestroy`
-
-**Apps**
-
-- `TravelplansConfig`
-
-### App `favorites`
-
-**Models**
-
-- `Favorite`
-
-**Serializers**
-
-- `FavoriteSerializer`
-
-**Views**
-
-- `FavoriteCreateListView`
-- `FavoriteRetrieveUpdateDestroy`
-
-**Apps**
-
-- `FavoritesConfig`
-
-### App `review`
-
-**Models**
-
-- `Review`
-
-**Serializers**
-
-- `ReviewSerializer`
-
-**Views**
-
-- `ReviewCreateListView`
-- `ReviewRetrieveUpdateDestroy`
-
-**Apps**
-
-- `ReviewConfig`
-
-### App `user_preferences`
-
-**Models**
-
-- `UserPreference`
-
-**Serializers**
-
-- `UserPreferenceSerializer`
-
-**Views**
-
-- `UserPreferenceViewSet`
-
-**Apps**
-
-- `UserPreferencesConfig`
-
-### App `travel_preferences`
-
-**Models**
-
-- `TravelPreference`
-
-**Serializers**
-
-- `TravelPreferenceSerializer`
-
-**Views**
-
-- `TravelPreferenceViewSet`
-
-**Apps**
-
-- `TravelPreferencesConfig`
-
-## Modelos de domínio
-
-### `User`
-
-Usuário customizado com autenticação por e-mail.
-
-Campos principais:
-
-- `email`
-- `is_active`
-- `is_staff`
-- `is_verified`
-- `date_joined`
-
-### `Traveler`
-
-Perfil de viajante associado 1:1 com `User`.
-
-Campos principais:
-
-- `user`
-- `first_name`
-- `last_name`
-- `phone_number`
-- `date_of_birth`
-- `document_id`
-
-### `TravelPlan`
-
-Plano de viagem vinculado a um usuário.
-
-Campos principais:
-
-- `user`
-- `titulo`
-- `destino_principal`
-- `dados` (`JSONField`)
-- `status`
-- `created_at`
-- `updated_at`
-
-Status possíveis:
-
-- `draft`
-- `saved`
-- `edited`
-
-### `Favorite`
-
-Relaciona um usuário a um plano favoritado.
-
-Campos principais:
-
-- `user`
-- `travel_plan`
-- `created_at`
-
-Restrição:
-
-- combinação única entre `user` e `travel_plan`
-
-### `Review`
-
-Avaliação de um plano de viagem.
-
-Campos principais:
-
-- `user`
-- `travel_plan`
-- `rating`
-- `comentario`
-- `created_at`
-
-Regras:
-
-- `rating` entre `0` e `10`
-- combinação única entre `user` e `travel_plan`
-
-### `UserPreference`
-
-Preferências gerais de perfil do usuário.
-
-Campos:
-
-- `user`
-- `traveler_type`
-- `comfort_level`
-- `companionship`
-- `travel_pace`
-- `travel_experience`
-
-### `TravelPreference`
-
-Preferências específicas de viagem.
-
-Campos:
-
-- `user`
-- `duration_days`
-- `budget`
-- `climate`
-- `interests` (`JSONField`)
-- `restrictions` (`JSONField`)
-- `created_at`
-
-## Rotas
-
-Rotas definidas em `api/app/urls.py`.
-
-| Método | Rota | Classe responsável |
-|---|---|---|
-| Interface administrativa | `/admin/` | Django Admin |
-| GET, POST | `/travel-plans/` | `TravelPlanCreateListView` |
-| GET, PUT, PATCH, DELETE | `/travel-plans/<int:pk>` | `TravelPlanRetrieveUpdateDestroy` |
-| GET, POST | `/favorites/` | `FavoriteCreateListView` |
-| GET, PUT, PATCH, DELETE | `/favorites/<int:pk>` | `FavoriteRetrieveUpdateDestroy` |
-| GET, POST | `/users/` | `UserCreateListView` |
-| GET, PUT, PATCH, DELETE | `/users/<int:pk>/` | `UserRetrieveUpdateDestroy` |
-| GET, POST | `/travelers/` | `TravelerCreateListView` |
-| GET, PUT, PATCH, DELETE | `/travelers/<int:pk>/` | `TravelerRetrieveUpdateDestroy` |
-| GET, POST | `/reviews/` | `ReviewCreateListView` |
-| GET, PUT, PATCH, DELETE | `/reviews/<int:pk>` | `ReviewRetrieveUpdateDestroy` |
-| GET, POST | `/user-preferences/` | `UserPreferenceViewSet` |
-| GET, PUT, DELETE | `/user-preferences/<int:pk>/` | `UserPreferenceViewSet` |
-| GET, POST | `/travel-preferences/` | `TravelPreferenceViewSet` |
-| GET, PUT, DELETE | `/travel-preferences/<int:pk>/` | `TravelPreferenceViewSet` |
-
-## Execução local
-
-Exemplo básico de execução:
-
-```bash
-cd api
-python manage.py migrate
-python manage.py runserver
-```
-
-Servidor padrão:
-
-- `http://127.0.0.1:8000/`

@@ -1,6 +1,12 @@
 venv/
 .venv/
 __pycache__/
+*.pyc
 
 api/db.sqlite3
 api/db.sqlite3-journal
+db.sqlite3
+node_modules/
+dist/
+.env
+.pytest_cache/

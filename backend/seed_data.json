@@ -1,0 +1,20 @@
+[
+  {
+    "model": "destinations.destination",
+    "pk": 1,
+    "fields": {
+      "slug": "lisbon",
+      "name": "Lisbon",
+      "country": "Portugal",
+      "city": "Lisbon",
+      "summary": "Coastal capital with neighborhoods, viewpoints, food, and rail access.",
+      "hero_image_url": "",
+      "timezone": "Europe/Lisbon",
+      "best_season": "Spring and Fall",
+      "average_rating": "4.70",
+      "metadata": {},
+      "created_at": "2026-04-29T12:00:00Z",
+      "updated_at": "2026-04-29T12:00:00Z"
+    }
+  }
+]
