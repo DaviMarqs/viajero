@@ -38,10 +38,6 @@ class AuthViewSet(viewsets.GenericViewSet):
         audit("user.registered", actor=user, target=user)
         return Response(build_auth_payload(user), status=status.HTTP_201_CREATED)
 
-    @action(detail=False, methods=["post"], url_path="create-account")
-    def create_account(self, request):
-        return self.register(request)
-
     @action(detail=False, methods=["post"], url_path="login")
     def login(self, request):
         serializer = self.get_serializer(data=request.data)

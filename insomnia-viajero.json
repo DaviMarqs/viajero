@@ -140,21 +140,6 @@
       }
     },
     {
-      "_id": "req_auth_create_account",
-      "_type": "request",
-      "parentId": "fld_auth",
-      "name": "Create Account",
-      "method": "POST",
-      "url": "{{ base_url }}/api/auth/create-account/",
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"email\": \"user@example.com\",\n  \"username\": \"user\",\n  \"password\": \"password123\",\n  \"display_name\": \"User Example\",\n  \"first_name\": \"User\",\n  \"last_name\": \"Example\"\n}"
-      }
-    },
-    {
       "_id": "req_auth_login",
       "_type": "request",
       "parentId": "fld_auth",
