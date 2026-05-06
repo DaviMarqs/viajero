@@ -1,40 +1,3 @@
-<<<<<<< HEAD
-# Viajero API
-
-API REST para gerenciamento de usuários, viajantes, planos de viagem, favoritos, avaliações e preferências.
-
-## Tecnologias
-
-- Python
-- Django 6.0.3
-- Django REST Framework
-- django-cors-headers
-- SQLite
-
-## Estrutura do projeto
-
-O projeto está dentro da pasta `api/` e foi dividido em apps Django:
-
-- `app`: configuração principal do projeto (`settings.py`, `urls.py`, `asgi.py`, `wsgi.py`)
-- `users`: autenticação e modelo de usuário customizado por e-mail
-- `travelers`: dados pessoais do viajante
-- `travelplans`: planos de viagem
-- `favorites`: favoritos de planos
-- `review`: avaliações de planos
-- `user_preferences`: preferências de perfil do usuário
-- `travel_preferences`: preferências da viagem
-
-## Tecnologias e configurações identificadas no código
-
-- Banco padrão configurado: `SQLite` em `api/db.sqlite3`
-- Modelo de usuário customizado: `AUTH_USER_MODEL = 'users.User'`
-- CORS liberado para:
-  - `http://localhost:5173`
-  - `http://127.0.0.1:5173`
-- API construída majoritariamente com:
-  - `generics.ListCreateAPIView`
-  - `generics.RetrieveUpdateDestroyAPIView`
-  - `viewsets.ModelViewSet`
 # Viajero
 
 O Viajero é um projeto criado do zero (*greenfield*) com um backend em Django para a geração de itinerários de viagem assistida por IA.
@@ -105,4 +68,3 @@ O Viajero é um projeto criado do zero (*greenfield*) com um backend em Django p
 - **Variaveis de ambiente completas:** `FIRECRAWL_API_KEY`, `FIRECRAWL_API_URL`, `DEFAULT_LLM_PROVIDER`, `DEFAULT_LLM_MODEL`, `LLM_API_KEY`, `CORS_ALLOWED_ORIGINS`.
 - **Migracoes:** Rode `uv run manage.py makemigrations` apenas se voce alterar modelos.
 - **Provedor de LLM:** Substitua o gerador simulado em `backend/apps/ai/services.py` por um adaptador real assim que o provedor for escolhido.
-
