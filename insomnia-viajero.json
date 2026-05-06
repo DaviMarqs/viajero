@@ -1,0 +1,855 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-05-06T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2026.1.0",
+  "resources": [
+    {
+      "_id": "wrk_viajero",
+      "_type": "workspace",
+      "name": "Viajero API",
+      "description": "",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_viajero_base",
+      "_type": "environment",
+      "parentId": "wrk_viajero",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://127.0.0.1:8000",
+        "jwt": "",
+        "user_id": "",
+        "destination_id": "",
+        "poi_id": "",
+        "traveler_dna_id": "",
+        "trip_preference_id": "",
+        "itinerary_id": "",
+        "favorite_id": "",
+        "review_id": "",
+        "shared_link_id": "",
+        "llm_model_id": "",
+        "llm_job_id": "",
+        "prompt_template_id": "",
+        "audit_log_id": ""
+      }
+    },
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "parentId": "wrk_viajero",
+      "name": "Auth"
+    },
+    {
+      "_id": "fld_users",
+      "_type": "request_group",
+      "parentId": "wrk_viajero",
+      "name": "Users"
+    },
+    {
+      "_id": "fld_destinations",
+      "_type": "request_group",
+      "parentId": "wrk_viajero",
+      "name": "Destinations"
+    },
+    {
+      "_id": "fld_pois",
+      "_type": "request_group",
+      "parentId": "wrk_viajero",
+      "name": "Points of Interest"
+    },
+    {
+      "_id": "fld_traveler_dna",
+      "_type": "request_group",
+      "parentId": "wrk_viajero",
+      "name": "Traveler DNA"
+    },
+    {
+      "_id": "fld_trip_preferences",
+      "_type": "request_group",
+      "parentId": "wrk_viajero",
+      "name": "Trip Preferences"
+    },
+    {
+      "_id": "fld_itineraries",
+      "_type": "request_group",
+      "parentId": "wrk_viajero",
+      "name": "Itineraries"
+    },
+    {
+      "_id": "fld_favorites",
+      "_type": "request_group",
+      "parentId": "wrk_viajero",
+      "name": "Favorites"
+    },
+    {
+      "_id": "fld_reviews",
+      "_type": "request_group",
+      "parentId": "wrk_viajero",
+      "name": "Reviews"
+    },
+    {
+      "_id": "fld_shared_links",
+      "_type": "request_group",
+      "parentId": "wrk_viajero",
+      "name": "Shared Links"
+    },
+    {
+      "_id": "fld_llm_models",
+      "_type": "request_group",
+      "parentId": "wrk_viajero",
+      "name": "LLM Models"
+    },
+    {
+      "_id": "fld_llm_jobs",
+      "_type": "request_group",
+      "parentId": "wrk_viajero",
+      "name": "LLM Jobs"
+    },
+    {
+      "_id": "fld_prompt_templates",
+      "_type": "request_group",
+      "parentId": "wrk_viajero",
+      "name": "Prompt Templates"
+    },
+    {
+      "_id": "fld_audit_logs",
+      "_type": "request_group",
+      "parentId": "wrk_viajero",
+      "name": "Audit Logs"
+    },
+    {
+      "_id": "fld_integrations",
+      "_type": "request_group",
+      "parentId": "wrk_viajero",
+      "name": "Integrations"
+    },
+    {
+      "_id": "req_auth_register",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Register",
+      "method": "POST",
+      "url": "{{ base_url }}/api/auth/register/",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"user@example.com\",\n  \"username\": \"user\",\n  \"password\": \"password123\",\n  \"display_name\": \"User Example\",\n  \"first_name\": \"User\",\n  \"last_name\": \"Example\"\n}"
+      }
+    },
+    {
+      "_id": "req_auth_create_account",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Create Account",
+      "method": "POST",
+      "url": "{{ base_url }}/api/auth/create-account/",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"user@example.com\",\n  \"username\": \"user\",\n  \"password\": \"password123\",\n  \"display_name\": \"User Example\",\n  \"first_name\": \"User\",\n  \"last_name\": \"Example\"\n}"
+      }
+    },
+    {
+      "_id": "req_auth_login",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Login",
+      "method": "POST",
+      "url": "{{ base_url }}/api/auth/login/",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+      }
+    },
+    {
+      "_id": "req_auth_logout",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Logout",
+      "method": "POST",
+      "url": "{{ base_url }}/api/auth/logout/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_users_me_get",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Me (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/users/me/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_users_me_patch",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Me (PATCH)",
+      "method": "PATCH",
+      "url": "{{ base_url }}/api/users/me/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"display_name\": \"Novo Nome\",\n  \"first_name\": \"Novo\",\n  \"last_name\": \"Nome\",\n  \"avatar_url\": \"https://example.com/avatar.png\",\n  \"home_airport\": \"GRU\",\n  \"preferred_currency\": \"BRL\"\n}"
+      }
+    },
+    {
+      "_id": "req_users_get",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Retrieve (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/users/{{ user_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_users_patch",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Update (PATCH)",
+      "method": "PATCH",
+      "url": "{{ base_url }}/api/users/{{ user_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"display_name\": \"Novo Nome\",\n  \"first_name\": \"Novo\",\n  \"last_name\": \"Nome\",\n  \"avatar_url\": \"https://example.com/avatar.png\",\n  \"home_airport\": \"GRU\",\n  \"preferred_currency\": \"BRL\"\n}"
+      }
+    },
+    {
+      "_id": "req_destinations_list",
+      "_type": "request",
+      "parentId": "fld_destinations",
+      "name": "List (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/destinations/"
+    },
+    {
+      "_id": "req_destinations_create",
+      "_type": "request",
+      "parentId": "fld_destinations",
+      "name": "Create (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/api/destinations/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"slug\": \"lisbon-pt\",\n  \"name\": \"Lisbon\",\n  \"country\": \"Portugal\",\n  \"city\": \"Lisbon\",\n  \"summary\": \"Capital with history and food.\",\n  \"hero_image_url\": \"https://example.com/lisbon.jpg\",\n  \"timezone\": \"Europe/Lisbon\",\n  \"best_season\": \"spring\",\n  \"metadata\": {\n    \"source\": \"manual\"\n  }\n}"
+      }
+    },
+    {
+      "_id": "req_destinations_get",
+      "_type": "request",
+      "parentId": "fld_destinations",
+      "name": "Retrieve (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/destinations/{{ destination_id }}/"
+    },
+    {
+      "_id": "req_destinations_patch",
+      "_type": "request",
+      "parentId": "fld_destinations",
+      "name": "Update (PATCH)",
+      "method": "PATCH",
+      "url": "{{ base_url }}/api/destinations/{{ destination_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"summary\": \"Updated summary for Lisbon.\",\n  \"best_season\": \"summer\",\n  \"hero_image_url\": \"https://example.com/lisbon-new.jpg\"\n}"
+      }
+    },
+    {
+      "_id": "req_destinations_delete",
+      "_type": "request",
+      "parentId": "fld_destinations",
+      "name": "Delete (DELETE)",
+      "method": "DELETE",
+      "url": "{{ base_url }}/api/destinations/{{ destination_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_pois_list",
+      "_type": "request",
+      "parentId": "fld_pois",
+      "name": "List (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/pois/"
+    },
+    {
+      "_id": "req_pois_create",
+      "_type": "request",
+      "parentId": "fld_pois",
+      "name": "Create (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/api/pois/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"destination\": {{ destination_id }},\n  \"name\": \"Praca do Comercio\",\n  \"slug\": \"praca-do-comercio\",\n  \"poi_type\": \"attraction\",\n  \"summary\": \"Main square by the river.\",\n  \"address\": \"Praca do Comercio, Lisbon\",\n  \"opening_hours\": \"10:00-22:00\",\n  \"source_url\": \"https://example.com/praca\",\n  \"price_level\": 2,\n  \"rating\": 4.6,\n  \"estimated_visit_minutes\": 90,\n  \"metadata\": {\n    \"category\": \"landmark\"\n  }\n}"
+      }
+    },
+    {
+      "_id": "req_pois_get",
+      "_type": "request",
+      "parentId": "fld_pois",
+      "name": "Retrieve (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/pois/{{ poi_id }}/"
+    },
+    {
+      "_id": "req_pois_patch",
+      "_type": "request",
+      "parentId": "fld_pois",
+      "name": "Update (PATCH)",
+      "method": "PATCH",
+      "url": "{{ base_url }}/api/pois/{{ poi_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"summary\": \"Updated summary.\",\n  \"address\": \"Updated address\",\n  \"price_level\": 3,\n  \"rating\": 4.8,\n  \"estimated_visit_minutes\": 120\n}"
+      }
+    },
+    {
+      "_id": "req_pois_delete",
+      "_type": "request",
+      "parentId": "fld_pois",
+      "name": "Delete (DELETE)",
+      "method": "DELETE",
+      "url": "{{ base_url }}/api/pois/{{ poi_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_traveler_dna_list",
+      "_type": "request",
+      "parentId": "fld_traveler_dna",
+      "name": "List (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/traveler-dna/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_traveler_dna_create",
+      "_type": "request",
+      "parentId": "fld_traveler_dna",
+      "name": "Create (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/api/traveler-dna/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"travel_style\": \"balanced\",\n  \"pace\": \"moderate\",\n  \"comfort_level\": \"mid\",\n  \"social_energy\": 6,\n  \"adventure_level\": 7,\n  \"food_focus\": 8,\n  \"cultural_interest\": 9,\n  \"nature_interest\": 6,\n  \"nightlife_interest\": 4,\n  \"notes\": \"Prefers walking tours.\"\n}"
+      }
+    },
+    {
+      "_id": "req_traveler_dna_get",
+      "_type": "request",
+      "parentId": "fld_traveler_dna",
+      "name": "Retrieve (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/traveler-dna/{{ traveler_dna_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_traveler_dna_patch",
+      "_type": "request",
+      "parentId": "fld_traveler_dna",
+      "name": "Update (PATCH)",
+      "method": "PATCH",
+      "url": "{{ base_url }}/api/traveler-dna/{{ traveler_dna_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pace\": \"slow\",\n  \"social_energy\": 4,\n  \"adventure_level\": 5,\n  \"notes\": \"More relaxed schedule.\"\n}"
+      }
+    },
+    {
+      "_id": "req_traveler_dna_delete",
+      "_type": "request",
+      "parentId": "fld_traveler_dna",
+      "name": "Delete (DELETE)",
+      "method": "DELETE",
+      "url": "{{ base_url }}/api/traveler-dna/{{ traveler_dna_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_trip_preferences_list",
+      "_type": "request",
+      "parentId": "fld_trip_preferences",
+      "name": "List (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/trip-preferences/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_trip_preferences_create",
+      "_type": "request",
+      "parentId": "fld_trip_preferences",
+      "name": "Create (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/api/trip-preferences/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"budget_min\": 500,\n  \"budget_max\": 1500,\n  \"currency_code\": \"BRL\",\n  \"preferred_trip_length_days\": 7,\n  \"travel_month\": \"June\",\n  \"hotel_level\": \"mid\",\n  \"transportation_style\": \"public\",\n  \"dietary_preferences\": [\n    \"vegetarian\"\n  ],\n  \"accessibility_needs\": [],\n  \"interests\": [\n    \"food\",\n    \"culture\"\n  ],\n  \"metadata\": {\n    \"flexible_dates\": true\n  }\n}"
+      }
+    },
+    {
+      "_id": "req_trip_preferences_get",
+      "_type": "request",
+      "parentId": "fld_trip_preferences",
+      "name": "Retrieve (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/trip-preferences/{{ trip_preference_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_trip_preferences_patch",
+      "_type": "request",
+      "parentId": "fld_trip_preferences",
+      "name": "Update (PATCH)",
+      "method": "PATCH",
+      "url": "{{ base_url }}/api/trip-preferences/{{ trip_preference_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"budget_min\": 700,\n  \"budget_max\": 1800,\n  \"preferred_trip_length_days\": 10,\n  \"travel_month\": \"July\"\n}"
+      }
+    },
+    {
+      "_id": "req_trip_preferences_delete",
+      "_type": "request",
+      "parentId": "fld_trip_preferences",
+      "name": "Delete (DELETE)",
+      "method": "DELETE",
+      "url": "{{ base_url }}/api/trip-preferences/{{ trip_preference_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_itineraries_list",
+      "_type": "request",
+      "parentId": "fld_itineraries",
+      "name": "List (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/itineraries/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_itineraries_create",
+      "_type": "request",
+      "parentId": "fld_itineraries",
+      "name": "Create (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/api/itineraries/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"destination\": {{ destination_id }},\n  \"title\": \"Weekend in Lisbon\",\n  \"summary\": \"Short trip with highlights.\",\n  \"start_date\": \"2026-06-10\",\n  \"end_date\": \"2026-06-12\",\n  \"duration_days\": 3,\n  \"budget_total\": 800,\n  \"currency_code\": \"BRL\"\n}"
+      }
+    },
+    {
+      "_id": "req_itineraries_get",
+      "_type": "request",
+      "parentId": "fld_itineraries",
+      "name": "Retrieve (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/itineraries/{{ itinerary_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_itineraries_patch",
+      "_type": "request",
+      "parentId": "fld_itineraries",
+      "name": "Update (PATCH)",
+      "method": "PATCH",
+      "url": "{{ base_url }}/api/itineraries/{{ itinerary_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Lisbon Highlights\",\n  \"summary\": \"Updated summary.\",\n  \"budget_total\": 950\n}"
+      }
+    },
+    {
+      "_id": "req_itineraries_delete",
+      "_type": "request",
+      "parentId": "fld_itineraries",
+      "name": "Delete (DELETE)",
+      "method": "DELETE",
+      "url": "{{ base_url }}/api/itineraries/{{ itinerary_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_itineraries_generate",
+      "_type": "request",
+      "parentId": "fld_itineraries",
+      "name": "Generate (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/api/itineraries/{{ itinerary_id }}/generate/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_favorites_list",
+      "_type": "request",
+      "parentId": "fld_favorites",
+      "name": "List (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/favorites/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_favorites_create",
+      "_type": "request",
+      "parentId": "fld_favorites",
+      "name": "Create (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/api/favorites/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"itinerary\": {{ itinerary_id }}\n}"
+      }
+    },
+    {
+      "_id": "req_favorites_get",
+      "_type": "request",
+      "parentId": "fld_favorites",
+      "name": "Retrieve (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/favorites/{{ favorite_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_favorites_patch",
+      "_type": "request",
+      "parentId": "fld_favorites",
+      "name": "Update (PATCH)",
+      "method": "PATCH",
+      "url": "{{ base_url }}/api/favorites/{{ favorite_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"itinerary\": {{ itinerary_id }}\n}"
+      }
+    },
+    {
+      "_id": "req_favorites_delete",
+      "_type": "request",
+      "parentId": "fld_favorites",
+      "name": "Delete (DELETE)",
+      "method": "DELETE",
+      "url": "{{ base_url }}/api/favorites/{{ favorite_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_reviews_list",
+      "_type": "request",
+      "parentId": "fld_reviews",
+      "name": "List (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/reviews/"
+    },
+    {
+      "_id": "req_reviews_create",
+      "_type": "request",
+      "parentId": "fld_reviews",
+      "name": "Create (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/api/reviews/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"itinerary\": {{ itinerary_id }},\n  \"rating\": 5,\n  \"title\": \"Great trip\",\n  \"body\": \"Loved the itinerary.\"\n}"
+      }
+    },
+    {
+      "_id": "req_reviews_get",
+      "_type": "request",
+      "parentId": "fld_reviews",
+      "name": "Retrieve (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/reviews/{{ review_id }}/"
+    },
+    {
+      "_id": "req_reviews_patch",
+      "_type": "request",
+      "parentId": "fld_reviews",
+      "name": "Update (PATCH)",
+      "method": "PATCH",
+      "url": "{{ base_url }}/api/reviews/{{ review_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"rating\": 4,\n  \"title\": \"Updated title\",\n  \"body\": \"Updated review text.\"\n}"
+      }
+    },
+    {
+      "_id": "req_reviews_delete",
+      "_type": "request",
+      "parentId": "fld_reviews",
+      "name": "Delete (DELETE)",
+      "method": "DELETE",
+      "url": "{{ base_url }}/api/reviews/{{ review_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_shared_links_list",
+      "_type": "request",
+      "parentId": "fld_shared_links",
+      "name": "List (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/shared-links/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_shared_links_create",
+      "_type": "request",
+      "parentId": "fld_shared_links",
+      "name": "Create (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/api/shared-links/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"itinerary\": {{ itinerary_id }},\n  \"expires_at\": \"2026-12-31T23:59:59Z\",\n  \"is_active\": true\n}"
+      }
+    },
+    {
+      "_id": "req_shared_links_get",
+      "_type": "request",
+      "parentId": "fld_shared_links",
+      "name": "Retrieve (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/shared-links/{{ shared_link_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_shared_links_patch",
+      "_type": "request",
+      "parentId": "fld_shared_links",
+      "name": "Update (PATCH)",
+      "method": "PATCH",
+      "url": "{{ base_url }}/api/shared-links/{{ shared_link_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"expires_at\": \"2027-01-31T23:59:59Z\",\n  \"is_active\": false\n}"
+      }
+    },
+    {
+      "_id": "req_shared_links_delete",
+      "_type": "request",
+      "parentId": "fld_shared_links",
+      "name": "Delete (DELETE)",
+      "method": "DELETE",
+      "url": "{{ base_url }}/api/shared-links/{{ shared_link_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_llm_models_list",
+      "_type": "request",
+      "parentId": "fld_llm_models",
+      "name": "List (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/llm-models/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_llm_models_get",
+      "_type": "request",
+      "parentId": "fld_llm_models",
+      "name": "Retrieve (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/llm-models/{{ llm_model_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_llm_jobs_list",
+      "_type": "request",
+      "parentId": "fld_llm_jobs",
+      "name": "List (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/llm-jobs/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_llm_jobs_get",
+      "_type": "request",
+      "parentId": "fld_llm_jobs",
+      "name": "Retrieve (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/llm-jobs/{{ llm_job_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_prompt_templates_list",
+      "_type": "request",
+      "parentId": "fld_prompt_templates",
+      "name": "List (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/prompt-templates/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_prompt_templates_get",
+      "_type": "request",
+      "parentId": "fld_prompt_templates",
+      "name": "Retrieve (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/prompt-templates/{{ prompt_template_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_audit_logs_list",
+      "_type": "request",
+      "parentId": "fld_audit_logs",
+      "name": "List (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/audit-logs/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_audit_logs_get",
+      "_type": "request",
+      "parentId": "fld_audit_logs",
+      "name": "Retrieve (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/audit-logs/{{ audit_log_id }}/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_firecrawl_ingest",
+      "_type": "request",
+      "parentId": "fld_integrations",
+      "name": "Firecrawl Ingest (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/api/firecrawl/ingest/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"destination_id\": {{ destination_id }},\n  \"source_urls\": [\n    \"https://example.com\"\n  ]\n}"
+      }
+    }
+  ]
+}
