@@ -1,11 +1,12 @@
-from rest_framework import permissions, viewsets
+from rest_framework import permissions
 
 from apps.audit.services import audit
+from apps.common.mixins import StandardModelViewSet
 from .models import TravelerDNAProfile, UserTripPreference
 from .serializers import TravelerDNAProfileSerializer, TripPreferenceSerializer
 
 
-class OwnedSingletonViewSet(viewsets.ModelViewSet):
+class OwnedSingletonViewSet(StandardModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):

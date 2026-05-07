@@ -1,15 +1,15 @@
 from django.contrib.auth import get_user_model
-from rest_framework import mixins, permissions, viewsets
+from rest_framework import permissions
 from rest_framework.decorators import action
-from rest_framework.response import Response
 
 from apps.audit.services import audit
+from apps.common.mixins import StandardRetrieveUpdateViewSet
 from .serializers import UserSerializer
 
 User = get_user_model()
 
 
-class UserViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
+class UserViewSet(StandardRetrieveUpdateViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
@@ -25,5 +25,5 @@ class UserViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.G
             serializer.is_valid(raise_exception=True)
             serializer.save()
             audit("user.profile_updated", actor=request.user, target=request.user, metadata=request.data)
-            return Response(serializer.data)
-        return Response(self.get_serializer(request.user).data)
+            return self.success_response(serializer.data, message="Usuario atualizado com sucesso.")
+        return self.success_response(self.get_serializer(request.user).data, message="Usuario carregado com sucesso.")

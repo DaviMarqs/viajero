@@ -1,15 +1,15 @@
 from django.db.models import Avg, Count
-from rest_framework import permissions, status, viewsets
+from rest_framework import permissions, status
 from rest_framework.decorators import action
-from rest_framework.response import Response
 
 from apps.ai.services import ItineraryGenerationService
 from apps.audit.services import audit
+from apps.common.mixins import StandardModelViewSet
 from .models import FavoriteItinerary, Itinerary, Review, ReviewStat, SharedItineraryLink
 from .serializers import FavoriteItinerarySerializer, ItinerarySerializer, ReviewSerializer, SharedItineraryLinkSerializer
 
 
-class ItineraryViewSet(viewsets.ModelViewSet):
+class ItineraryViewSet(StandardModelViewSet):
     serializer_class = ItinerarySerializer
     permission_classes = [permissions.IsAuthenticated]
     filterset_fields = ("destination", "generation_status")
@@ -32,10 +32,14 @@ class ItineraryViewSet(viewsets.ModelViewSet):
         job = service.create_job(itinerary=itinerary, user=request.user)
         service.run_job(job)
         audit("itinerary.generated", actor=request.user, target=itinerary, metadata={"job_id": job.id})
-        return Response(self.get_serializer(itinerary).data, status=status.HTTP_202_ACCEPTED)
+        return self.success_response(
+            self.get_serializer(itinerary).data,
+            message="Geracao de itinerario iniciada.",
+            status_code=status.HTTP_202_ACCEPTED,
+        )
 
 
-class FavoriteItineraryViewSet(viewsets.ModelViewSet):
+class FavoriteItineraryViewSet(StandardModelViewSet):
     serializer_class = FavoriteItinerarySerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -47,7 +51,7 @@ class FavoriteItineraryViewSet(viewsets.ModelViewSet):
         audit("itinerary.favorited", actor=self.request.user, target=favorite.itinerary)
 
 
-class ReviewViewSet(viewsets.ModelViewSet):
+class ReviewViewSet(StandardModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = Review.objects.select_related("itinerary", "user")
@@ -64,7 +68,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         audit("review.created", actor=self.request.user, target=review.itinerary, metadata={"rating": review.rating})
 
 
-class SharedItineraryLinkViewSet(viewsets.ModelViewSet):
+class SharedItineraryLinkViewSet(StandardModelViewSet):
     serializer_class = SharedItineraryLinkSerializer
     permission_classes = [permissions.IsAuthenticated]
 
