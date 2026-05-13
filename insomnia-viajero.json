@@ -835,6 +835,38 @@
         "mimeType": "application/json",
         "text": "{\n  \"destination_id\": {{ destination_id }},\n  \"source_urls\": [\n    \"https://example.com\"\n  ]\n}"
       }
+    },
+    {
+      "_id": "req_destinations_search",
+      "_type": "request",
+      "parentId": "fld_destinations",
+      "name": "Search (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/destinations/search/",
+      "parameters": [
+        { "name": "q", "value": "lisbon" },
+        { "name": "country", "value": "" },
+        { "name": "city", "value": "" }
+      ],
+      "description": "Busca pública de destinos para a home (AllowAny). Filtros opcionais: q (texto), country, city."
+    },
+    {
+      "_id": "req_itineraries_templates",
+      "_type": "request",
+      "parentId": "fld_itineraries",
+      "name": "Templates (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/itineraries/templates/",
+      "description": "Lista templates genéricos de roteiros para usuários sem preferências cadastradas (itinerários com metadata.is_template=true e generation_status=ready, AllowAny)."
+    },
+    {
+      "_id": "req_itineraries_top_rated",
+      "_type": "request",
+      "parentId": "fld_itineraries",
+      "name": "Top Rated (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/itineraries/top-rated/",
+      "description": "Roteiros mais bem avaliados exibidos na página principal (AllowAny). Ordenados por ReviewStat.average_rating desc, requer pelo menos uma avaliação."
     }
   ]
 }

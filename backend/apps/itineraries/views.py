@@ -1,4 +1,4 @@
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, F
 from rest_framework import permissions, status
 from rest_framework.decorators import action
 
@@ -9,6 +9,10 @@ from .models import FavoriteItinerary, Itinerary, Review, ReviewStat, SharedItin
 from .serializers import FavoriteItinerarySerializer, ItinerarySerializer, ReviewSerializer, SharedItineraryLinkSerializer
 
 
+TOP_RATED_LIMIT = 10
+TEMPLATES_LIMIT = 10
+
+
 class ItineraryViewSet(StandardModelViewSet):
     serializer_class = ItinerarySerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -17,7 +21,14 @@ class ItineraryViewSet(StandardModelViewSet):
     ordering_fields = ("created_at", "budget_total", "duration_days")
 
     def get_queryset(self):
+        if self.action in ("templates", "top_rated"):
+            return Itinerary.objects.select_related("destination").prefetch_related("days__events")
         return Itinerary.objects.filter(user=self.request.user).select_related("destination").prefetch_related("days__events")
+
+    def get_permissions(self):
+        if self.action in ("templates", "top_rated"):
+            return [permissions.AllowAny()]
+        return super().get_permissions()
 
     def perform_create(self, serializer):
         itinerary = serializer.save(user=self.request.user)
@@ -37,6 +48,32 @@ class ItineraryViewSet(StandardModelViewSet):
             message="Geracao de itinerario iniciada.",
             status_code=status.HTTP_202_ACCEPTED,
         )
+
+    @action(detail=False, methods=["get"], url_path="templates")
+    def templates(self, request):
+        queryset = (
+            Itinerary.objects.filter(metadata__is_template=True, generation_status="ready")
+            .select_related("destination")
+            .prefetch_related("days__events")
+            .order_by("-updated_at")[:TEMPLATES_LIMIT]
+        )
+        data = self.get_serializer(queryset, many=True).data
+        return self.success_response(data, message="Templates de roteiros carregados com sucesso.")
+
+    @action(detail=False, methods=["get"], url_path="top-rated")
+    def top_rated(self, request):
+        queryset = (
+            Itinerary.objects.filter(generation_status="ready", review_stats__review_count__gt=0)
+            .select_related("destination", "review_stats")
+            .prefetch_related("days__events")
+            .annotate(
+                _avg_rating=F("review_stats__average_rating"),
+                _review_count=F("review_stats__review_count"),
+            )
+            .order_by("-_avg_rating", "-_review_count")[:TOP_RATED_LIMIT]
+        )
+        data = self.get_serializer(queryset, many=True).data
+        return self.success_response(data, message="Ranking de roteiros mais bem avaliados carregado com sucesso.")
 
 
 class FavoriteItineraryViewSet(StandardModelViewSet):
