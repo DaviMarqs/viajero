@@ -1,13 +1,11 @@
-import Sidebar from "@/components/ui/Sidebar";
-import TripRecomendation from "@/components/ui/TripRecomendation";
+import Sidebar from "@/components/ui/Sidebar"; 
+import Weather from "@/components/ui/weather";
 
 export default function Test() {
   return (
     <div className="flex gap-8">
       <Sidebar />
-      <div className="flex gap-4">
-        <TripRecomendation />
-      </div>
+      <Weather />
     </div>
   );
 }
