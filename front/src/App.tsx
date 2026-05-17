@@ -13,6 +13,7 @@ import Register from "./pages/register/register";
 import Onboard from "./pages/onboarding/onboarding";
 import Test from "./pages/tests/test";
 import { Dashboard } from "./pages/dashboard/dashboard";
+import DestinationPage from "./pages/destination/destination";
 
 import "./index.css";
 
@@ -53,6 +54,7 @@ function App() {
             path="/explorar"
             element={<div className="p-8">Explorar</div>}
           />
+          <Route path="/destinos/:slug" element={<DestinationPage />} />
           <Route
             path="/roteiros"
             element={<div className="p-8">Roteiros</div>}

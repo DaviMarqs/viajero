@@ -157,7 +157,7 @@ export default function Login() {
 
             <div className="mt-6 flex items-center justify-center">
               <Link
-                to="/cadastro"
+                to="/register"
                 className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
               >
                 Criar uma conta nova
