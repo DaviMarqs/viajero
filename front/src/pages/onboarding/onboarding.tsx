@@ -1,11 +1,11 @@
 import { PartyPopper } from "lucide-react";
 import { Link } from "react-router-dom";
 import CardOnboard from "../../components/ui/card-onboard";
-import OnboardingSidebar from "../../components/ui/OnboardingSidebar";
-import InputCurrency from "../../components/ui/InputCurrency";
-import InputDropdown from "../../components/ui/InputDropdown";
-import TagSelector from "../../components/ui/TagSelector";
-import InputTextarea from "../../components/ui/InputTextArea";
+import OnboardingSidebar from "../../components/ui/onboarding-sidebar";
+import InputCurrency from "../../components/ui/input-currency";
+import InputDropdown from "../../components/ui/input-dropdown";
+import TagSelector from "../../components/ui/tag-selector";
+import InputTextarea from "../../components/ui/input-text-area";
 import { useOnboarding } from "../../hooks/useOnboarding";
 import type { StepField } from "./onboarding.data";
 

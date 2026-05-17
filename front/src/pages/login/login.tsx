@@ -3,10 +3,11 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Lock, Mail,  } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 
 import { ApiError } from "../../lib/api";
 import { isAuthenticated, login } from "../../lib/auth";
+import { useAuth } from "@/contexts/authContext";
 
 const loginSchema = z.object({
   email: z.string().email("Email invalido"),
@@ -19,13 +20,13 @@ function getFieldError(error: unknown) {
   if (!error || typeof error !== "object") {
     return undefined;
   }
-
   const detail = (error as Record<string, unknown>).detail;
   return typeof detail === "string" ? detail : undefined;
 }
 
 export default function Login() {
   const navigate = useNavigate();
+  const { setAuth } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -47,17 +48,19 @@ export default function Login() {
     setSubmitError(null);
 
     try {
-      await login({
+      const response = await login({
         email: data.email,
         password: data.senha,
       });
+
+      setAuth(response.data); // ← avisa o context
+
       navigate("/onboard", { replace: true });
     } catch (error) {
       if (error instanceof ApiError) {
         setSubmitError(getFieldError(error.errors) ?? error.message);
         return;
       }
-
       setSubmitError("Nao foi possivel entrar agora. Tente novamente.");
     }
   };
