@@ -12,7 +12,7 @@ export type TagValues = Record<string, string[]>;
 const PACE_MAP: Record<string, number> = { adventure: 9, balanced: 5, relaxed: 2 };
 const ADVENTURE_MAP: Record<string, number> = { adventure: 9, balanced: 5, relaxed: 2 };
 const SOCIAL_ENERGY_MAP: Record<string, number> = { solo: 2, couple: 4, friends: 8, family: 6 };
-const HOTEL_MAP: Record<string, string> = { budget: "hostel", standard: "hotel", premium: "resort" };
+const HOTEL_MAP: Record<string, string> = { budget: "lodging", standard: "lodging", premium: "lodging" };
 
 // ── Shapes dos payloads ───────────────────────────────────────
 

@@ -9,7 +9,7 @@ interface UseDestinationsReturn {
   refetch: () => void
 }
 
-export function useDestinations(token: string, slug?: string): UseDestinationsReturn {
+export function useDestinations(token: string, id?: string): UseDestinationsReturn {
   const [destinations, setDestinations] = useState<Destination[]>([])
   const [destination, setDestination] = useState<Destination | null>(null)
   const [loading, setLoading] = useState(() => !!token)
@@ -26,8 +26,8 @@ export function useDestinations(token: string, slug?: string): UseDestinationsRe
       setError(null)
 
       try {
-        if (slug) {
-          const response = await getDestination(token, slug)
+        if (id) {
+          const response = await getDestination(token, id)
           if (!cancelled) setDestination(response.data)
         } else {
           const response = await getDestinations(token)
@@ -42,7 +42,7 @@ export function useDestinations(token: string, slug?: string): UseDestinationsRe
 
     load()
     return () => { cancelled = true }
-  }, [token, slug, trigger])
+  }, [token, id, trigger])
 
   const refetch = () => setTrigger(t => t + 1)
 

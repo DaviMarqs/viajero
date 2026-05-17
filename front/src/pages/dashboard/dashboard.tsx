@@ -68,14 +68,6 @@ export function Dashboard() {
           onDetails={(id) => navigate(`/roteiros/${id}/detalhes`)}
         />
       )}
-
-      <CarouselRow
-        title="Praias encantadoras"
-        itineraries={itineraries}
-        onVerTodos={() => navigate('/explorar')}
-        onView={(id) => navigate(`/roteiros/${id}`)}
-        onDetails={(id) => navigate(`/roteiros/${id}/detalhes`)}
-      />
     </section>
   )
 }

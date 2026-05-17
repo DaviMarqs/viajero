@@ -17,16 +17,21 @@ import DestinationPage from "./pages/destination/destination";
 
 import "./index.css";
 
-// Rota protegida — redireciona pro login se não autenticado
 function PrivateRoute() {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+
   return (
     <div className="flex h-screen overflow-hidden">
-      <aside className="w-64 shrink-0 h-full">
+      <aside className="hidden lg:block w-64 shrink-0 h-full">
         <Sidebar />
       </aside>
-      <main className="flex-1 overflow-y-auto">
+
+      <div className="lg:hidden">
+        <Sidebar />
+      </div>
+
+      <main className="flex-1 overflow-y-auto pt-14 lg:pt-0">
         <Outlet />
       </main>
     </div>
@@ -54,7 +59,7 @@ function App() {
             path="/explorar"
             element={<div className="p-8">Explorar</div>}
           />
-          <Route path="/destinos/:slug" element={<DestinationPage />} />
+          <Route path="/destinos/:id" element={<DestinationPage />} />
           <Route
             path="/roteiros"
             element={<div className="p-8">Roteiros</div>}

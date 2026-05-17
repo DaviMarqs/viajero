@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import type { ItineraryWithDestination } from '@/hooks/useItineraries'
 import { Calendar, Clock, Wallet } from 'lucide-react'
 
@@ -13,7 +14,9 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   ready:      { label: 'Pronto',     className: 'bg-green-100 text-green-700' },
 }
 
-export default function TripCard({ itinerary, onView, onDetails }: TripCardProps) {
+export default function TripCard({ itinerary, onView }: TripCardProps) {
+  const navigate = useNavigate()
+
   const status = statusConfig[itinerary.generation_status] ?? {
     label: itinerary.generation_status,
     className: 'bg-neutral-100 text-neutral-600',
@@ -42,9 +45,11 @@ export default function TripCard({ itinerary, onView, onDetails }: TripCardProps
     ? `${itinerary.destinationData.city}, ${itinerary.destinationData.country}`
     : null
 
+  const destinationSlug = itinerary.destinationData?.id
+
   return (
-    <div className="flex flex-col border border-neutral-200 rounded-2xl overflow-hidden h-full bg-white w-full sm:w-80 shrink-0 transition-shadow hover:shadow-md">
-      <div className="relative h-44 bg-neutral-100 shrink-0">
+    <div className="flex flex-col w-64 sm:w-72 shrink-0">
+      <div className="relative h-44 rounded-2xl overflow-hidden bg-neutral-100">
         <img
           src={imageUrl}
           alt={itinerary.title}
@@ -55,9 +60,9 @@ export default function TripCard({ itinerary, onView, onDetails }: TripCardProps
         </span>
       </div>
 
-      <div className="flex flex-col gap-3 p-4 flex-1">
+      <div className="flex flex-col gap-2 pt-3 px-1">
         <div>
-          <h2 className="font-semibold text-base text-neutral-900 leading-snug line-clamp-1">
+          <h2 className="font-semibold text-sm text-neutral-900 leading-snug line-clamp-1">
             {itinerary.title}
           </h2>
           {locationLabel && (
@@ -65,17 +70,17 @@ export default function TripCard({ itinerary, onView, onDetails }: TripCardProps
           )}
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-1.5 text-xs text-neutral-500">
-            <Calendar className="size-3.5 shrink-0" />
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          <div className="flex items-center gap-1 text-xs text-neutral-500">
+            <Calendar className="size-3 shrink-0" />
             <span>{startDate} → {endDate}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-neutral-500">
-            <Clock className="size-3.5 shrink-0" />
+          <div className="flex items-center gap-1 text-xs text-neutral-500">
+            <Clock className="size-3 shrink-0" />
             <span>{itinerary.duration_days} dias</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-neutral-500">
-            <Wallet className="size-3.5 shrink-0" />
+          <div className="flex items-center gap-1 text-xs text-neutral-500">
+            <Wallet className="size-3 shrink-0" />
             <span>{budget}</span>
           </div>
         </div>
@@ -86,18 +91,19 @@ export default function TripCard({ itinerary, onView, onDetails }: TripCardProps
           </p>
         )}
 
-        <div className="flex gap-2 mt-auto pt-1">
+        <div className="flex gap-2 pt-1">
           <button
             onClick={() => onView?.(itinerary.id)}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium py-2 rounded-xl transition-colors"
           >
             Ver roteiro
           </button>
           <button
-            onClick={() => onDetails?.(itinerary.id)}
-            className="flex-1 bg-neutral-50 hover:bg-neutral-100 text-neutral-700 text-sm font-medium py-2.5 rounded-xl border border-neutral-200 transition-colors"
+            onClick={() => destinationSlug && navigate(`/destinos/${destinationSlug}`)}
+            disabled={!destinationSlug}
+            className="flex-1 bg-neutral-50 hover:bg-neutral-100 disabled:opacity-40 text-neutral-700 text-xs font-medium py-2 rounded-xl border border-neutral-200 transition-colors"
           >
-            Detalhes
+            Ver destino
           </button>
         </div>
       </div>
