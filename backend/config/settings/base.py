@@ -109,3 +109,5 @@ FIRECRAWL_API_URL = os.getenv("FIRECRAWL_API_URL", "https://api.firecrawl.dev/v1
 DEFAULT_LLM_PROVIDER = os.getenv("DEFAULT_LLM_PROVIDER", "mock")
 DEFAULT_LLM_MODEL = os.getenv("DEFAULT_LLM_MODEL", "mock-itinerary-v1")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")

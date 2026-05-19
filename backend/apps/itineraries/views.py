@@ -37,16 +37,41 @@ class ItineraryViewSet(StandardModelViewSet):
     @action(detail=True, methods=["post"])
     def generate(self, request, pk=None):
         itinerary = self.get_object()
+
+        if itinerary.generation_status == "generating":
+            return self.error_response(
+                {"detail": "Itinerary is already being generated."},
+                message="Geracao ja em andamento.",
+                status_code=status.HTTP_409_CONFLICT,
+            )
+
         itinerary.generation_status = "generating"
         itinerary.save(update_fields=["generation_status", "updated_at"])
+
         service = ItineraryGenerationService()
         job = service.create_job(itinerary=itinerary, user=request.user)
-        service.run_job(job)
+        job = service.run_job(job)
+
+        itinerary.refresh_from_db()
+
+        if job.status == "failed":
+            audit(
+                "itinerary.generation_failed",
+                actor=request.user,
+                target=itinerary,
+                metadata={"job_id": job.id, "error": job.error_message},
+            )
+            return self.error_response(
+                {"detail": job.error_message or "AI generation failed."},
+                message="Falha ao gerar o roteiro com IA.",
+                status_code=status.HTTP_502_BAD_GATEWAY,
+            )
+
         audit("itinerary.generated", actor=request.user, target=itinerary, metadata={"job_id": job.id})
         return self.success_response(
             self.get_serializer(itinerary).data,
-            message="Geracao de itinerario iniciada.",
-            status_code=status.HTTP_202_ACCEPTED,
+            message="Roteiro gerado com sucesso.",
+            status_code=status.HTTP_200_OK,
         )
 
     @action(detail=False, methods=["get"], url_path="templates")
