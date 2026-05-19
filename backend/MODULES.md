@@ -105,6 +105,8 @@ Núcleo funcional do produto.
 |---|---|---|---|
 | ItineraryViewSet | `/api/itineraries/` `[+ /{id}/]` | GET/POST/PUT/PATCH/DELETE | CRUD do roteiro; filtros destino/status; busca por título |
 | ItineraryViewSet.generate | `/api/itineraries/{id}/generate/` | POST | Aciona geração via IA; muda status para `generating` e retorna 202 |
+| ItineraryViewSet.days | `/api/itineraries/{id}/days/` | GET | Lista todos os dias do roteiro com seus eventos (programação completa) |
+| ItineraryViewSet.day_detail | `/api/itineraries/{id}/days/{day_number}/` | GET | Programação de um dia específico (eventos com horário, POI, custo) |
 | ItineraryViewSet.templates | `/api/itineraries/templates/` | GET | Lista templates "genéricos" para usuários sem preferências (itinerários com `metadata.is_template=true`, AllowAny) |
 | ItineraryViewSet.top_rated | `/api/itineraries/top-rated/` | GET | Ranking público (página principal) ordenado por `ReviewStat.average_rating` desc (AllowAny) |
 | FavoriteItineraryViewSet | `/api/favorites/` `[+ /{id}/]` | GET/POST/DELETE | Favoritar / listar / remover favorito |

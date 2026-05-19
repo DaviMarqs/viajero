@@ -544,6 +544,30 @@
       ]
     },
     {
+      "_id": "req_itineraries_days_list",
+      "_type": "request",
+      "parentId": "fld_itineraries",
+      "name": "Days List (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/itineraries/{{ itinerary_id }}/days/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ],
+      "description": "Lista todos os dias do roteiro com seus eventos (programacao completa). Resposta inclui day_number, title, summary, estimated_cost e events[]."
+    },
+    {
+      "_id": "req_itineraries_day_detail",
+      "_type": "request",
+      "parentId": "fld_itineraries",
+      "name": "Day Detail (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/itineraries/{{ itinerary_id }}/days/1/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ],
+      "description": "Programacao de um dia especifico do roteiro (substitua o '1' pelo day_number desejado). Retorna o dia com seus eventos (start_time, end_time, title, description, estimated_cost, POI)."
+    },
+    {
       "_id": "req_favorites_list",
       "_type": "request",
       "parentId": "fld_favorites",

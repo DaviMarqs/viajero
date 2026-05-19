@@ -1,12 +1,19 @@
 from django.db.models import Avg, Count, F
+from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status
 from rest_framework.decorators import action
 
 from apps.ai.services import ItineraryGenerationService
 from apps.audit.services import audit
 from apps.common.mixins import StandardModelViewSet
-from .models import FavoriteItinerary, Itinerary, Review, ReviewStat, SharedItineraryLink
-from .serializers import FavoriteItinerarySerializer, ItinerarySerializer, ReviewSerializer, SharedItineraryLinkSerializer
+from .models import FavoriteItinerary, Itinerary, ItineraryDay, Review, ReviewStat, SharedItineraryLink
+from .serializers import (
+    FavoriteItinerarySerializer,
+    ItineraryDaySerializer,
+    ItinerarySerializer,
+    ReviewSerializer,
+    SharedItineraryLinkSerializer,
+)
 
 
 TOP_RATED_LIMIT = 10
@@ -59,6 +66,24 @@ class ItineraryViewSet(StandardModelViewSet):
         )
         data = self.get_serializer(queryset, many=True).data
         return self.success_response(data, message="Templates de roteiros carregados com sucesso.")
+
+    @action(detail=True, methods=["get"], url_path="days")
+    def days(self, request, pk=None):
+        itinerary = self.get_object()
+        queryset = itinerary.days.prefetch_related("events", "events__poi").order_by("day_number")
+        data = ItineraryDaySerializer(queryset, many=True).data
+        return self.success_response(data, message="Programacao do roteiro carregada com sucesso.")
+
+    @action(detail=True, methods=["get"], url_path=r"days/(?P<day_number>\d+)")
+    def day_detail(self, request, pk=None, day_number=None):
+        itinerary = self.get_object()
+        day = get_object_or_404(
+            ItineraryDay.objects.prefetch_related("events", "events__poi"),
+            itinerary=itinerary,
+            day_number=day_number,
+        )
+        data = ItineraryDaySerializer(day).data
+        return self.success_response(data, message="Programacao do dia carregada com sucesso.")
 
     @action(detail=False, methods=["get"], url_path="top-rated")
     def top_rated(self, request):
