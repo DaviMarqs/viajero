@@ -62,7 +62,7 @@ Catálogo de destinos turísticos e seus pontos de interesse.
 | Controller | Rota | Métodos | Função |
 |---|---|---|---|
 | DestinationViewSet | `/api/destinations/` `[+ /{id}/]` | GET/POST/PUT/PATCH/DELETE | CRUD de destinos; filtro por country/city; busca textual |
-| DestinationViewSet.search | `/api/destinations/search/` | GET | Busca pública por destino (`?q=`, `?country=`, `?city=`) para a home (AllowAny) |
+| DestinationViewSet.search | `/api/destinations/search/` | GET | Busca pública por destino (`?q=`, `?country=`, `?city=`) para a home (AllowAny). Em cache miss (`q` informado e zero resultados locais), aciona `FirecrawlIngestionService.discover_destination` sincronamente para criar/enriquecer o destino e re-consulta o banco antes de responder. |
 | PointOfInterestViewSet | `/api/pois/` `[+ /{id}/]` | GET/POST/PUT/PATCH/DELETE | CRUD de POIs; filtros por destino/tipo/tag; busca textual |
 
 Permissão: `IsAuthenticatedOrReadOnly`. Cobre **US-05** (Destinos) e **US-07** (POIs).
@@ -166,6 +166,19 @@ Sem modelos próprios — grava em `Destination`, `DestinationCostProfile` e `Po
 | Controller | Rota | Método | Função |
 |---|---|---|---|
 | FirecrawlIngestView | `/api/firecrawl/ingest/` | POST | Recebe `{destination_id, source_urls[]}`, executa scraping, atualiza destino/POIs e retorna `{destination_updated, poi_count, cost_profile_updated}` (admin) |
+
+> O serviço `FirecrawlIngestionService` também expõe `discover_destination(query, country, city, actor)`, usado pela busca pública de destinos como cache-aside: se a busca local não retorna nada, cria/recupera a `Destination` por slug, dispara ingestão e persiste summary/cost profile/POIs.
+
+### Fluxo com a API real do Firecrawl
+
+Quando `FIRECRAWL_API_KEY` está definido, o serviço usa dois endpoints do `https://api.firecrawl.dev/v1`:
+
+1. `POST /search` — recebe `{query, limit}` e retorna até 3 URLs candidatas (`data[].url`).
+2. `POST /scrape` — recebe `{url, formats: ["json"], jsonOptions: {schema, prompt}}` e retorna `data.json` já estruturado conforme o `DESTINATION_EXTRACTION_SCHEMA` da `services.py` (`name`, `country`, `city`, `summary`, `best_season`, `timezone`, `costs.{low,mid,high}`, `pois[]`).
+
+Erros são mapeados em `FirecrawlError`: 401 (credencial inválida), 429 (rate limit), 5xx (indisponibilidade). A view `search` captura a exceção, registra em log via `logger.exception` e responde com lista vazia (não propaga 500).
+
+Quando `FIRECRAWL_API_KEY` está vazio, ambos os métodos caem em um payload mockado (útil em dev/CI sem gastar crédito). Os testes em `tests/test_services.py` exercitam os dois caminhos sem chamadas HTTP reais.
 
 Cobre **US-16** (Ingestão de Dados).
 

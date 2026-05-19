@@ -1,13 +1,19 @@
+import logging
+
 from django.db.models import Q
 from rest_framework import permissions
 from rest_framework.decorators import action
 
+from apps.audit.services import audit
 from apps.common.mixins import StandardModelViewSet
+from apps.integrations.services import FirecrawlIngestionService
 from .models import Destination, PointOfInterest
 from .serializers import DestinationSerializer, PointOfInterestSerializer
 
 
 SEARCH_LIMIT = 20
+
+logger = logging.getLogger(__name__)
 
 
 class DestinationViewSet(StandardModelViewSet):
@@ -29,6 +35,40 @@ class DestinationViewSet(StandardModelViewSet):
         country = request.query_params.get("country", "").strip()
         city = request.query_params.get("city", "").strip()
 
+        results = self._local_search(q=q, country=country, city=city)
+
+        discovered = False
+        if q and not results.exists():
+            try:
+                destination = FirecrawlIngestionService().discover_destination(
+                    query=q,
+                    country=country,
+                    city=city,
+                    actor=request.user,
+                )
+            except Exception:
+                logger.exception("Falha ao enriquecer destino via Firecrawl para query=%s", q)
+                destination = None
+
+            if destination is not None:
+                discovered = True
+                audit(
+                    "firecrawl.discovered",
+                    actor=request.user if request.user.is_authenticated else None,
+                    target=destination,
+                    metadata={"query": q, "country": country, "city": city},
+                )
+                results = self._local_search(q=q, country=country, city=city)
+
+        data = self.get_serializer(results, many=True).data
+        message = (
+            "Resultados carregados (destino enriquecido via Firecrawl)."
+            if discovered
+            else "Resultados da busca carregados com sucesso."
+        )
+        return self.success_response(data, message=message)
+
+    def _local_search(self, *, q: str, country: str, city: str):
         queryset = self.get_queryset()
         if q:
             queryset = queryset.filter(
@@ -41,10 +81,7 @@ class DestinationViewSet(StandardModelViewSet):
             queryset = queryset.filter(country__iexact=country)
         if city:
             queryset = queryset.filter(city__iexact=city)
-
-        queryset = queryset.order_by("-average_rating", "name")[:SEARCH_LIMIT]
-        data = self.get_serializer(queryset, many=True).data
-        return self.success_response(data, message="Resultados da busca carregados com sucesso.")
+        return queryset.order_by("-average_rating", "name")[:SEARCH_LIMIT]
 
 
 class PointOfInterestViewSet(StandardModelViewSet):

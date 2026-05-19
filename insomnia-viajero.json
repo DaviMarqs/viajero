@@ -872,7 +872,7 @@
         { "name": "country", "value": "" },
         { "name": "city", "value": "" }
       ],
-      "description": "Busca pública de destinos para a home (AllowAny). Filtros opcionais: q (texto), country, city."
+      "description": "Busca pública de destinos para a home (AllowAny). Filtros opcionais: q (texto), country, city. Cache-aside: se a busca local não retornar nada e q for informado, dispara FirecrawlIngestionService.discover_destination sincronamente (mock quando FIRECRAWL_API_KEY vazio) e retorna o destino recém-criado."
     },
     {
       "_id": "req_itineraries_templates",
