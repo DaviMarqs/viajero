@@ -62,8 +62,12 @@ Catálogo de destinos turísticos e seus pontos de interesse.
 | Controller | Rota | Métodos | Função |
 |---|---|---|---|
 | DestinationViewSet | `/api/destinations/` `[+ /{id}/]` | GET/POST/PUT/PATCH/DELETE | CRUD de destinos; filtro por country/city; busca textual |
-| DestinationViewSet.search | `/api/destinations/search/` | GET | Busca pública por destino (`?q=`, `?country=`, `?city=`) para a home (AllowAny). Em cache miss (`q` informado e zero resultados locais), aciona `FirecrawlIngestionService.discover_destination` sincronamente para criar/enriquecer o destino e re-consulta o banco antes de responder. |
+| DestinationViewSet.search | `/api/destinations/search/` | GET | Busca pública por destino (`?q=`, `?country=`, `?city=`) para a home (AllowAny). Em cache miss (`q` informado e zero resultados locais), aciona `FirecrawlIngestionService.discover_destination` sincronamente para criar/enriquecer o destino, re-consulta o banco e **garante que o destino enriquecido sempre apareça no response** (mesmo se o `_local_search` falhar por mismatch de acento/casing — ex: query "Sao Paulo" vs nome "São Paulo"). |
 | PointOfInterestViewSet | `/api/pois/` `[+ /{id}/]` | GET/POST/PUT/PATCH/DELETE | CRUD de POIs; filtros por destino/tipo/tag; busca textual |
+
+### Management commands
+
+- `python manage.py seed_destinations` — popula a tabela `Destination` via Firecrawl com uma lista curada de cidades brasileiras (Rio, SP, Salvador, Floripa, Bonito, Paraty, etc — 20 cidades default). Útil pra ter dados prontos pro frontend sem depender da busca síncrona. Flags: `--cities` (lista custom), `--country` (default Brasil), `--force` (re-ingere mesmo já populados), `--clear-failure-cache` (limpa cache negativo antes), `--delay N` (segundos entre cidades, default 1.0).
 
 Permissão: `IsAuthenticatedOrReadOnly`. Cobre **US-05** (Destinos) e **US-07** (POIs).
 
@@ -167,16 +171,39 @@ Sem modelos próprios — grava em `Destination`, `DestinationCostProfile` e `Po
 |---|---|---|---|
 | FirecrawlIngestView | `/api/firecrawl/ingest/` | POST | Recebe `{destination_id, source_urls[]}`, executa scraping, atualiza destino/POIs e retorna `{destination_updated, poi_count, cost_profile_updated}` (admin) |
 
-> O serviço `FirecrawlIngestionService` também expõe `discover_destination(query, country, city, actor)`, usado pela busca pública de destinos como cache-aside: se a busca local não retorna nada, cria/recupera a `Destination` por slug, dispara ingestão e persiste summary/cost profile/POIs.
+> O serviço `FirecrawlIngestionService` também expõe `discover_destination(query, country, city, actor)`, usado pela busca pública de destinos como cache-aside: faz search + scrape em memória primeiro e **só cria/atualiza o `Destination` no banco se o scrape retornar dados úteis** (`summary` ou ao menos um POI). Isso evita placeholders órfãos quando o scrape falha ou estoura timeout.
 
 ### Fluxo com a API real do Firecrawl
 
 Quando `FIRECRAWL_API_KEY` está definido, o serviço usa dois endpoints do `https://api.firecrawl.dev/v1`:
 
-1. `POST /search` — recebe `{query, limit}` e retorna até 3 URLs candidatas (`data[].url`).
-2. `POST /scrape` — recebe `{url, formats: ["json"], jsonOptions: {schema, prompt}}` e retorna `data.json` já estruturado conforme o `DESTINATION_EXTRACTION_SCHEMA` da `services.py` (`name`, `country`, `city`, `summary`, `best_season`, `timezone`, `costs.{low,mid,high}`, `pois[]`).
+1. `POST /search` — recebe `{query, limit}` (limit vem de `FIRECRAWL_SEARCH_LIMIT`, default 2) e retorna URLs candidatas (`data[].url`). A query é montada como `"{query} turismo {country|Brasil}"`. URLs de domínios não suportados pelo Firecrawl (Instagram, Facebook, YouTube, TikTok, X/Twitter, LinkedIn, Reddit, Pinterest, Threads) são descartadas antes do scrape. Se nenhuma URL útil sobrar, faz fallback para `https://pt.wikipedia.org/wiki/<slug>`. Se as URLs do search vierem mas TODAS falharem no scrape, faz uma segunda tentativa com a URL da Wikipedia antes de desistir.
+2. `POST /scrape` — recebe `{url, formats: ["json"], jsonOptions: {schema, prompt}}` e retorna `data.json` estruturado conforme o `DESTINATION_EXTRACTION_SCHEMA` da `services.py` (`name`, `country`, `city`, `summary`, `hero_image_url`, `best_season`, `timezone`, `costs.{low,mid,high}`, `pois[]` com `image_url` opcional por POI).
 
-Erros são mapeados em `FirecrawlError`: 401 (credencial inválida), 429 (rate limit), 5xx (indisponibilidade). A view `search` captura a exceção, registra em log via `logger.exception` e responde com lista vazia (não propaga 500).
+`hero_image_url` é promovido para `Destination.hero_image_url`; `image_url` de cada POI é persistido em `PointOfInterest.metadata['image_url']`. Tipos de POI vindos do LLM passam por `_normalize_poi_type` (aliases como `hotel`→`lodging`, `tour`→`activity`, `cafe`→`restaurant`) antes do fallback final para `activity`.
+
+Erros são mapeados em `FirecrawlError` com status code + trecho do body para diagnóstico: 401 (credencial inválida), 429 (rate limit), demais 4xx (requisição rejeitada), 5xx (indisponibilidade) e payloads não-JSON. A view `search` captura a exceção, registra em log via `logger.exception` e responde com lista vazia (não propaga 500).
+
+#### Arquitetura interna
+
+- `_search_urls(query)` → lista de URLs.
+- `_aggregate_payloads(urls)` → `AggregatedExtraction` (sem tocar no DB):
+  - tolera falhas por URL (registra em `failures`, segue pra próxima);
+  - **early-exit** assim que tiver `summary` + ≥ 1 POI (poupa scrape e latência);
+  - levanta `FirecrawlError` somente se TODAS as URLs falharem.
+- `_persist_extraction(destination, source_urls, aggregated)` → `IngestionResult`, dentro de `@transaction.atomic`. Falhas no scrape ficam registradas em `Destination.metadata['scrape_failures']`.
+- `discover_destination` orquestra: search → aggregate → (se `has_meaningful_data()`) `get_or_create` + persist + promote.
+- `ingest_destination(destination, source_urls)` (consumido pela view admin `/api/firecrawl/ingest/`) faz aggregate + persist sobre um `Destination` já existente, em transação.
+
+#### Tuning de timeouts (env)
+
+| Variável | Default | Uso |
+|---|---|---|
+| `FIRECRAWL_SEARCH_LIMIT` | `2` | URLs solicitadas ao `/search`. Quanto menor, mais rápida a request da busca pública. |
+| `FIRECRAWL_CONNECT_TIMEOUT` | `5` | Timeout de conexão TCP (segundos). |
+| `FIRECRAWL_SEARCH_TIMEOUT` | `15` | Timeout de leitura do `/search`. |
+| `FIRECRAWL_SCRAPE_TIMEOUT` | `25` | Timeout de leitura por chamada `/scrape`. |
+| `FIRECRAWL_DISCOVERY_FAILURE_TTL` | `60` | Quando `discover_destination` retorna `None`, o slug fica em cache negativo (`firecrawl:discover_failed:<slug>`) por esse TTL em segundos. Buscas repetidas da mesma query no curto prazo retornam vazio imediato sem chamar Firecrawl. Defina `0` pra desabilitar. |
 
 Quando `FIRECRAWL_API_KEY` está vazio, ambos os métodos caem em um payload mockado (útil em dev/CI sem gastar crédito). Os testes em `tests/test_services.py` exercitam os dois caminhos sem chamadas HTTP reais.
 
