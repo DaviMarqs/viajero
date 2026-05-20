@@ -86,10 +86,7 @@ export default function Register() {
         <section className="flex items-center px-6 py-10 sm:px-10 lg:px-14">
           <div className="mx-auto w-full max-w-md">
             <div className="mb-10 space-y-3">
-              <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">
-                Cadastro
-              </span>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl pt-10">
                 Crie sua conta
               </h1>
               <p className="text-sm leading-6 text-slate-500 sm:text-base">

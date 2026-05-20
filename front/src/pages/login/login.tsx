@@ -3,10 +3,11 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Lock, Mail, PlaneTakeoff } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 
 import { ApiError } from "../../lib/api";
 import { isAuthenticated, login } from "../../lib/auth";
+import { useAuth } from "@/contexts/authContext";
 
 const loginSchema = z.object({
   email: z.string().email("Email invalido"),
@@ -19,13 +20,13 @@ function getFieldError(error: unknown) {
   if (!error || typeof error !== "object") {
     return undefined;
   }
-
   const detail = (error as Record<string, unknown>).detail;
   return typeof detail === "string" ? detail : undefined;
 }
 
 export default function Login() {
   const navigate = useNavigate();
+  const { setAuth } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -47,17 +48,19 @@ export default function Login() {
     setSubmitError(null);
 
     try {
-      await login({
+      const response = await login({
         email: data.email,
         password: data.senha,
       });
+
+      setAuth(response.data); // ← avisa o context
+
       navigate("/onboard", { replace: true });
     } catch (error) {
       if (error instanceof ApiError) {
         setSubmitError(getFieldError(error.errors) ?? error.message);
         return;
       }
-
       setSubmitError("Nao foi possivel entrar agora. Tente novamente.");
     }
   };
@@ -71,11 +74,6 @@ export default function Login() {
           <div className="absolute bottom-0 right-0 h-56 w-56 translate-x-1/4 translate-y-1/4 rounded-full bg-cyan-300/20 blur-3xl" />
 
           <div className="relative z-10 max-w-xl space-y-6">
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur">
-              <PlaneTakeoff className="h-4 w-4" />
-              Viajero
-            </div>
-
             <div className="space-y-4">
               <h1 className="max-w-lg text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
                 Sua proxima viagem nao terminou.
@@ -91,9 +89,6 @@ export default function Login() {
         <section className="flex items-center px-6 py-10 sm:px-10 lg:px-14">
           <div className="mx-auto w-full max-w-md">
             <div className="mb-10 space-y-3">
-              <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">
-                Login
-              </span>
               <h2 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
                 Bem-vindo de volta
               </h2>
@@ -162,7 +157,7 @@ export default function Login() {
 
             <div className="mt-6 flex items-center justify-center">
               <Link
-                to="/cadastro"
+                to="/register"
                 className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
               >
                 Criar uma conta nova
