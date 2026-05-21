@@ -58,7 +58,12 @@ class DestinationViewSet(StandardModelViewSet):
                     target=destination,
                     metadata={"query": q, "country": country, "city": city},
                 )
-                results = self._local_search(q=q, country=country, city=city)
+                refreshed = list(self._local_search(q=q, country=country, city=city))
+                if all(item.pk != destination.pk for item in refreshed):
+                    enriched = self.get_queryset().filter(pk=destination.pk).first()
+                    if enriched is not None:
+                        refreshed.insert(0, enriched)
+                results = refreshed
 
         data = self.get_serializer(results, many=True).data
         message = (
