@@ -2,34 +2,37 @@ import { Lightbulb } from "lucide-react";
 
 export default function RoadTrip() {
   return (
-    <div className="flex border border-neutral-300 rounded-2xl overflow-clip w-full">
-      <div>
-        <img src="../src/assets/pic-tripb.svg" className="rounded-2xl" alt="" />
+    <div className="flex flex-col sm:flex-row border border-neutral-300 rounded-2xl overflow-clip w-full">
+      <div className="w-full h-48 sm:w-48 sm:h-auto flex-shrink-0">
+        <img
+          src="../src/assets/pic-tripb.svg"
+          className="w-full h-full object-cover"
+          alt=""
+        />
       </div>
-      <div className="flex-col py-6 px-6">
-        <div className="flex w-full pt-6">
-          <h2 className="text-3xl">Programação</h2>
-          <p className="py-2 px-12 text-blue-600 font-bold">13:37</p>
+
+      <div className="flex flex-col py-5 px-5 gap-2 w-full">
+        <div className="flex items-center justify-between w-full">
+          <h2 className="text-2xl">Programação</h2>
+          <p className="text-blue-600 font-bold">13:37</p>
         </div>
-        <div className="pt-2">
-          <p>Detalhes da programação do horário</p>
+
+        <p className="text-sm text-neutral-700">
+          Detalhes da programação do horário
+        </p>
+
+        <p className="text-sm text-neutral-700">Custo estimado: R$50,00</p>
+
+        <div className="border px-3 py-2 border-neutral-300 bg-amber-100 rounded-lg">
+          <p className="flex gap-2 items-start text-sm text-amber-900">
+            <Lightbulb className="flex-shrink-0 mt-0.5" size={16} />
+            Dica: Exiba uma mensagem de dica ao usuário
+          </p>
         </div>
-        <div className="pt-2">
-          <p>Custo estimado: R$50,00</p>
-        </div>
-        <div className="pt-4">
-          <div className="pt-2 border px-2 py-2 border-neutral-300 bg-amber-100 rounded-lg">
-            <p className="py-2 px-2 flex gap-2 text-amber-900">
-              <Lightbulb />
-              Dica: Exiba uma mensagem de dica ao usuário
-            </p>
-          </div>
-        </div>
-        <div className="pt-4">
-          <button className=" bg-neutral-100 text-neutral-950 w-full px-8 py-3 border border-neutral-300 rounded-lg">
-            Ver detalhes
-          </button>
-        </div>
+
+        <button className="bg-neutral-100 text-neutral-950 w-full px-6 py-2.5 border border-neutral-300 rounded-lg text-sm mt-1">
+          Ver detalhes
+        </button>
       </div>
     </div>
   );

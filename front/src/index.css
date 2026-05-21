@@ -17,7 +17,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #f7f9fc;
+  background: var(--color-neutral-50);
   color: #0f172a;
   font-family: var(--font-sans);
   text-rendering: optimizeLegibility;

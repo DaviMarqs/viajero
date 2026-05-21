@@ -179,7 +179,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      <div className="bg-white border-b border-neutral-100 px-6 py-4 flex items-center justify-between">
+      <div className="bg-white border-b border-neutral-300 px-6 py-4 flex items-center justify-between">
         <h1 className="text-base font-semibold text-neutral-900">Meu perfil</h1>
         <button
           onClick={onLogout}
@@ -191,7 +191,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-8 flex flex-col gap-6">
-        <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex items-center gap-5">
+        <div className="bg-white rounded-2xl border border-neutral-300 p-6 flex items-center gap-5">
           <div className="relative shrink-0">
             <div className="size-20 rounded-full bg-blue-50 border border-blue-100 overflow-hidden flex items-center justify-center">
               {avatarUploading ? (
@@ -210,7 +210,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
             </div>
             <button
               onClick={() => fileRef.current?.click()}
-              className="absolute -bottom-1 -right-1 size-7 rounded-full bg-white border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-colors shadow-sm"
+              className="absolute -bottom-1 -right-1 size-7 rounded-full bg-white border border-neutral-300 flex items-center justify-center hover:bg-neutral-50 transition-colors shadow-sm"
               title="Alterar foto"
             >
               <Camera className="size-3.5 text-neutral-500" />
@@ -250,7 +250,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex flex-col gap-5">
+        <div className="bg-white rounded-2xl border border-neutral-300 p-6 flex flex-col gap-5">
           <h2 className="text-sm font-semibold text-neutral-700">
             Informações pessoais
           </h2>
@@ -313,7 +313,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
             />
           </div>
 
-          <div className="border-t border-neutral-100 pt-5 flex flex-col gap-5">
+          <div className="border-t border-neutral-300 pt-5 flex flex-col gap-5">
             <h2 className="text-sm font-semibold text-neutral-700">
               Preferências de viagem
             </h2>
@@ -413,7 +413,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl border border-neutral-100 px-6 py-4 flex flex-col gap-1">
+        <div className="bg-white rounded-2xl border border-neutral-300 px-6 py-4 flex flex-col gap-1">
           <h2 className="text-sm font-semibold text-neutral-700 mb-2">Conta</h2>
           <div className="grid grid-cols-2 gap-y-2 text-xs text-neutral-400">
             <span>ID do usuário</span>
