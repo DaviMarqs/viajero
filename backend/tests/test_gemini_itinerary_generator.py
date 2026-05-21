@@ -163,3 +163,38 @@ def test_generate_raises_on_timeout():
                 pois=[],
                 prompt_template=None,
             )
+
+
+def test_run_job_persists_valid_poi_id_in_event():
+    """Integração: run_job consome poi_id do gerador e persiste FK no ItineraryDailyEvent."""
+    from apps.ai.services import ItineraryGenerationService
+    from apps.itineraries.models import ItineraryDailyEvent
+
+    itinerary, destination = _make_itinerary()
+    poi = PointOfInterest.objects.create(
+        destination=destination,
+        slug="jardim-botanico",
+        name="Jardim Botanico",
+        poi_type="attraction",
+    )
+    payload = _gemini_itinerary_payload(poi.id)
+
+    fake_provider = MagicMock()
+    fake_provider.generate_json.return_value = payload
+
+    service = ItineraryGenerationService()
+    job = service.create_job(itinerary=itinerary, user=itinerary.user)
+
+    with patch(
+        "apps.ai.generators.itinerary.GeminiProvider",
+        return_value=fake_provider,
+    ), patch(
+        "apps.ai.services.get_generator",
+        return_value=GeminiItineraryGenerator(),
+    ):
+        service.run_job(job)
+
+    events = list(ItineraryDailyEvent.objects.filter(itinerary_day__itinerary=itinerary).order_by("order_index"))
+    assert len(events) == 2
+    assert events[0].poi_id == poi.id  # poi_id valido persistiu
+    assert events[1].poi_id is None  # evento freestyle

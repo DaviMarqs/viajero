@@ -136,6 +136,7 @@ class ItineraryGenerationService:
                     description=event["description"],
                     estimated_cost=Decimal(event["estimated_cost"]),
                     order_index=event["order_index"],
+                    poi_id=event.get("poi_id"),
                 )
 
         job.status = "completed"

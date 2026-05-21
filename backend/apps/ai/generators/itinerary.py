@@ -9,6 +9,7 @@ from django.conf import settings
 
 from apps.ai.providers.base import LLMProviderError, LLMResponseError
 from apps.ai.providers.gemini import GeminiProvider
+from apps.ai.models import PromptTemplate
 from apps.ai.services import BaseItineraryGenerator
 from apps.destinations.models import PointOfInterest
 from apps.itineraries.models import Itinerary
@@ -69,7 +70,7 @@ class GeminiItineraryGenerator(BaseItineraryGenerator):
         profile: TravelerDNAProfile | None,
         preferences: UserTripPreference | None,
         pois: list[PointOfInterest],
-        prompt_template,
+        prompt_template: PromptTemplate | None,
     ) -> dict[str, Any]:
         context = self._build_context(itinerary, profile, preferences, pois)
         prompt = self._build_prompt(context, prompt_template)
@@ -91,8 +92,6 @@ class GeminiItineraryGenerator(BaseItineraryGenerator):
                 raise
 
             return self._normalize_payload(payload, itinerary, pois)
-
-        raise LLMResponseError("Gemini nao retornou roteiro valido apos retries")
 
     def _build_context(
         self,
