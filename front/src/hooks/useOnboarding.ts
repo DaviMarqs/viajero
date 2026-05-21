@@ -112,17 +112,14 @@ export function useOnboarding() {
     [currentStep]
   );
 
-  // ── Atualiza campo livre ────────────────────────────────────
   const setField = useCallback((key: string, value: string) => {
     setFieldValues((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  // ── Atualiza tags ───────────────────────────────────────────
   const setTags = useCallback((key: string, values: string[]) => {
     setTagValues((prev) => ({ ...prev, [key]: values }));
   }, []);
 
-  // ── Navegação ───────────────────────────────────────────────
   const next = useCallback(() => {
     if (isLast) setFinished(true);
     else setCurrentIndex((i) => i + 1);
@@ -132,7 +129,6 @@ export function useOnboarding() {
     if (!isLast) setCurrentIndex((i) => i + 1);
   }, [isLast]);
 
-  // ── Helpers para extrair card values ───────────────────────
   const getCardValues = useCallback(
     (key: string): string[] => {
       const step = ONBOARDING_STEPS.find((s) => s.key === key);
@@ -145,7 +141,6 @@ export function useOnboarding() {
     [cardSelections]
   );
 
-  // ── buildProfilePayload → TravelerDNAProfile ────────────────
   const buildProfilePayload = useCallback((): ProfilePayload => {
     const [ritmo] = getCardValues("ritmo");
     const experiencias = getCardValues("experiencia");
@@ -169,7 +164,6 @@ export function useOnboarding() {
     };
   }, [getCardValues]);
 
-  // ── buildTravelPayload → UserTripPreference ─────────────────
   const buildTravelPayload = useCallback((): TravelPayload => {
     const [conforto] = getCardValues("conforto");
     const budgetRaw = parseInt(fieldValues["budget"] ?? "0", 10) / 100;

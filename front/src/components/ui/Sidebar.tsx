@@ -88,7 +88,6 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Mobile — drawer */}
       {mobileOpen && (
         <div
           className="lg:hidden fixed inset-0 z-50 flex"
@@ -117,7 +116,6 @@ export default function Sidebar() {
         </div>
       )}
 
-      {/* Desktop — sidebar fixa */}
       <div className="hidden lg:flex flex-col justify-between h-full py-6 px-4 border-r border-neutral-200">
         <div className="flex flex-col gap-6">
           <div className="px-3">

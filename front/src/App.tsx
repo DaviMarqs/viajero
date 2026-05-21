@@ -19,6 +19,7 @@ import DestinationPage from "./pages/destination/destination";
 
 import "./index.css";
 import ProfilePage from "./pages/user-profile/user";
+import Recommendations from "./pages/recommendations/recommendations";
 
 function PrivateRoute() {
   const { isAuthenticated, token, logout } = useAuth();
@@ -71,6 +72,8 @@ function App() {
           />
           <Route path="/perfil" element={<ProfilePageWrapper />} />
           <Route path="/test" element={<Test />} />
+
+          <Route path="/recomendacoes" element={<Recommendations />} />
         </Route>
 
         <Route path="/onboard" element={<Onboard />} />

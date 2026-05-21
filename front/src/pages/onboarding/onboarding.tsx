@@ -132,7 +132,7 @@ export default function Onboarding() {
                 personalizados para voce.
               </p>
               <Link
-                to="/app"
+                to="/"
                 className="mt-2 inline-flex h-14 items-center justify-center rounded-2xl bg-slate-950 px-6 text-sm font-semibold text-white transition hover:bg-slate-800"
               >
                 Explorar destinos
