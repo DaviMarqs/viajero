@@ -1,7 +1,7 @@
 """Exceções e contratos comuns para LLM providers."""
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
 
 class LLMProviderError(Exception):
@@ -24,6 +24,7 @@ class LLMResponseError(LLMProviderError):
     """Resposta vazia, JSON inválido ou fora do schema esperado."""
 
 
+@runtime_checkable
 class LLMProvider(Protocol):
     """Contrato de um provider de LLM (Gemini, OpenAI etc)."""
 

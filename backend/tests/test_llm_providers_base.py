@@ -14,6 +14,10 @@ def test_all_subclasses_inherit_from_provider_error():
         assert issubclass(cls, LLMProviderError)
 
 
-def test_provider_error_carries_message():
-    exc = LLMTimeoutError("timeout em 20s")
-    assert "timeout" in str(exc)
+@pytest.mark.parametrize(
+    "exc_class",
+    [LLMTimeoutError, LLMAuthError, LLMQuotaError, LLMResponseError],
+)
+def test_subclasses_carry_message(exc_class):
+    exc = exc_class("mensagem de teste")
+    assert "mensagem de teste" in str(exc)
