@@ -93,6 +93,9 @@ class GeminiItineraryGenerator(BaseItineraryGenerator):
 
             return self._normalize_payload(payload, itinerary, pois)
 
+        # Unreachable: o loop sempre retorna ou levanta.
+        raise LLMResponseError("Gemini nao retornou roteiro valido")
+
     def _build_context(
         self,
         itinerary: Itinerary,

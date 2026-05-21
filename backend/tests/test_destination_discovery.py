@@ -67,6 +67,11 @@ def test_discover_merges_firecrawl_and_gemini_data(settings):
     sources = destination.metadata.get("sources") or {}
     assert sources == {"firecrawl": True, "gemini": True}
 
+    mercado = destination.pois.get(name="Mercado Municipal")
+    assert mercado.metadata.get("source") == "gemini"
+    praia = destination.pois.get(name="Praia Central")
+    assert praia.metadata.get("source") != "gemini"  # POI do Firecrawl, sem marca
+
 
 def test_discover_dedup_pois_by_slug_firecrawl_wins(settings):
     settings.GEMINI_API_KEY = "fake"
@@ -90,7 +95,8 @@ def test_discover_dedup_pois_by_slug_firecrawl_wins(settings):
         )
 
     poi = destination.pois.get(slug="praia-central")
-    assert poi.poi_type == "attraction"  # Firecrawl venceu
+    assert poi.poi_type == "attraction"  # Firecrawl venceu o dedup (update_or_create com dados Firecrawl primeiro)
+    # Firecrawl venceu: metadata nao deve ter source=gemini, pois o POI foi persistido antes do Gemini tentar sobrescrever
     assert poi.metadata.get("source") != "gemini"
 
 
@@ -122,6 +128,10 @@ def test_discover_uses_gemini_when_firecrawl_fails(settings):
     assert destination.summary == "So o Gemini respondeu"
     sources = destination.metadata.get("sources") or {}
     assert sources == {"firecrawl": False, "gemini": True}
+
+    # POIs do Gemini devem ter metadata.source=gemini persistido
+    poi = destination.pois.get(name="Cachoeira")
+    assert poi.metadata.get("source") == "gemini"
 
 
 def test_discover_returns_none_when_both_fail(settings):

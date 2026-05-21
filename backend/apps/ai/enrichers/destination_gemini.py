@@ -60,6 +60,7 @@ ENRICHMENT_SCHEMA: dict[str, Any] = {
 class GeminiDestinationEnricher(BaseDestinationEnricher):
     def __init__(self, provider: GeminiProvider | None = None) -> None:
         self._provider = provider or GeminiProvider()
+        self._failures_so_far: list[dict[str, str]] = []
 
     def enrich(self, *, query: str, country: str = "", city: str = "") -> EnrichmentResult:
         prompt = ENRICHMENT_PROMPT.format(
@@ -73,7 +74,7 @@ class GeminiDestinationEnricher(BaseDestinationEnricher):
         return self._build_result(payload)
 
     def _call_with_retry(self, prompt: str) -> dict[str, Any] | None:
-        self._failures_so_far: list[dict[str, str]] = []
+        self._failures_so_far = []
         for attempt in (1, 2):
             try:
                 return self._provider.generate_json(

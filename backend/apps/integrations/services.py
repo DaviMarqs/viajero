@@ -504,6 +504,9 @@ class FirecrawlIngestionService:
             poi_metadata = dict(existing_poi.metadata) if existing_poi and isinstance(existing_poi.metadata, dict) else {}
             if image_url:
                 poi_metadata["image_url"] = image_url[:500]
+            source = poi_data.get("source")
+            if source:
+                poi_metadata["source"] = str(source)[:32]
             poi, _ = PointOfInterest.objects.update_or_create(
                 destination=destination,
                 slug=poi_slug,

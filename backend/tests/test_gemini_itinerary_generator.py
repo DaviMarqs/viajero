@@ -198,3 +198,7 @@ def test_run_job_persists_valid_poi_id_in_event():
     assert len(events) == 2
     assert events[0].poi_id == poi.id  # poi_id valido persistiu
     assert events[1].poi_id is None  # evento freestyle
+
+    itinerary.refresh_from_db()
+    assert itinerary.generation_status == "ready"
+    assert itinerary.days.count() == 1
