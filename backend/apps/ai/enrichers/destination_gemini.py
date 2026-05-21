@@ -45,7 +45,7 @@ ENRICHMENT_SCHEMA: dict[str, Any] = {
                     "name": {"type": "string"},
                     "type": {
                         "type": "string",
-                        "enum": list(VALID_POI_TYPES),
+                        "enum": sorted(VALID_POI_TYPES),
                     },
                     "summary": {"type": "string"},
                     "tags": {"type": "array", "items": {"type": "string"}},
