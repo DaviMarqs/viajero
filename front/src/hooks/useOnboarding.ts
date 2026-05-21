@@ -1,24 +1,26 @@
-import { useState, useCallback } from "react";
-import { ONBOARDING_STEPS } from "../pages/onboarding/onboarding.data";
-
-// ── Tipos de estado ───────────────────────────────────────────
+import { useCallback, useState } from "react";
+import { ONBOARDING_STEPS, type OnboardingStep } from "../pages/onboarding/onboarding.data";
 
 export type CardSelections = Record<string, Set<number>>;
 export type FieldValues = Record<string, string>;
 export type TagValues = Record<string, string[]>;
 
-// ── Mapeamentos DNA → campos numéricos ────────────────────────
+export interface OnboardingSnapshot {
+  currentIndex?: number;
+  cardSelections?: Record<string, number[]>;
+  fieldValues?: FieldValues;
+  tagValues?: TagValues;
+}
 
 const PACE_MAP: Record<string, number> = { adventure: 9, balanced: 5, relaxed: 2 };
 const ADVENTURE_MAP: Record<string, number> = { adventure: 9, balanced: 5, relaxed: 2 };
 const SOCIAL_ENERGY_MAP: Record<string, number> = { solo: 2, couple: 4, friends: 8, family: 6 };
-const HOTEL_MAP: Record<string, string> = { budget: "lodging", standard: "lodging", premium: "lodging" };
-
-// ── Shapes dos payloads ───────────────────────────────────────
+const HOTEL_MAP: Record<string, string> = { budget: "budget", standard: "mid", premium: "luxury" };
+const TRANSPORTATION_MAP: Record<string, string> = { budget: "public", standard: "mixed", premium: "private" };
 
 export interface ProfilePayload {
   travel_style: string;
-  pace: number;
+  pace: string;
   comfort_level: string;
   social_energy: number;
   adventure_level: number;
@@ -26,8 +28,7 @@ export interface ProfilePayload {
   cultural_interest: number;
   nature_interest: number;
   nightlife_interest: number;
-  accessibility_needs: string[];
-  interests: string[];
+  notes: string;
 }
 
 export interface TravelPayload {
@@ -35,70 +36,61 @@ export interface TravelPayload {
   budget_max: number;
   currency_code: string;
   preferred_trip_length_days: number;
+  travel_month: string;
   hotel_level: string;
-  destination_types: string[];
-  climate: string[];
-  interests: string[];
+  transportation_style: string;
   dietary_preferences: string[];
   accessibility_needs: string[];
-  notes: string;
+  interests: string[];
+  metadata: Record<string, unknown>;
 }
 
-// ── Hook ──────────────────────────────────────────────────────
+interface TravelerDNANotes {
+  companionship?: string;
+  additional_preferences?: string[];
+}
 
-export function useOnboarding() {
+export function useOnboarding(steps: OnboardingStep[] = ONBOARDING_STEPS) {
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  // Cards (índices selecionados por step key)
   const [cardSelections, setCardSelections] = useState<CardSelections>({});
-
-  // Campos livres: currency, dropdown, textarea (valor string por field key)
   const [fieldValues, setFieldValues] = useState<FieldValues>({});
-
-  // Tags (array de values por field key)
   const [tagValues, setTagValues] = useState<TagValues>({});
-
   const [finished, setFinished] = useState(false);
 
-  const currentStep = ONBOARDING_STEPS[currentIndex];
-  const isLast = currentIndex === ONBOARDING_STEPS.length - 1;
-
-  // ── Seleção atual de cards ──────────────────────────────────
+  const currentStep = steps[currentIndex];
+  const isLast = currentIndex === steps.length - 1;
   const selectedCards = cardSelections[currentStep.key] ?? new Set<number>();
 
-  // ── Verifica se o step atual tem algo preenchido ────────────
   const hasSelection = useCallback((): boolean => {
     for (const field of currentStep.fields) {
       if (field.type === "empty") return true;
 
       if (field.type === "cards") {
-        const sel = cardSelections[currentStep.key];
-        if (!sel || sel.size === 0) return false;
+        const selected = cardSelections[currentStep.key];
+        if (!selected || selected.size === 0) return false;
       }
 
-      if (field.type === "currency" || field.type === "dropdown") {
-        if (field.required && !fieldValues[field.key]) return false;
+      if ((field.type === "currency" || field.type === "dropdown") && field.required && !fieldValues[field.key]) {
+        return false;
       }
 
-      if (field.type === "tags") {
-        if (field.required) {
-          const sel = tagValues[field.key];
-          if (!sel || sel.length === 0) return false;
-        }
+      if (field.type === "tags" && field.required) {
+        const selected = tagValues[field.key];
+        if (!selected || selected.length === 0) return false;
       }
     }
-    return true;
-  }, [currentStep, cardSelections, fieldValues, tagValues]);
 
-  // ── Toggle de card ──────────────────────────────────────────
+    return true;
+  }, [cardSelections, currentStep, fieldValues, tagValues]);
+
   const toggleCard = useCallback(
     (cardIndex: number) => {
-      const field = currentStep.fields.find((f) => f.type === "cards");
+      const field = currentStep.fields.find((item) => item.type === "cards");
       const isMulti = field?.type === "cards" && field.multi;
 
-      setCardSelections((prev) => {
-        const key = currentStep.key;
-        const current = new Set(prev[key] ?? []);
+      setCardSelections((previous) => {
+        const current = new Set(previous[currentStep.key] ?? []);
+
         if (isMulti) {
           if (current.has(cardIndex)) current.delete(cardIndex);
           else current.add(cardIndex);
@@ -106,102 +98,139 @@ export function useOnboarding() {
           current.clear();
           current.add(cardIndex);
         }
-        return { ...prev, [key]: current };
+
+        return { ...previous, [currentStep.key]: current };
       });
     },
-    [currentStep]
+    [currentStep],
   );
 
-  // ── Atualiza campo livre ────────────────────────────────────
   const setField = useCallback((key: string, value: string) => {
-    setFieldValues((prev) => ({ ...prev, [key]: value }));
+    setFieldValues((previous) => ({ ...previous, [key]: value }));
   }, []);
 
-  // ── Atualiza tags ───────────────────────────────────────────
   const setTags = useCallback((key: string, values: string[]) => {
-    setTagValues((prev) => ({ ...prev, [key]: values }));
+    setTagValues((previous) => ({ ...previous, [key]: values }));
   }, []);
 
-  // ── Navegação ───────────────────────────────────────────────
+  const setSnapshot = useCallback((snapshot: OnboardingSnapshot) => {
+    if (typeof snapshot.currentIndex === "number") {
+      setCurrentIndex(snapshot.currentIndex);
+    }
+
+    if (snapshot.cardSelections) {
+      const nextSelections = Object.fromEntries(
+        Object.entries(snapshot.cardSelections).map(([key, values]) => [key, new Set(values)]),
+      ) as CardSelections;
+      setCardSelections(nextSelections);
+    }
+
+    if (snapshot.fieldValues) {
+      setFieldValues(snapshot.fieldValues);
+    }
+
+    if (snapshot.tagValues) {
+      setTagValues(snapshot.tagValues);
+    }
+  }, []);
+
   const next = useCallback(() => {
     if (isLast) setFinished(true);
-    else setCurrentIndex((i) => i + 1);
+    else setCurrentIndex((index) => index + 1);
   }, [isLast]);
 
   const skip = useCallback(() => {
-    if (!isLast) setCurrentIndex((i) => i + 1);
+    if (!isLast) setCurrentIndex((index) => index + 1);
   }, [isLast]);
 
-  // ── Helpers para extrair card values ───────────────────────
   const getCardValues = useCallback(
     (key: string): string[] => {
-      const step = ONBOARDING_STEPS.find((s) => s.key === key);
-      const sel = cardSelections[key];
-      if (!step || !sel) return [];
-      const field = step.fields.find((f) => f.type === "cards");
+      const step = steps.find((item) => item.key === key);
+      const selected = cardSelections[key];
+      if (!step || !selected) return [];
+
+      const field = step.fields.find((item) => item.type === "cards");
       if (!field || field.type !== "cards") return [];
-      return Array.from(sel).map((i) => String(field.cards[i].value));
+
+      return Array.from(selected).map((index) => String(field.cards[index].value));
     },
-    [cardSelections]
+    [cardSelections, steps],
   );
 
-  // ── buildProfilePayload → TravelerDNAProfile ────────────────
   const buildProfilePayload = useCallback((): ProfilePayload => {
     const [ritmo] = getCardValues("ritmo");
     const experiencias = getCardValues("experiencia");
     const [conforto] = getCardValues("conforto");
     const [companhia] = getCardValues("companhia");
     const adicionais = getCardValues("adicionais");
-    const hasExp = (v: string) => experiencias.includes(v);
+    const hasExperience = (value: string) => experiencias.includes(value);
+
+    const notes: TravelerDNANotes = {
+      companionship: companhia,
+      additional_preferences: adicionais,
+    };
 
     return {
-      travel_style: ritmo ?? "balanced",
-      pace: PACE_MAP[ritmo] ?? 5,
+      travel_style: experiencias.join(",") || ritmo || "balanced",
+      pace: ritmo ?? "balanced",
       comfort_level: conforto ?? "standard",
       social_energy: SOCIAL_ENERGY_MAP[companhia] ?? 5,
-      adventure_level: hasExp("nature_adventure") ? 8 : ADVENTURE_MAP[ritmo] ?? 5,
-      food_focus: hasExp("food_culture") ? 8 : 3,
-      cultural_interest: hasExp("food_culture") ? 8 : 3,
-      nature_interest: hasExp("nature_adventure") ? 8 : 3,
-      nightlife_interest: hasExp("nightlife") ? 8 : 2,
-      accessibility_needs: adicionais.includes("accessibility") ? ["mobility"] : [],
-      interests: adicionais.filter((v) => v !== "accessibility"),
+      adventure_level: hasExperience("nature_adventure") ? 8 : ADVENTURE_MAP[ritmo] ?? 5,
+      food_focus: hasExperience("food_culture") ? 8 : 3,
+      cultural_interest: hasExperience("food_culture") ? 8 : 3,
+      nature_interest: hasExperience("nature_adventure") ? 8 : 3,
+      nightlife_interest: hasExperience("nightlife") ? 8 : 2,
+      notes: JSON.stringify(notes),
     };
   }, [getCardValues]);
 
-  // ── buildTravelPayload → UserTripPreference ─────────────────
   const buildTravelPayload = useCallback((): TravelPayload => {
     const [conforto] = getCardValues("conforto");
-    const budgetRaw = parseInt(fieldValues["budget"] ?? "0", 10) / 100;
-    const tripLength = parseInt(fieldValues["trip_length"] ?? "7", 10);
-    const destinationTypes = tagValues["destination_types"] ?? [];
-    const climate = tagValues["climate"] ?? [];
-    const interests = tagValues["interests"] ?? [];
-    const restrictions = fieldValues["restrictions"] ?? "none";
-    const notes = fieldValues["notes"] ?? "";
+    const experiencias = getCardValues("experiencia");
+    const adicionais = getCardValues("adicionais");
+    const budgetRaw = parseInt(fieldValues.budget ?? "0", 10) / 100;
+    const tripLength = parseInt(fieldValues.trip_length ?? "7", 10);
+    const destinationTypes = tagValues.destination_types ?? [];
+    const climate = tagValues.climate ?? [];
+    const interests = tagValues.interests ?? [];
+    const restrictions = fieldValues.restrictions ?? "none";
+    const notes = fieldValues.notes ?? "";
 
     const dietaryRestrictions = ["vegetarian", "vegan", "food_allergy"].includes(restrictions)
       ? [restrictions]
       : [];
 
-    const accessibilityNeeds = restrictions === "mobility" ? ["mobility"] : [];
+    const accessibilityNeeds = Array.from(
+      new Set([
+        ...(restrictions === "mobility" ? ["mobility"] : []),
+        ...(adicionais.includes("accessibility") ? ["mobility"] : []),
+      ]),
+    );
 
     return {
       budget_min: Math.round(budgetRaw * 0.8),
       budget_max: budgetRaw,
       currency_code: "BRL",
       preferred_trip_length_days: tripLength,
-      hotel_level: HOTEL_MAP[conforto] ?? "hotel",
-      destination_types: destinationTypes,
-      climate: climate,
-      interests: interests,
+      travel_month: "",
+      hotel_level: HOTEL_MAP[conforto] ?? "mid",
+      transportation_style: TRANSPORTATION_MAP[conforto] ?? "mixed",
       dietary_preferences: dietaryRestrictions,
       accessibility_needs: accessibilityNeeds,
-      notes: notes,
+      interests,
+      metadata: {
+        climate,
+        destination_types: destinationTypes,
+        notes,
+        selected_experiences: experiencias,
+        additional_preferences: adicionais,
+        restrictions,
+      },
     };
-  }, [getCardValues, fieldValues, tagValues]);
+  }, [fieldValues, getCardValues, tagValues]);
 
   return {
+    steps,
     currentIndex,
     currentStep,
     isLast,
@@ -213,8 +242,10 @@ export function useOnboarding() {
     toggleCard,
     setField,
     setTags,
+    setSnapshot,
     next,
     skip,
+    getCardValues,
     buildProfilePayload,
     buildTravelPayload,
   };

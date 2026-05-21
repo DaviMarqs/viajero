@@ -4,15 +4,15 @@ import {
   Route,
   Navigate,
   Outlet,
+  useOutletContext,
 } from "react-router-dom";
 import { useAuth } from "@/contexts/authContext";
 import Sidebar from "@/components/ui/sidebar";
-import { useOutletContext } from "react-router-dom";
-
 
 import Login from "./pages/login/login";
 import Register from "./pages/register/register";
 import Onboard from "./pages/onboarding/onboarding";
+import TravelPreferencesOnboarding from "./pages/travel-preferences-onboarding/travel-preferences-onboarding";
 import Test from "./pages/tests/test";
 import { Dashboard } from "./pages/dashboard/dashboard";
 import DestinationPage from "./pages/destination/destination";
@@ -74,6 +74,7 @@ function App() {
         </Route>
 
         <Route path="/onboard" element={<Onboard />} />
+        <Route path="/onboard/preferencias" element={<TravelPreferencesOnboarding />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

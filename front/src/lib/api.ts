@@ -1,6 +1,8 @@
 const API_BASE_URL =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") ??
-  "http://127.0.0.1:8000";
+  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(
+    /\/$/,
+    "",
+  ) ?? "http://127.0.0.1:8000";
 
 export interface ApiSuccessResponse<T> {
   success: true;
@@ -18,7 +20,11 @@ export class ApiError extends Error {
   status: number;
   errors?: Record<string, unknown>;
 
-  constructor(message: string, status: number, errors?: Record<string, unknown>) {
+  constructor(
+    message: string,
+    status: number,
+    errors?: Record<string, unknown>,
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
@@ -26,19 +32,36 @@ export class ApiError extends Error {
   }
 }
 
+function buildHeaders(init: RequestInit): Headers {
+  const headers = new Headers(init.headers);
+  const body = init.body;
+  const hasBody = body !== undefined && body !== null;
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+  const isUrlEncoded = typeof URLSearchParams !== "undefined" && body instanceof URLSearchParams;
+
+  if (!headers.has("Accept")) {
+    headers.set("Accept", "application/json");
+  }
+
+  if (hasBody && !isFormData && !isUrlEncoded && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  return headers;
+}
+
 export async function apiRequest<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<ApiSuccessResponse<T>> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(init.headers ?? {}),
-    },
     ...init,
+    headers: buildHeaders(init),
   });
 
-  const payload = (await response.json()) as ApiSuccessResponse<T> | ApiErrorResponse;
+  const payload = (await response.json()) as
+    | ApiSuccessResponse<T>
+    | ApiErrorResponse;
 
   if (!response.ok || !payload.success) {
     throw new ApiError(
