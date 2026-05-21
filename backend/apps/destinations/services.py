@@ -58,7 +58,12 @@ class DestinationDiscoveryService:
             self._firecrawl._mark_recently_failed(slug)
             return None
 
-        return self._persist(slug=slug, merged=merged, actor=actor)
+        destination = self._persist(slug=slug, merged=merged, actor=actor)
+        logger.info(
+            "Destino descoberto: slug=%s sources=%s pois=%d",
+            slug, merged["sources"], len(merged["pois"]),
+        )
+        return destination
 
     def _run_parallel(
         self, query: str, country: str, city: str,

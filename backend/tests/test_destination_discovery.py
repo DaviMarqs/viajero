@@ -4,8 +4,7 @@ import pytest
 from django.core.cache import cache
 
 from apps.ai.enrichers.base import EnrichmentResult
-from apps.ai.providers.base import LLMTimeoutError
-from apps.destinations.models import Destination, PointOfInterest
+from apps.destinations.models import Destination
 from apps.destinations.services import DestinationDiscoveryService
 from apps.integrations.services import (
     AggregatedExtraction,
@@ -105,6 +104,10 @@ def test_discover_uses_gemini_when_firecrawl_fails(settings):
         FirecrawlIngestionService,
         "_search_urls",
         side_effect=FirecrawlError("search down"),
+    ), patch.object(
+        FirecrawlIngestionService,
+        "_aggregate_payloads",
+        side_effect=FirecrawlError("all urls failed"),
     ), patch(
         "apps.destinations.services.GeminiDestinationEnricher",
     ) as enricher_cls:
