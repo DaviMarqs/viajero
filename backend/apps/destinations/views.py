@@ -6,9 +6,9 @@ from rest_framework.decorators import action
 
 from apps.audit.services import audit
 from apps.common.mixins import StandardModelViewSet
-from apps.integrations.services import FirecrawlIngestionService
 from .models import Destination, PointOfInterest
 from .serializers import DestinationSerializer, PointOfInterestSerializer
+from .services import DestinationDiscoveryService
 
 
 SEARCH_LIMIT = 20
@@ -40,23 +40,25 @@ class DestinationViewSet(StandardModelViewSet):
         discovered = False
         if q and not results.exists():
             try:
-                destination = FirecrawlIngestionService().discover_destination(
-                    query=q,
-                    country=country,
-                    city=city,
-                    actor=request.user,
+                destination = DestinationDiscoveryService().discover(
+                    query=q, country=country, city=city, actor=request.user,
                 )
             except Exception:
-                logger.exception("Falha ao enriquecer destino via Firecrawl para query=%s", q)
+                logger.exception("Falha na descoberta de destino para query=%s", q)
                 destination = None
 
             if destination is not None:
                 discovered = True
                 audit(
-                    "firecrawl.discovered",
+                    "destination.discovered",
                     actor=request.user if request.user.is_authenticated else None,
                     target=destination,
-                    metadata={"query": q, "country": country, "city": city},
+                    metadata={
+                        "query": q,
+                        "country": country,
+                        "city": city,
+                        "sources": (destination.metadata or {}).get("sources") or {},
+                    },
                 )
                 refreshed = list(self._local_search(q=q, country=country, city=city))
                 if all(item.pk != destination.pk for item in refreshed):
@@ -67,7 +69,7 @@ class DestinationViewSet(StandardModelViewSet):
 
         data = self.get_serializer(results, many=True).data
         message = (
-            "Resultados carregados (destino enriquecido via Firecrawl)."
+            "Resultados carregados (destino enriquecido)."
             if discovered
             else "Resultados da busca carregados com sucesso."
         )
