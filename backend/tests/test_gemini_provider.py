@@ -91,3 +91,30 @@ def test_generate_text_returns_string(settings):
     fake_model.generate_content.return_value = _build_response("Hello world")
     with patch("apps.ai.providers.gemini.genai.GenerativeModel", return_value=fake_model):
         assert GeminiProvider().generate_text("prompt") == "Hello world"
+
+
+def test_generate_json_raises_auth_on_unauthenticated(settings):
+    settings.GEMINI_API_KEY = "fake-key"
+    fake_model = MagicMock()
+    fake_model.generate_content.side_effect = google_exceptions.Unauthenticated("expired")
+    with patch("apps.ai.providers.gemini.genai.GenerativeModel", return_value=fake_model):
+        with pytest.raises(LLMAuthError):
+            GeminiProvider().generate_json("prompt", SCHEMA)
+
+
+def test_generate_text_raises_response_error_on_empty_response(settings):
+    settings.GEMINI_API_KEY = "fake-key"
+    fake_model = MagicMock()
+    fake_model.generate_content.return_value = _build_response("")
+    with patch("apps.ai.providers.gemini.genai.GenerativeModel", return_value=fake_model):
+        with pytest.raises(LLMResponseError):
+            GeminiProvider().generate_text("prompt")
+
+
+def test_generate_json_raises_response_error_when_json_is_list(settings):
+    settings.GEMINI_API_KEY = "fake-key"
+    fake_model = MagicMock()
+    fake_model.generate_content.return_value = _build_response('[1, 2, 3]')
+    with patch("apps.ai.providers.gemini.genai.GenerativeModel", return_value=fake_model):
+        with pytest.raises(LLMResponseError):
+            GeminiProvider().generate_json("prompt", SCHEMA)

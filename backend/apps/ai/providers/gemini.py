@@ -36,8 +36,8 @@ class GeminiProvider:
             raise LLMAuthError("GEMINI_API_KEY nao configurada")
         genai.configure(api_key=api_key)
 
-    def _build_model(self, system_instruction: str | None = None) -> genai.GenerativeModel:
-        return genai.GenerativeModel(self._model_name, system_instruction=system_instruction)
+    def _build_model(self) -> genai.GenerativeModel:
+        return genai.GenerativeModel(self._model_name)
 
     def _call(self, prompt: str, *, response_mime_type: str | None, timeout: float) -> str:
         self._ensure_configured()
