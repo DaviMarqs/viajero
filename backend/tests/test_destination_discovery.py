@@ -65,7 +65,7 @@ def test_discover_merges_firecrawl_and_gemini_data(settings):
     poi_names = set(destination.pois.values_list("name", flat=True))
     assert {"Praia Central", "Mercado Municipal"} <= poi_names
     sources = destination.metadata.get("sources") or {}
-    assert sources == {"firecrawl": True, "gemini": True}
+    assert sources == {"firecrawl": True, "gemini": True, "groq": False}
 
     mercado = destination.pois.get(name="Mercado Municipal")
     assert mercado.metadata.get("source") == "gemini"
@@ -127,7 +127,7 @@ def test_discover_uses_gemini_when_firecrawl_fails(settings):
     assert destination is not None
     assert destination.summary == "So o Gemini respondeu"
     sources = destination.metadata.get("sources") or {}
-    assert sources == {"firecrawl": False, "gemini": True}
+    assert sources == {"firecrawl": False, "gemini": True, "groq": False}
 
     # POIs do Gemini devem ter metadata.source=gemini persistido
     poi = destination.pois.get(name="Cachoeira")
@@ -181,4 +181,4 @@ def test_discover_skips_gemini_when_key_missing(settings):
 
     enricher_cls.assert_not_called()
     sources = destination.metadata.get("sources") or {}
-    assert sources == {"firecrawl": True, "gemini": False}
+    assert sources == {"firecrawl": True, "gemini": False, "groq": False}

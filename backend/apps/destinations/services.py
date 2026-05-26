@@ -11,6 +11,7 @@ from django.utils.text import slugify
 
 from apps.ai.enrichers.base import EnrichmentResult
 from apps.ai.enrichers.destination_gemini import GeminiDestinationEnricher
+from apps.ai.enrichers.destination_groq import GroqDestinationEnricher
 from apps.integrations.services import (
     AggregatedExtraction,
     FirecrawlError,
@@ -35,7 +36,7 @@ class DestinationDiscoveryService:
         city: str = "",
         actor=None,
     ) -> Destination | None:
-        slug = slugify(query)
+        slug = slugify(query)[:50]
         if not slug:
             return None
 
@@ -46,14 +47,14 @@ class DestinationDiscoveryService:
             )
             return None
 
-        firecrawl_result, gemini_result = self._run_parallel(query, country, city)
+        firecrawl_result, llm_result = self._run_parallel(query, country, city)
 
-        if firecrawl_result is None and not gemini_result.has_meaningful_data():
+        if firecrawl_result is None and not llm_result.has_meaningful_data():
             logger.info("Discovery sem dados uteis para slug=%s", slug)
             self._firecrawl._mark_recently_failed(slug)
             return None
 
-        merged = self._merge(firecrawl_result, gemini_result, query=query, country=country, city=city)
+        merged = self._merge(firecrawl_result, llm_result, query=query, country=country, city=city)
         if not merged["has_data"]:
             self._firecrawl._mark_recently_failed(slug)
             return None
@@ -70,14 +71,19 @@ class DestinationDiscoveryService:
     ) -> tuple[AggregatedExtraction | None, EnrichmentResult]:
         with ThreadPoolExecutor(max_workers=2) as pool:
             fc_future = pool.submit(self._run_firecrawl, query, country, city)
-            g_future = pool.submit(self._run_gemini, query, country, city)
-            return fc_future.result(), g_future.result()
+            llm_future = pool.submit(self._run_llm, query, country, city)
+            return fc_future.result(), llm_future.result()
 
     def _run_firecrawl(self, query: str, country: str, city: str) -> AggregatedExtraction | None:
+        if self._firecrawl.is_circuit_open():
+            logger.info("Firecrawl circuit ABERTO, pulando para LLM (query=%s)", query)
+            return None
+
         try:
             urls = self._firecrawl._search_urls(query, country=country)
-        except FirecrawlError:
-            logger.exception("Firecrawl search falhou para query=%s", query)
+        except FirecrawlError as exc:
+            logger.warning("Firecrawl search falhou para query=%s: %s", query, exc)
+            self._firecrawl.record_failure()
             urls = []
 
         wiki_fallback = self._firecrawl._wikipedia_fallback_url(query)
@@ -85,36 +91,63 @@ class DestinationDiscoveryService:
             urls = [wiki_fallback]
 
         try:
-            return self._firecrawl._aggregate_payloads(urls)
-        except FirecrawlError:
+            result = self._firecrawl._aggregate_payloads(urls)
+            self._firecrawl.record_success()
+            return result
+        except FirecrawlError as exc:
+            self._firecrawl.record_failure()
             if wiki_fallback in urls:
-                logger.exception(
-                    "Firecrawl falhou em todas as URLs (incluindo wiki) para query=%s", query,
+                logger.warning(
+                    "Firecrawl falhou em todas as URLs (incluindo wiki) para query=%s: %s",
+                    query, exc,
                 )
                 return None
-            logger.warning(
+            logger.info(
                 "Firecrawl falhou em todas as %d URLs para query=%s, tentando wikipedia",
                 len(urls), query,
             )
             try:
-                return self._firecrawl._aggregate_payloads([wiki_fallback])
-            except FirecrawlError:
-                logger.exception("Fallback wikipedia tambem falhou para query=%s", query)
+                result = self._firecrawl._aggregate_payloads([wiki_fallback])
+                self._firecrawl.record_success()
+                return result
+            except FirecrawlError as exc2:
+                self._firecrawl.record_failure()
+                logger.warning(
+                    "Fallback wikipedia tambem falhou para query=%s: %s", query, exc2,
+                )
                 return None
 
-    def _run_gemini(self, query: str, country: str, city: str) -> EnrichmentResult:
-        if not settings.GEMINI_API_KEY:
-            return EnrichmentResult()
-        try:
-            return GeminiDestinationEnricher().enrich(query=query, country=country, city=city)
-        except Exception:
-            logger.exception("Gemini enricher falhou para query=%s", query)
-            return EnrichmentResult()
+    def _run_llm(self, query: str, country: str, city: str) -> EnrichmentResult:
+        """Tenta Gemini primeiro; se falhar ou vier vazio, cai pra Groq."""
+        if settings.GEMINI_API_KEY:
+            try:
+                result = GeminiDestinationEnricher().enrich(
+                    query=query, country=country, city=city,
+                )
+                if result.has_meaningful_data():
+                    return result
+                logger.info(
+                    "Gemini sem dados uteis para query=%s, tentando Groq fallback", query,
+                )
+            except Exception:
+                logger.exception(
+                    "Gemini enricher falhou para query=%s, tentando Groq fallback", query,
+                )
+
+        if settings.GROQ_API_KEY:
+            try:
+                return GroqDestinationEnricher().enrich(
+                    query=query, country=country, city=city,
+                )
+            except Exception:
+                logger.exception("Groq enricher falhou para query=%s", query)
+
+        return EnrichmentResult()
 
     def _merge(
         self,
         firecrawl: AggregatedExtraction | None,
-        gemini: EnrichmentResult,
+        llm: EnrichmentResult,
         *,
         query: str,
         country: str,
@@ -127,7 +160,7 @@ class DestinationDiscoveryService:
         fc_failures = list(firecrawl.failures) if firecrawl else []
 
         def pick(key: str) -> str:
-            return str(fc_meta.get(key) or getattr(gemini, key, "") or "")
+            return str(fc_meta.get(key) or getattr(llm, key, "") or "")
 
         name = pick("name") or query.strip().title()
         country_val = pick("country") or country or "Desconhecido"
@@ -141,16 +174,18 @@ class DestinationDiscoveryService:
         # Dedup POIs por slug — Firecrawl tem prioridade
         merged_pois = list(fc_pois)
         existing_slugs = {slugify(p.get("name") or "") for p in merged_pois}
-        for poi in gemini.pois:
+        for poi in llm.pois:
             poi_slug = slugify(poi.get("name") or "")
             if not poi_slug or poi_slug in existing_slugs:
                 continue
             merged_pois.append(poi)
             existing_slugs.add(poi_slug)
 
+        llm_source = llm.metadata.get("source", "")
         sources = {
             "firecrawl": firecrawl is not None,
-            "gemini": gemini.has_meaningful_data(),
+            "gemini": llm.has_meaningful_data() and llm_source == "gemini",
+            "groq": llm.has_meaningful_data() and llm_source == "groq",
         }
 
         has_data = bool(summary) or bool(merged_pois)
@@ -169,7 +204,8 @@ class DestinationDiscoveryService:
             "extracted_meta": fc_meta,
             "scrape_failures": fc_failures,
             "sources": sources,
-            "gemini_model": gemini.metadata.get("model", ""),
+            "llm_source": llm_source,
+            "llm_model": llm.metadata.get("model", ""),
             "has_data": has_data,
         }
 
@@ -216,8 +252,10 @@ class DestinationDiscoveryService:
             **existing_meta,
             "sources": merged["sources"],
         }
-        if merged["gemini_model"]:
-            new_meta["gemini_model"] = merged["gemini_model"]
+        if merged["llm_model"]:
+            new_meta["llm_model"] = merged["llm_model"]
+        if merged["llm_source"]:
+            new_meta["llm_source"] = merged["llm_source"]
         destination.metadata = new_meta
         updates.append("metadata")
 

@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -102,6 +103,8 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "SIGNING_KEY": os.getenv("JWT_SECRET_KEY", SECRET_KEY),
     "AUTH_HEADER_TYPES": ("Bearer",),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.getenv("JWT_ACCESS_MINUTES", "60"))),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.getenv("JWT_REFRESH_DAYS", "7"))),
 }
 
 FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY", "")
@@ -120,3 +123,8 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 GEMINI_TIMEOUT = float(os.getenv("GEMINI_TIMEOUT", "20"))
 GEMINI_ITINERARY_TIMEOUT = float(os.getenv("GEMINI_ITINERARY_TIMEOUT", "40"))
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_TIMEOUT = float(os.getenv("GROQ_TIMEOUT", "20"))
+GROQ_ITINERARY_TIMEOUT = float(os.getenv("GROQ_ITINERARY_TIMEOUT", "40"))

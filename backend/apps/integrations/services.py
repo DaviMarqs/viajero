@@ -33,6 +33,20 @@ UNSUPPORTED_SEARCH_HOSTS = (
     "reddit.com",
     "pinterest.com",
     "threads.net",
+    # Sites de booking/hotel: JS-heavy, anti-bot, timeout frequente
+    "expedia.com",
+    "expedia.es",
+    "booking.com",
+    "hotels.com",
+    "trivago.com",
+    "kayak.com",
+    "decolar.com",
+    "hoteis.com",
+    "hotelroyalpark.com.br",
+    "hurb.com",
+    "airbnb.com",
+    "tripadvisor.com",
+    "tripadvisor.com.br",
 )
 
 POI_TYPE_ALIASES = {
@@ -315,6 +329,12 @@ class FirecrawlIngestionService:
     def _failure_cache_key(slug: str) -> str:
         return f"firecrawl:discover_failed:{slug}"
 
+    _CIRCUIT_KEY = "firecrawl:circuit_open"
+    _CIRCUIT_FAILURES_KEY = "firecrawl:recent_failures"
+    _CIRCUIT_THRESHOLD = 3
+    _CIRCUIT_WINDOW_S = 300
+    _CIRCUIT_OPEN_S = 300
+
     def _is_recently_failed(self, slug: str) -> bool:
         if not getattr(settings, "FIRECRAWL_DISCOVERY_FAILURE_TTL", 0):
             return False
@@ -325,6 +345,24 @@ class FirecrawlIngestionService:
         if ttl > 0:
             cache.set(self._failure_cache_key(slug), True, timeout=ttl)
 
+    def is_circuit_open(self) -> bool:
+        return bool(cache.get(self._CIRCUIT_KEY))
+
+    def record_failure(self) -> None:
+        count = cache.get(self._CIRCUIT_FAILURES_KEY, 0) + 1
+        cache.set(self._CIRCUIT_FAILURES_KEY, count, timeout=self._CIRCUIT_WINDOW_S)
+        if count >= self._CIRCUIT_THRESHOLD:
+            cache.set(self._CIRCUIT_KEY, True, timeout=self._CIRCUIT_OPEN_S)
+            cache.delete(self._CIRCUIT_FAILURES_KEY)
+            logger.warning(
+                "Firecrawl circuit breaker ABERTO por %ds (>= %d falhas em %ds)",
+                self._CIRCUIT_OPEN_S, self._CIRCUIT_THRESHOLD, self._CIRCUIT_WINDOW_S,
+            )
+
+    def record_success(self) -> None:
+        cache.delete(self._CIRCUIT_FAILURES_KEY)
+        cache.delete(self._CIRCUIT_KEY)
+
     def discover_destination(
         self,
         *,
@@ -333,7 +371,7 @@ class FirecrawlIngestionService:
         city: str = "",
         actor=None,
     ) -> Destination | None:
-        slug = slugify(query)
+        slug = slugify(query)[:50]
         if not slug:
             return None
 
@@ -346,8 +384,8 @@ class FirecrawlIngestionService:
 
         try:
             urls = self._search_urls(query, country=country)
-        except FirecrawlError:
-            logger.exception("Firecrawl search falhou para query=%s", query)
+        except FirecrawlError as exc:
+            logger.warning("Firecrawl search falhou para query=%s: %s", query, exc)
             urls = []
 
         wiki_fallback = self._wikipedia_fallback_url(query)
@@ -360,23 +398,25 @@ class FirecrawlIngestionService:
 
         try:
             aggregated = self._aggregate_payloads(urls)
-        except FirecrawlError:
+        except FirecrawlError as exc:
             if wiki_fallback in urls:
-                logger.exception(
-                    "Firecrawl scrape falhou em todas as URLs (incluindo wikipedia) para slug=%s",
-                    slug,
+                logger.warning(
+                    "Firecrawl scrape falhou em todas as URLs (incluindo wikipedia) para slug=%s: %s",
+                    slug, exc,
                 )
                 self._mark_recently_failed(slug)
                 return None
-            logger.warning(
+            logger.info(
                 "Firecrawl scrape falhou em todas as %d URLs do search para slug=%s, "
                 "tentando fallback wikipedia",
                 len(urls), slug,
             )
             try:
                 aggregated = self._aggregate_payloads([wiki_fallback])
-            except FirecrawlError:
-                logger.exception("Fallback wikipedia tambem falhou para slug=%s", slug)
+            except FirecrawlError as exc2:
+                logger.warning(
+                    "Fallback wikipedia tambem falhou para slug=%s: %s", slug, exc2,
+                )
                 self._mark_recently_failed(slug)
                 return None
 
@@ -495,7 +535,7 @@ class FirecrawlIngestionService:
             name = (poi_data.get("name") or "").strip()
             if not name:
                 continue
-            poi_slug = slugify(name)
+            poi_slug = slugify(name)[:50]
             if not poi_slug:
                 continue
             poi_type = self._normalize_poi_type(poi_data.get("type"))
@@ -523,7 +563,7 @@ class FirecrawlIngestionService:
                 tag_str = str(tag_name).strip()
                 if not tag_str:
                     continue
-                tag_slug = slugify(tag_str)
+                tag_slug = slugify(tag_str)[:50]
                 if not tag_slug:
                     continue
                 tag, _ = POITag.objects.get_or_create(
