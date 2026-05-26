@@ -8,6 +8,16 @@ from apps.common.mixins import StandardResponseMixin
 from apps.users.serializers import UserSerializer
 from .serializers import LoginSerializer, RegisterSerializer
 
+from pathlib import Path
+from datetime import timedelta
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=7),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
+}
+
 User = get_user_model()
 
 

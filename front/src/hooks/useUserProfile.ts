@@ -1,46 +1,51 @@
-import { useState, useEffect } from 'react'
-import { apiRequest } from '@/lib/api'
-import type { AuthUser } from '@/lib/auth'
+import { useCallback, useEffect, useState } from "react";
+import { apiRequest } from "../lib/api";
+import { getStoredUser, persistGuestUser, type AuthUser } from "../lib/auth";
 
-interface UseUserProfileReturn {
-  user: AuthUser | null
-  loading: boolean
-  error: string | null
-  refetch: () => void
-}
+export function useUserProfile(token?: string) {
+  const [profile, setProfile] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export function useUserProfile(token: string): UseUserProfileReturn {
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [loading, setLoading] = useState(() => !!token) // ← false se não tem token
-  const [error, setError] = useState<string | null>(null)
-  const [trigger, setTrigger] = useState(0)
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-  useEffect(() => {
-    if (!token) return // sem setState aqui
-
-    let cancelled = false
-
-    async function load() {
-      setLoading(true)
-      setError(null)
-
-      try {
-        const response = await apiRequest<AuthUser>('/api/users/me/', {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (!cancelled) setUser(response.data)
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Erro desconhecido')
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
+    if (!token) {
+      setProfile(getStoredUser());
+      setLoading(false);
+      return;
     }
 
-    load()
-    return () => { cancelled = true }
-  }, [token, trigger])
+    try {
+      const response = (await apiRequest<{ data?: AuthUser }>("/api/users/me/", {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      })) as { data?: AuthUser };
 
-  const refetch = () => setTrigger(t => t + 1)
+      setProfile(response.data ?? null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível carregar o perfil.");
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
 
-  return { user, loading, error, refetch }
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  return {
+    profile,
+    data: profile,
+    user: profile,
+    loading,
+    error,
+    refresh,
+    refetch: refresh,
+    saveGuestProfile: (input: Partial<AuthUser>) => {
+      const nextUser = persistGuestUser(input);
+      setProfile(nextUser);
+      return nextUser;
+    },
+  };
 }

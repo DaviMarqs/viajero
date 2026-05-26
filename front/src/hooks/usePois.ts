@@ -1,61 +1,45 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { apiRequest } from "../lib/api";
 
-import { getPois, type Poi } from "@/lib/pois";
-
-interface UsePoisReturn {
-  pois: Poi[];
-  loading: boolean;
-  error: string | null;
+export interface Poi {
+  [key: string]: any;
+  id: number | string;
+  name?: string;
+  title?: string;
+  description?: string;
 }
 
-export function usePois(
-  token: string,
-  destinationId: number | null,
-): UsePoisReturn {
-  const [pois, setPois] = useState<Poi[]>([]);
-  const [loading, setLoading] = useState(() => !!token && !!destinationId);
+type PoisResponse = {
+  data?: Poi[];
+  results?: Poi[];
+  items?: Poi[];
+};
 
+export function usePois(token?: string) {
+  const [pois, setPois] = useState<Poi[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!token || !destinationId) return;
+  const loadPois = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-    let cancelled = false;
+    try {
+      const response = (await apiRequest<PoisResponse>("/api/pois/", {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      })) as PoisResponse;
 
-    async function load() {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await getPois(token);
-        const allPois = response.data.results;
-        const filteredPois = allPois.filter((poi: Poi) => Number(poi.destination) === Number(destinationId));
-        console.log("ALL POIS", allPois);
-        console.log("FILTERED", filteredPois);
-        if (!cancelled) {
-          setPois(filteredPois);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Erro desconhecido");
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
+      setPois(response.data ?? response.results ?? response.items ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível carregar os POIs.");
+    } finally {
+      setLoading(false);
     }
+  }, [token]);
 
-    load();
+  useEffect(() => {
+    void loadPois();
+  }, [loadPois]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [token, destinationId]);
-
-  return {
-    pois,
-    loading,
-    error,
-  };
+  return { pois, loading, error, refetch: loadPois };
 }

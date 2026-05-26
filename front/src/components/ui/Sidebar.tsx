@@ -1,85 +1,108 @@
-import { useState } from 'react'
-import { Compass, Home, Map, User, LogOut, Menu, X } from 'lucide-react'
-import { NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '@/contexts/authContext'
+import { useState } from "react";
+import { Compass, Home, Map, User, LogOut, Menu, X } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/authContext";
 
 export default function Sidebar() {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
-  const [showLogout, setShowLogout] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const { user, logout, isGuest } = useAuth();
+  const navigate = useNavigate();
+  const [showLogout, setShowLogout] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   function handleLogout() {
-    logout()
-    navigate('/login', { replace: true })
+    logout();
+    navigate("/", { replace: true });
   }
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `flex gap-3 items-center text-sm font-medium py-2.5 px-3 rounded-xl transition-colors ${
       isActive
-        ? 'bg-blue-50 text-blue-700'
-        : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-    }`
+        ? "bg-blue-50 text-blue-700"
+        : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+    }`;
 
   const navLinks = (
     <ul className="flex flex-col gap-1">
       <li>
-        <NavLink to="/" className={linkClass} onClick={() => setMobileOpen(false)}>
+        <NavLink
+          to="/"
+          className={linkClass}
+          onClick={() => setMobileOpen(false)}
+        >
           <Home className="size-4 shrink-0" />
           <span>Home</span>
         </NavLink>
       </li>
       <li>
-        <NavLink to="/explorar" className={linkClass} onClick={() => setMobileOpen(false)}>
+        <NavLink
+          to="/explorar"
+          className={linkClass}
+          onClick={() => setMobileOpen(false)}
+        >
           <Compass className="size-4 shrink-0" />
           <span>Explorar</span>
         </NavLink>
       </li>
       <li>
-        <NavLink to="/roteiros" className={linkClass} onClick={() => setMobileOpen(false)}>
+        <NavLink
+          to="/roteiros"
+          className={linkClass}
+          onClick={() => setMobileOpen(false)}
+        >
           <Map className="size-4 shrink-0" />
           <span>Roteiros</span>
         </NavLink>
       </li>
       <li>
-        <NavLink to="/perfil" className={linkClass} onClick={() => setMobileOpen(false)}>
+        <NavLink
+          to="/perfil"
+          className={linkClass}
+          onClick={() => setMobileOpen(false)}
+        >
           <User className="size-4 shrink-0" />
           <span>Perfil</span>
         </NavLink>
       </li>
     </ul>
-  )
+  );
 
   const userFooter = (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-3 px-3 py-2">
         <div className="size-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-semibold shrink-0">
-          {user?.first_name?.[0]?.toUpperCase() ?? '?'}
+          {user?.first_name?.[0]?.toUpperCase() ?? "?"}
         </div>
         <div className="flex flex-col min-w-0">
           <span className="text-sm font-medium text-neutral-900 truncate">
-            {user?.display_name ?? 'Usuário'}
+            {user?.display_name ?? "Visitante"}
           </span>
           <span className="text-xs text-neutral-400 truncate">
-            {user?.email ?? ''}
+            {user?.email ?? "Modo sem login"}
           </span>
         </div>
       </div>
-      <button
-        onClick={() => { setShowLogout(true); setMobileOpen(false) }}
-        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-neutral-600 hover:bg-red-50 hover:text-red-600 transition-colors w-full"
-      >
-        <LogOut className="size-4 shrink-0" />
-        <span>Sair</span>
-      </button>
+      {!isGuest ? (
+        <button
+          onClick={() => {
+            setShowLogout(true);
+            setMobileOpen(false);
+          }}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-neutral-600 hover:bg-red-50 hover:text-red-600 transition-colors w-full"
+        >
+          <LogOut className="size-4 shrink-0" />
+          <span>Sair</span>
+        </button>
+      ) : null}
     </div>
-  )
+  );
 
   return (
     <>
       {/* Mobile — topbar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-14 bg-white border-b border-neutral-200">
-        <span className="text-lg font-bold text-blue-700 tracking-tight">Viajero</span>
+        <span className="text-lg font-bold text-blue-700 tracking-tight">
+          Viajero
+        </span>
         <button
           onClick={() => setMobileOpen(true)}
           className="p-2 rounded-xl hover:bg-neutral-100 transition-colors"
@@ -88,7 +111,6 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Mobile — drawer */}
       {mobileOpen && (
         <div
           className="lg:hidden fixed inset-0 z-50 flex"
@@ -100,7 +122,9 @@ export default function Sidebar() {
           >
             <div className="flex flex-col gap-6">
               <div className="flex items-center justify-between px-3">
-                <span className="text-xl font-bold text-blue-700 tracking-tight">Viajero</span>
+                <span className="text-xl font-bold text-blue-700 tracking-tight">
+                  Viajero
+                </span>
                 <button
                   onClick={() => setMobileOpen(false)}
                   className="p-1.5 rounded-xl hover:bg-neutral-100 transition-colors"
@@ -117,11 +141,12 @@ export default function Sidebar() {
         </div>
       )}
 
-      {/* Desktop — sidebar fixa */}
       <div className="hidden lg:flex flex-col justify-between h-full py-6 px-4 border-r border-neutral-200">
         <div className="flex flex-col gap-6">
           <div className="px-3">
-            <span className="text-xl font-bold text-blue-700 tracking-tight">Viajero</span>
+            <span className="text-xl font-bold text-blue-700 tracking-tight">
+              Viajero
+            </span>
           </div>
           {navLinks}
         </div>
@@ -139,9 +164,12 @@ export default function Sidebar() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col gap-1.5">
-              <h2 className="text-base font-semibold text-neutral-900">Sair da conta</h2>
+              <h2 className="text-base font-semibold text-neutral-900">
+                Sair da conta
+              </h2>
               <p className="text-sm text-neutral-500 leading-relaxed">
-                Você será desconectado e precisará fazer login novamente para acessar seus roteiros.
+                Você será desconectado e precisará fazer login novamente para
+                acessar seus roteiros.
               </p>
             </div>
             <div className="flex gap-2 justify-end">
@@ -162,5 +190,5 @@ export default function Sidebar() {
         </div>
       )}
     </>
-  )
+  );
 }

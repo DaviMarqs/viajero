@@ -1,50 +1,43 @@
-import { useState, useEffect } from 'react'
-import { getDestinations, getDestination, type Destination } from '@/lib/destinations'
+import { useEffect, useState } from "react";
+import { fetchDestinations } from "../lib/destinations";
+import type { Destination } from "../types/travel";
 
-interface UseDestinationsReturn {
-  destinations: Destination[]
-  destination: Destination | null
-  loading: boolean
-  error: string | null
-  refetch: () => void
-}
-
-export function useDestinations(token: string, id?: string): UseDestinationsReturn {
-  const [destinations, setDestinations] = useState<Destination[]>([])
-  const [destination, setDestination] = useState<Destination | null>(null)
-  const [loading, setLoading] = useState(() => !!token)
-  const [error, setError] = useState<string | null>(null)
-  const [trigger, setTrigger] = useState(0)
+export function useDestinations() {
+  const [destinations, setDestinations] = useState<Destination[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return
-
-    let cancelled = false
+    const controller = new AbortController();
+    let active = true;
 
     async function load() {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       try {
-        if (id) {
-          const response = await getDestination(token, id)
-          if (!cancelled) setDestination(response.data)
-        } else {
-          const response = await getDestinations(token)
-          if (!cancelled) setDestinations(response.data.results)
+        const data = await fetchDestinations();
+        if (active) {
+          setDestinations(data);
         }
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Erro desconhecido')
+        if (active) {
+          setError(err instanceof Error ? err.message : "Não foi possível carregar os destinos.");
+        }
       } finally {
-        if (!cancelled) setLoading(false)
+        if (active) {
+          setLoading(false);
+        }
       }
     }
 
-    load()
-    return () => { cancelled = true }
-  }, [token, id, trigger])
+    load();
 
-  const refetch = () => setTrigger(t => t + 1)
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, []);
 
-  return { destinations, destination, loading, error, refetch }
+  return { destinations, loading, error };
 }

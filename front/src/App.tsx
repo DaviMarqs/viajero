@@ -2,27 +2,27 @@ import {
   BrowserRouter,
   Routes,
   Route,
-  Navigate,
   Outlet,
+  useOutletContext,
 } from "react-router-dom";
 import { useAuth } from "@/contexts/authContext";
 import Sidebar from "@/components/ui/sidebar";
-import { useOutletContext } from "react-router-dom";
-
 
 import Login from "./pages/login/login";
 import Register from "./pages/register/register";
 import Onboard from "./pages/onboarding/onboarding";
+import TravelPreferencesOnboarding from "./pages/travel-preferences-onboarding/travel-preferences-onboarding";
 import Test from "./pages/tests/test";
 import { Dashboard } from "./pages/dashboard/dashboard";
 import DestinationPage from "./pages/destination/destination";
 
 import "./index.css";
 import ProfilePage from "./pages/user-profile/user";
+import Recommendations from "./pages/recommendations/recommendations";
+import Explorer from "./pages/explorer/explorer";
 
 function PrivateRoute() {
-  const { isAuthenticated, token, logout } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  const { token, logout, isGuest } = useAuth();
   return (
     <div className="flex h-screen overflow-hidden">
       <aside className="hidden lg:block w-64 shrink-0 h-full">
@@ -32,20 +32,21 @@ function PrivateRoute() {
         <Sidebar />
       </div>
       <main className="flex-1 overflow-y-auto pt-14 lg:pt-0">
-        <Outlet context={{ token, logout }} />
+        <Outlet context={{ token, logout, isGuest }} />
       </main>
     </div>
   );
 }
 
 function PublicRoute() {
-  const { isAuthenticated } = useAuth();
-  if (isAuthenticated) return <Navigate to="/" replace />;
   return <Outlet />;
 }
 
 function ProfilePageWrapper() {
-  const { token, logout } = useOutletContext<{ token: string; logout: () => void }>();
+  const { token, logout } = useOutletContext<{
+    token: string;
+    logout: () => void;
+  }>();
   return <ProfilePage token={token} onLogout={logout} />;
 }
 
@@ -60,10 +61,7 @@ function App() {
 
         <Route element={<PrivateRoute />}>
           <Route path="/" element={<Dashboard />} />
-          <Route
-            path="/explorar"
-            element={<div className="p-8">Explorar</div>}
-          />
+          <Route path="/explorar" element={<Explorer />} />
           <Route path="/destinos/:id" element={<DestinationPage />} />
           <Route
             path="/roteiros"
@@ -71,11 +69,15 @@ function App() {
           />
           <Route path="/perfil" element={<ProfilePageWrapper />} />
           <Route path="/test" element={<Test />} />
+
+          <Route path="/recomendacoes" element={<Recommendations />} />
         </Route>
 
         <Route path="/onboard" element={<Onboard />} />
-
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route
+          path="/onboard/preferencias"
+          element={<TravelPreferencesOnboarding />}
+        />
       </Routes>
     </BrowserRouter>
   );

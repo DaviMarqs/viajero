@@ -7,6 +7,7 @@ import { Eye, EyeOff, Lock, Mail, UserRound } from "lucide-react";
 
 import { ApiError } from "../../lib/api";
 import { isAuthenticated, register as registerRequest } from "../../lib/auth";
+import { useAuth } from "@/contexts/authContext";
 
 const registerSchema = z
   .object({
@@ -35,6 +36,7 @@ function splitName(fullName: string) {
 
 export default function Register() {
   const navigate = useNavigate();
+  const { setAuth } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -61,7 +63,7 @@ export default function Register() {
     const { firstName, lastName } = splitName(data.nome);
 
     try {
-      await registerRequest({
+      const response = await registerRequest({
         email: data.email,
         password: data.senha,
         display_name: data.nome.trim(),
@@ -69,6 +71,7 @@ export default function Register() {
         last_name: lastName,
       });
 
+      setAuth(response.data);
       navigate("/onboard", { replace: true });
     } catch (error) {
       if (error instanceof ApiError) {

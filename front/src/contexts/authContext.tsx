@@ -1,13 +1,15 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, ReactNode } from 'react'
-import { persistAuth, type AuthPayload, type AuthUser } from '@/lib/auth'
+import { getStoredUser, persistAuth, type AuthPayload, type AuthUser } from '@/lib/auth'
 
 interface AuthContextValue {
   token: string
   user: AuthUser | null
   isAuthenticated: boolean
+  isGuest: boolean
   setAuth: (payload: AuthPayload) => void
   logout: () => void
+  refreshUser: () => void
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
@@ -18,11 +20,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   })
 
   const [user, setUser] = useState<AuthUser | null>(() => {
-    const raw = localStorage.getItem('viajero.user')
-    return raw ? JSON.parse(raw) : null
+    return getStoredUser()
   })
 
   const isAuthenticated = !!token
+  const isGuest = !token
 
   function setAuth(payload: AuthPayload) {
     persistAuth(payload)
@@ -30,16 +32,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(payload.user)
   }
 
+  function refreshUser() {
+    setUser(getStoredUser())
+  }
+
   function logout() {
     localStorage.removeItem('viajero.access_token')
     localStorage.removeItem('viajero.refresh_token')
-    localStorage.removeItem('viajero.user')
     setToken('')
-    setUser(null)
+    setUser(getStoredUser())
   }
 
   return (
-    <AuthContext.Provider value={{ token, user, isAuthenticated, setAuth, logout }}>
+    <AuthContext.Provider value={{ token, user, isAuthenticated, isGuest, setAuth, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

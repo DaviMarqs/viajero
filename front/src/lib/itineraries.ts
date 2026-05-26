@@ -1,33 +1,16 @@
-import { apiRequest } from './api'
+import { apiFetch, unwrapListResponse } from "./api";
+import type { Itinerary } from "../types/travel";
+import type { Destination } from "../types/travel";
 
-export interface Itinerary {
-  id: number
-  title: string
-  summary: string
-  start_date: string
-  end_date: string
-  duration_days: number
-  budget_total: string
-  currency_code: string
-  generation_status: string
-  generation_context: Record<string, unknown>
-  metadata: Record<string, unknown>
-  created_at: string
-  updated_at: string
-  user: number
-  destination: number
-  days: unknown[]
-}
+type ItinerariesPayload = Itinerary[] | { results?: Itinerary[]; data?: Itinerary[]; items?: Itinerary[] };
 
-export interface ItinerariesResponse {
-  count: number
-  next: string | null
-  previous: string | null
-  results: Itinerary[]
-}
+export type ItineraryWithDestination = Itinerary & {
+  [key: string]: any;
+  destination?: Destination | string | null;
+  destinationData?: Destination | null;
+};
 
-export async function getItineraries(token: string) {
-  return apiRequest<ItinerariesResponse>('/api/itineraries/', {
-    headers: { Authorization: `Bearer ${token}` },
-  })
+export async function fetchItineraries() {
+  const payload = await apiFetch<ItinerariesPayload>("/api/itineraries/");
+  return unwrapListResponse(payload);
 }
