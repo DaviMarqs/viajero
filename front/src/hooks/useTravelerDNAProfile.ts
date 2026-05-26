@@ -59,23 +59,37 @@ export function useTravelerDNAProfile(token?: string) {
       setSaving(true);
       setSaveError(null);
 
+      const safeInput = {
+      ...input,
+      travel_style: input.travel_style || "A definir",
+      pace: input.pace || "A definir",
+      comfort_level: input.comfort_level || "A definir",
+      social_energy: input.social_energy || 5,
+      adventure_level: input.adventure_level || 5,
+      food_focus: input.food_focus || 5,
+      cultural_interest: input.cultural_interest || 5,
+      nature_interest: input.nature_interest || 5,
+      nightlife_interest: input.nightlife_interest || 5,
+      notes: input.notes || "", 
+    };
+
       if (!token) {
         const nextProfile = {
-          id: 0,
-          user: 0,
-          travel_style: input.travel_style ?? "",
-          pace: input.pace ?? "",
-          comfort_level: input.comfort_level ?? "",
-          social_energy: input.social_energy ?? 0,
-          adventure_level: input.adventure_level ?? 0,
-          food_focus: input.food_focus ?? 0,
-          cultural_interest: input.cultural_interest ?? 0,
-          nature_interest: input.nature_interest ?? 0,
-          nightlife_interest: input.nightlife_interest ?? 0,
-          notes: input.notes ?? "",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as TravelerDNAProfile;
+        id: 0,
+        user: 0,
+        travel_style: safeInput.travel_style,
+        pace: safeInput.pace,
+        comfort_level: safeInput.comfort_level,
+        social_energy: safeInput.social_energy,
+        adventure_level: safeInput.adventure_level,
+        food_focus: safeInput.food_focus,
+        cultural_interest: safeInput.cultural_interest,
+        nature_interest: safeInput.nature_interest,
+        nightlife_interest: safeInput.nightlife_interest,
+        notes: safeInput.notes,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as TravelerDNAProfile;
 
         localStorage.setItem(GUEST_TRAVELER_DNA_KEY, JSON.stringify(nextProfile));
         setProfile(nextProfile);
@@ -84,14 +98,17 @@ export function useTravelerDNAProfile(token?: string) {
       }
 
       try {
-        const response = (await apiRequest<{ data?: TravelerDNAProfile }>(
-          "/api/traveler-dna/me/",
-          {
-            method: "PATCH",
-            body: JSON.stringify(input),
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          },
-        )) as { data?: TravelerDNAProfile };
+  const response = (await apiRequest<{ data?: TravelerDNAProfile }>(
+    "/api/traveler-dna/me/",
+    {
+      method: "PATCH",
+      body: JSON.stringify(safeInput),
+      headers: {
+        "Content-Type": "application/json", 
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+    },
+  )) as { data?: TravelerDNAProfile };
 
         const nextProfile = response.data ?? null;
         setProfile(nextProfile);

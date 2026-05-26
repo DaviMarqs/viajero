@@ -77,21 +77,23 @@ function authHeaders(token: string) {
 }
 
 export async function getTravelerDNAProfile(token: string) {
-  return apiRequest<TravelerDNAProfile | null>("/api/traveler-dna/me/", {
+  return apiRequest<TravelerDNAProfile | null>("/api/traveler-dna", {
     headers: authHeaders(token),
   });
 }
 
 export async function saveTravelerDNAProfile(token: string, input: TravelerDNAUpsertInput) {
-  return apiRequest<TravelerDNAProfile>("/api/traveler-dna/me/", {
+  return apiRequest<TravelerDNAProfile>("/api/traveler-dna", {
     method: "PATCH",
-    headers: authHeaders(token),
-    body: JSON.stringify(input),
+headers: {
+      ...authHeaders(token),
+      "Content-Type": "application/json",
+    },    body: JSON.stringify(input),
   });
 }
 
 export async function getTripPreferences(token: string) {
-  return apiRequest<UserTripPreference | null>("/api/trip-preferences/me/", {
+  return apiRequest<UserTripPreference | null>("/api/trip-preferences", {
     headers: authHeaders(token),
   });
 }
@@ -99,7 +101,9 @@ export async function getTripPreferences(token: string) {
 export async function saveTripPreferences(token: string, input: TripPreferenceUpsertInput) {
   return apiRequest<UserTripPreference>("/api/trip-preferences/me/", {
     method: "PATCH",
-    headers: authHeaders(token),
-    body: JSON.stringify(input),
+    headers: {
+      ...authHeaders(token),
+      "Content-Type": "application/json", 
+    },    body: JSON.stringify(input),
   });
 }

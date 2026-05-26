@@ -86,11 +86,14 @@ export function useTripPreferences(token?: string) {
       }
 
       try {
-        const response = (await apiRequest<{ data?: UserTripPreference }>("/api/trip-preferences/me/", {
-          method: "PATCH",
-          body: JSON.stringify(input),
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        })) as { data?: UserTripPreference };
+  const response = (await apiRequest<{ data?: UserTripPreference }>("/api/trip-preferences/me/", {
+    method: "PATCH",
+    body: JSON.stringify(input),
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    },
+  })) as { data?: UserTripPreference };
 
         const nextPreferences = response.data ?? null;
         setPreferences(nextPreferences);
