@@ -6,7 +6,6 @@ import {
   useOutletContext,
 } from "react-router-dom";
 import { useAuth } from "@/contexts/authContext";
-import Sidebar from "@/components/ui/sidebar";
 
 import Login from "./pages/login/login";
 import Register from "./pages/register/register";
@@ -20,6 +19,7 @@ import "./index.css";
 import ProfilePage from "./pages/user-profile/user";
 import Recommendations from "./pages/recommendations/recommendations";
 import Explorer from "./pages/explorer/explorer";
+import Sidebar from "./components/ui/Sidebar";
 
 function PrivateRoute() {
   const { token, logout, isGuest } = useAuth();

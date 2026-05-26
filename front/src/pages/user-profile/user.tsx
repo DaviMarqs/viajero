@@ -4,6 +4,8 @@ import { useState, useRef } from "react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/contexts/authContext";
+import { TripPreferencesSection } from "./trip-preferences-section";
+import { TravelerDNASection } from "./traveler-dna-section";
 import {
   User,
   Mail,
@@ -439,6 +441,9 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
             </div>
           )}
         </div>
+
+        {token && <TripPreferencesSection token={token} />}
+        {token && <TravelerDNASection token={token} />}
 
         <div className="bg-white rounded-2xl border border-neutral-100 px-6 py-4 flex flex-col gap-1">
           <h2 className="text-sm font-semibold text-neutral-700 mb-2">Conta</h2>
