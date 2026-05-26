@@ -7,7 +7,6 @@ import {
   Navigate,
 } from "react-router-dom";
 import { useAuth } from "@/contexts/authContext";
-import Sidebar from "@/components/ui/sidebar";
 
 import Login from "./pages/login/login";
 import Register from "./pages/register/register";
@@ -22,6 +21,7 @@ import ProfilePage from "./pages/user-profile/user";
 import Recommendations from "./pages/recommendations/recommendations";
 import Explorer from "./pages/explorer/explorer";
 import Roteiros from "./pages/roteiros/roteiros";
+import Sidebar from "./components/ui/sidebar";
 
 function PrivateRoute() {
   const { token, logout, isGuest, isAuthenticated } = useAuth();
