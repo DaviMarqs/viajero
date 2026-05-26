@@ -63,8 +63,10 @@ class MockItineraryGenerator(BaseItineraryGenerator):
 
 
 def get_generator() -> BaseItineraryGenerator:
-    if settings.LLM_API_KEY:
-        return MockItineraryGenerator()
+    provider = getattr(settings, "DEFAULT_LLM_PROVIDER", "mock")
+    if provider == "gemini" and settings.GEMINI_API_KEY:
+        from apps.ai.generators.itinerary import GeminiItineraryGenerator
+        return GeminiItineraryGenerator()
     return MockItineraryGenerator()
 
 
@@ -136,6 +138,7 @@ class ItineraryGenerationService:
                     description=event["description"],
                     estimated_cost=Decimal(event["estimated_cost"]),
                     order_index=event["order_index"],
+                    poi_id=event.get("poi_id"),
                 )
 
         job.status = "completed"

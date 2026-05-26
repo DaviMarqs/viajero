@@ -24,15 +24,15 @@ def _make_destination(**overrides) -> Destination:
 def test_search_returns_enriched_destination_even_when_local_filter_misses_accents():
     """
     Regressao: query 'Sao Paulo' (sem acento) com destino 'São Paulo' (com til)
-    cria via discover_destination mas o _local_search por icontains nao casa em
+    cria via discover mas o _local_search por icontains nao casa em
     SQLite. O response deve conter o destino mesmo assim.
     """
     accented = _make_destination()
 
     with patch(
-        "apps.destinations.views.FirecrawlIngestionService.discover_destination",
-        return_value=accented,
-    ):
+        "apps.destinations.views.DestinationDiscoveryService",
+    ) as service_cls:
+        service_cls.return_value.discover.return_value = accented
         client = APIClient()
         response = client.get("/api/destinations/search/?q=Sao Paulo")
 
@@ -40,29 +40,29 @@ def test_search_returns_enriched_destination_even_when_local_filter_misses_accen
     body = response.json()
     slugs = [item["slug"] for item in body["data"]]
     assert "sao-paulo" in slugs
-    assert "enriquecido via Firecrawl" in body["message"]
+    assert "enriquecido" in body["message"]
 
 
-def test_search_skips_firecrawl_when_local_results_exist():
+def test_search_skips_discovery_when_local_results_exist():
     _make_destination(slug="paris", name="Paris", country="Franca", city="Paris", summary="")
 
     with patch(
-        "apps.destinations.views.FirecrawlIngestionService.discover_destination",
-    ) as discover:
+        "apps.destinations.views.DestinationDiscoveryService",
+    ) as service_cls:
         client = APIClient()
         response = client.get("/api/destinations/search/?q=Paris")
 
     assert response.status_code == 200
-    discover.assert_not_called()
+    service_cls.return_value.discover.assert_not_called()
     body = response.json()
     assert any(item["slug"] == "paris" for item in body["data"])
 
 
 def test_search_returns_empty_when_discover_returns_none():
     with patch(
-        "apps.destinations.views.FirecrawlIngestionService.discover_destination",
-        return_value=None,
-    ):
+        "apps.destinations.views.DestinationDiscoveryService",
+    ) as service_cls:
+        service_cls.return_value.discover.return_value = None
         client = APIClient()
         response = client.get("/api/destinations/search/?q=lugar-inexistente")
 
@@ -70,3 +70,27 @@ def test_search_returns_empty_when_discover_returns_none():
     body = response.json()
     assert body["data"] == []
     assert "enriquecido" not in body["message"]
+
+
+def test_search_uses_discovery_service():
+    """Confirma que view chama DestinationDiscoveryService, nao FirecrawlIngestionService direto."""
+    destination = Destination.objects.create(
+        slug="bonito",
+        name="Bonito",
+        country="Brasil",
+        summary="resumo via discovery",
+    )
+
+    # Usa uma query sem acento que nao bate em icontains com 'Bonito' (SQLite nao ignora acento),
+    # mas DestinationDiscoveryService retorna o destino ja existente.
+    with patch(
+        "apps.destinations.views.DestinationDiscoveryService",
+    ) as service_cls:
+        service_cls.return_value.discover.return_value = destination
+        client = APIClient()
+        response = client.get("/api/destinations/search/?q=destino-inexistente-xyz")
+
+    service_cls.return_value.discover.assert_called_once()
+    assert response.status_code == 200
+    slugs = [item["slug"] for item in response.json()["data"]]
+    assert "bonito" in slugs

@@ -541,7 +541,8 @@
       "url": "{{ base_url }}/api/itineraries/{{ itinerary_id }}/generate/",
       "headers": [
         { "name": "Authorization", "value": "Bearer {{ jwt }}" }
-      ]
+      ],
+      "description": "Dispara geração síncrona do roteiro via IA. Usa GeminiItineraryGenerator quando DEFAULT_LLM_PROVIDER=gemini e GEMINI_API_KEY está setado; caso contrário, cai no MockItineraryGenerator. O serviço lê TravelerDNAProfile + UserTripPreference do usuário, top 30 POIs do destino ranqueados por rating, monta prompt e chama Gemini com GEMINI_ITINERARY_TIMEOUT (default 40s). Cria ItineraryDay + ItineraryDailyEvent com FK para POIs válidos (Gemini referenciar poi_id inválido → vira freestyle). Resposta 202 com generation_status='ready'. Em falha, 503 e status='failed' (veja LLMJob.error_message via /api/llm-jobs/)."
     },
     {
       "_id": "req_itineraries_days_list",
@@ -872,7 +873,7 @@
         { "name": "country", "value": "" },
         { "name": "city", "value": "" }
       ],
-      "description": "Busca pública de destinos para a home (AllowAny). Filtros opcionais: q (texto), country, city. Cache-aside: se a busca local não retornar nada e q for informado, dispara FirecrawlIngestionService.discover_destination sincronamente (mock quando FIRECRAWL_API_KEY vazio) e retorna o destino recém-criado."
+      "description": "Busca pública de destinos para a home (AllowAny). Filtros opcionais: q (texto), country, city. Cache-aside: se a busca local não retornar nada e q for informado, dispara DestinationDiscoveryService.discover sincronamente, que roda Firecrawl e Gemini em paralelo (ThreadPoolExecutor), funde resultados (Firecrawl factual vence em conflito; Gemini complementa lacunas) e persiste. Audit event: destination.discovered com metadata.sources={firecrawl,gemini}. Resposta inclui metadata.sources indicando quem contribuiu e POIs do Gemini ficam com metadata.source='gemini'."
     },
     {
       "_id": "req_itineraries_templates",

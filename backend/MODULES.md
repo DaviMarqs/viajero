@@ -62,8 +62,22 @@ Catálogo de destinos turísticos e seus pontos de interesse.
 | Controller | Rota | Métodos | Função |
 |---|---|---|---|
 | DestinationViewSet | `/api/destinations/` `[+ /{id}/]` | GET/POST/PUT/PATCH/DELETE | CRUD de destinos; filtro por country/city; busca textual |
-| DestinationViewSet.search | `/api/destinations/search/` | GET | Busca pública por destino (`?q=`, `?country=`, `?city=`) para a home (AllowAny). Em cache miss (`q` informado e zero resultados locais), aciona `FirecrawlIngestionService.discover_destination` sincronamente para criar/enriquecer o destino, re-consulta o banco e **garante que o destino enriquecido sempre apareça no response** (mesmo se o `_local_search` falhar por mismatch de acento/casing — ex: query "Sao Paulo" vs nome "São Paulo"). |
+| DestinationViewSet.search | `/api/destinations/search/` | GET | Busca pública por destino (`?q=`, `?country=`, `?city=`) para a home (AllowAny). Em cache miss (`q` informado e zero resultados locais), aciona `DestinationDiscoveryService.discover` que **roda Firecrawl e Gemini em paralelo** via `ThreadPoolExecutor`, funde os resultados (Firecrawl factual vence em conflito; Gemini complementa lacunas) e persiste. Garante que o destino enriquecido sempre apareça no response mesmo se `_local_search` falhar por mismatch de acento. Audit event renomeado para `destination.discovered` com campo `sources` no metadata. |
 | PointOfInterestViewSet | `/api/pois/` `[+ /{id}/]` | GET/POST/PUT/PATCH/DELETE | CRUD de POIs; filtros por destino/tipo/tag; busca textual |
+
+### `DestinationDiscoveryService` (`apps/destinations/services.py`)
+
+Orquestra a descoberta de um destino combinando Firecrawl + Gemini. Em paralelo (`ThreadPoolExecutor`, `max_workers=2`):
+- Firecrawl: `_search_urls` + `_aggregate_payloads` (com fallback Wikipedia interno).
+- Gemini: `GeminiDestinationEnricher.enrich` (só se `GEMINI_API_KEY` setada).
+
+Funde: Firecrawl > Gemini em todos os campos escalares (`summary`, `best_season`, `timezone`, `name`, `country`, `city`); `hero_image_url` e `costs` apenas Firecrawl; POIs unidos com dedup por slug (Firecrawl ganha em conflito); POIs novos do Gemini ficam com `metadata['source']='gemini'`. Persiste em transação. Marca cache negativo (`firecrawl:discover_failed:<slug>`) quando os dois falham.
+
+`Destination.metadata` ganha:
+- `sources`: `{firecrawl: bool, gemini: bool}` — quem contribuiu.
+- `gemini_model`: modelo usado (quando Gemini contribuiu).
+- `source_urls`, `extracted` (do Firecrawl, inalterados).
+- `scrape_failures` (do Firecrawl, inalterado).
 
 ### Management commands
 
@@ -121,16 +135,20 @@ Cobre **US-08** (Criar Itinerário), **US-09** (Geração com IA — gatilho), *
 
 ---
 
-## `apps/ai` — Registro de IA e jobs
+## `apps/ai` — Camada LLM
 
-Configuração de modelos LLM, templates de prompt e rastreamento de execuções.
+Provê o gerador de roteiro e o enricher de destinos via Gemini (Google).
 
-### Modelos
-- **LLMProvider** — `key`, `name`, `config`, `is_active`.
-- **LLMModel** — FK provider, `key`, `name`, `context_window`, `is_default`, `is_active`.
-- **PromptTemplate** — `key`, `name`, `template`, `version`, `is_active`, `metadata`.
-- **LLMJob** — `user`, `itinerary?`, `destination?`, `prompt_template`, `llm_model`, `job_type`, `status` (queued/running/completed/failed), `request_payload`, `response_payload`, `error_message`.
-- **LLMJobLog** — log por job com `level` (info/warn/error), `message`, `payload`.
+### Estrutura
+- `providers/base.py` — `LLMProvider` Protocol (runtime_checkable) + exceções (`LLMProviderError`, `LLMTimeoutError`, `LLMAuthError`, `LLMQuotaError`, `LLMResponseError`).
+- `providers/gemini.py` — `GeminiProvider` (cliente do Gemini via `google-generativeai` SDK). Sem regras de negócio, só envia prompt e parseia retorno (JSON ou texto). Mapeia exceções HTTP do `google.api_core.exceptions` para os tipos tipados.
+- `enrichers/base.py` — `BaseDestinationEnricher` + `EnrichmentResult` dataclass (9 campos + `has_meaningful_data()`).
+- `enrichers/destination_gemini.py` — `GeminiDestinationEnricher` com retry no `LLMResponseError` (1 tentativa extra). Marca POIs gerados com `source="gemini"`. Sem image_url no schema (nível Moderado).
+- `generators/itinerary.py` — `GeminiItineraryGenerator(BaseItineraryGenerator)` consumido por `ItineraryGenerationService.run_job`. Valida `poi_id` retornado contra o DB do mesmo destino; eventos com FK inválida viram freestyle (poi=None).
+- `services.py` — `get_generator()` lê `DEFAULT_LLM_PROVIDER`: `"gemini"` (com `GEMINI_API_KEY`) → `GeminiItineraryGenerator`; caso contrário → `MockItineraryGenerator`. Import do Gemini é lazy pra evitar ciclo.
+
+### Modelos (existentes)
+- `LLMProvider`, `LLMModel`, `PromptTemplate`, `LLMJob`, `LLMJobLog` — usados pra audit/observabilidade. `LLMJob` armazena `request_payload`/`response_payload` do Gemini pra debug.
 
 ### Controllers
 | Controller | Rota | Métodos | Função |
@@ -139,7 +157,16 @@ Configuração de modelos LLM, templates de prompt e rastreamento de execuções
 | PromptTemplateViewSet | `/api/prompt-templates/` `[+ /{id}/]` | GET | Lista/consulta templates (admin, read-only) |
 | LLMJobViewSet | `/api/llm-jobs/` `[+ /{id}/]` | GET | Lista/consulta jobs do usuário com logs (read-only) |
 
-Suporta o motor que atende **US-09**.
+### Tuning (env)
+| Variável | Default | Uso |
+|---|---|---|
+| `DEFAULT_LLM_PROVIDER` | `mock` | Setar `gemini` ativa o gerador real. |
+| `GEMINI_API_KEY` | `""` | Chave do Gemini. Se vazia, cai pro Mock. |
+| `GEMINI_MODEL` | `gemini-2.0-flash` | Modelo do Gemini. |
+| `GEMINI_TIMEOUT` | `20` | Timeout (s) do enrichment de destino. |
+| `GEMINI_ITINERARY_TIMEOUT` | `40` | Timeout (s) da geração de roteiro (mais alto pois roteiro tende a ser maior). |
+
+### Cobre **US-12** (Geração de Itinerário com IA) + fallback complementar pra **US-05** (Destinos via cache-aside da home).
 
 ---
 
