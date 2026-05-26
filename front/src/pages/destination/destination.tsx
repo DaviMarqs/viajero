@@ -1,23 +1,30 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/authContext";
 import { useDestinations } from "@/hooks/useDestinations";
-import { usePois } from "@/hooks/usePois";
 import DestinationInfo from "@/components/ui/info";
 import PoiList from "@/components/ui/poi-list";
 
 export default function DestinationPage() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { token } = useAuth();
-  const destinationId = id ? parseInt(id) : null;
-  const { pois, loading: poisLoading } = usePois(token, destinationId);
-  const { destination, loading } = useDestinations(token, id!);
+  const { destinations, loading, error } = useDestinations();
 
-  console.log("PARAM ID", id);
-  console.log("DESTINATION ID", destinationId);
+  const destination = destinations.find((item) => {
+    if (!id) return false;
+    return String(item.id) === id || item.slug === id;
+  });
 
-  if (loading) return <div>Carregando...</div>;
-  if (!destination) return <div>Destino não encontrado</div>;
+  const pois = Array.isArray(destination?.pois) ? destination.pois : [];
+  const destinationInfo = destination
+    ? {
+        ...destination,
+        best_season: destination.best_season || "",
+      }
+    : undefined;
+
+  if (loading) return <div className="px-6 py-6 lg:px-8">Carregando...</div>;
+  if (error) return <div className="px-6 py-6 lg:px-8">{error}</div>;
+  if (!destination) return <div className="px-6 py-6 lg:px-8">Destino nÃ£o encontrado</div>;
+
   return (
     <section className="px-6 py-6 lg:px-8">
       <button
@@ -25,10 +32,16 @@ export default function DestinationPage() {
         className="mb-4 px-4 py-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-medium transition"
         onClick={() => navigate(-1)}
       >
-        ← Voltar
+        â† Voltar
       </button>
       <img
-        src={destination.hero_image_url}
+        src={
+          destination.hero_image_url ||
+          destination.image_url ||
+          destination.image ||
+          destination.cover_image ||
+          ""
+        }
         alt={destination.name}
         className="w-full max-h-96 object-cover rounded-3xl lg:h-96"
       />
@@ -46,11 +59,11 @@ export default function DestinationPage() {
         </div>
 
         <div>
-          <DestinationInfo destination={destination} />
+          <DestinationInfo destination={destinationInfo!} />
         </div>
 
         <div>
-          <PoiList pois={pois} loading={poisLoading} />
+          <PoiList pois={pois as any} />
         </div>
       </div>
     </section>

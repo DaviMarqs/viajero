@@ -14,7 +14,8 @@ interface DestinationInfoProps {
 }
 
 export default function DestinationInfo({ destination }: DestinationInfoProps) {
-  const season = seasonLabel[destination.best_season.toLowerCase()] ?? destination.best_season
+  const bestSeason = destination.best_season ?? ''
+  const season = seasonLabel[bestSeason.toLowerCase()] ?? bestSeason
   const ratingNum = Number(destination.average_rating)
 
   const items = [

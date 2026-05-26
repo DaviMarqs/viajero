@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { apiRequest } from "@/lib/api";
+import { useAuth } from "@/contexts/authContext";
 import {
   User,
   Mail,
@@ -58,7 +59,8 @@ interface ProfilePageProps {
 }
 
 export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
-  const { user, loading, error, refetch } = useUserProfile(token);
+  const { user, loading, error, refetch, saveGuestProfile } = useUserProfile(token);
+  const { isGuest, refreshUser } = useAuth();
 
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -99,6 +101,16 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
     setSaving(true);
     setSaveError(null);
 
+    if (!token) {
+      saveGuestProfile(form);
+      refreshUser();
+      setSuccess(true);
+      setEditing(false);
+      setSaving(false);
+      setTimeout(() => setSuccess(false), 3000);
+      return;
+    }
+
     try {
       await apiRequest("/api/users/me/", {
         method: "PATCH",
@@ -125,6 +137,12 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!token) {
+      setSaveError("Upload de avatar esta desativado no modo sem login.");
+      return;
+    }
+
     setAvatarUploading(true);
     try {
       const fd = new FormData();
@@ -183,6 +201,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
         <h1 className="text-base font-semibold text-neutral-900">Meu perfil</h1>
         <button
           onClick={onLogout}
+          disabled={isGuest}
           className="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-red-500 transition-colors"
         >
           <LogOut className="size-4" />
@@ -210,6 +229,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
             </div>
             <button
               onClick={() => fileRef.current?.click()}
+              disabled={isGuest}
               className="absolute -bottom-1 -right-1 size-7 rounded-full bg-white border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-colors shadow-sm"
               title="Alterar foto"
             >
@@ -306,7 +326,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
             />
             <Field
               label="E-mail"
-              value={user.email}
+              value={user.email ?? ""}
               icon={<Mail className="size-3.5" />}
               editing={false}
               inputNode={null}
@@ -409,6 +429,13 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
             <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
               <Check className="size-4 shrink-0" />
               Perfil atualizado com sucesso!
+            </div>
+          )}
+
+          {isGuest && (
+            <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
+              <AlertCircle className="size-4 shrink-0" />
+              Modo visitante ativo. As alteracoes ficam salvas apenas neste navegador.
             </div>
           )}
         </div>

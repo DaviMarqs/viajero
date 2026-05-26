@@ -1,6 +1,6 @@
 import { AlertCircle, Loader2, PartyPopper } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import OnboardingSidebar from "../../components/ui/onboarding-sidebar";
 import OnboardingStepFields from "@/components/ui/onboarding-step-fields";
 import {
@@ -101,7 +101,7 @@ function buildSnapshotFromExistingData(
 }
 
 export default function Onboarding() {
-  const { token: contextToken, isAuthenticated } = useAuth();
+  const { token: contextToken } = useAuth();
   const token =
     contextToken || localStorage.getItem("viajero.access_token") || "";
   const hydratedRef = useRef(false);
@@ -123,7 +123,7 @@ export default function Onboarding() {
     skip,
     buildProfilePayload,
     buildTravelPayload,
-  } = useOnboarding();
+  } = useOnboarding(ONBOARDING_STEPS);
   const dna = useTravelerDNAProfile(token);
   const tripPreferences = useTripPreferences(token);
 
@@ -142,10 +142,6 @@ export default function Onboarding() {
     tripPreferences.loading,
     tripPreferences.preferences,
   ]);
-
-  if (!isAuthenticated && !token) {
-    return <Navigate to="/login" replace />;
-  }
 
   const loading = dna.loading || tripPreferences.loading;
   const saving = dna.saving || tripPreferences.saving;

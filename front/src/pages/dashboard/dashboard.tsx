@@ -16,13 +16,18 @@ function getGreeting() {
 }
 
 export function Dashboard() {
-  const { user, token } = useAuth();
-  const { itineraries, loading } = useItineraries(token);
+  const { user, token, isGuest } = useAuth();
+  const { itineraries, loading } = useItineraries();
   const navigate = useNavigate();
 
   const [checkingOnboard, setCheckingOnboard] = useState(false);
 
   async function handleCreateItinerary() {
+    if (!token || isGuest) {
+      navigate("/explorar");
+      return;
+    }
+
     try {
       setCheckingOnboard(true);
 

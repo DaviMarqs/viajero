@@ -1,112 +1,83 @@
-import { useNavigate } from 'react-router-dom'
-import type { ItineraryWithDestination } from '@/hooks/useItineraries'
-import { Calendar, Clock, Wallet } from 'lucide-react'
+import type { ItineraryWithDestination } from "@/hooks/useItineraries";
+import { formatCurrency, formatDuration } from "@/lib/utils";
 
-interface TripCardProps {
-  itinerary: ItineraryWithDestination
-  onView?: (id: number) => void
-  onDetails?: (id: number) => void
+type TripCardProps = {
+  trip?: ItineraryWithDestination;
+  itinerary?: ItineraryWithDestination;
+  className?: string;
+  [key: string]: any;
+};
+
+function getTripData(props: TripCardProps) {
+  return props.trip || props.itinerary || (props as { data?: ItineraryWithDestination }).data;
 }
 
-const statusConfig: Record<string, { label: string; className: string }> = {
-  draft:      { label: 'Rascunho',   className: 'bg-neutral-100 text-neutral-600' },
-  generating: { label: 'Gerando...', className: 'bg-amber-100 text-amber-700' },
-  ready:      { label: 'Pronto',     className: 'bg-green-100 text-green-700' },
-}
+export function TripCard(props: TripCardProps) {
+  const trip = getTripData(props);
 
-export default function TripCard({ itinerary, onView }: TripCardProps) {
-  const navigate = useNavigate()
-
-  const status = statusConfig[itinerary.generation_status] ?? {
-    label: itinerary.generation_status,
-    className: 'bg-neutral-100 text-neutral-600',
+  if (!trip) {
+    return null;
   }
 
-  const budget = Number(itinerary.budget_total).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: itinerary.currency_code,
-  })
-
-  const startDate = new Date(itinerary.start_date).toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-  })
-
-  const endDate = new Date(itinerary.end_date).toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-
-  const imageUrl = itinerary.destinationData?.hero_image_url
-    || `https://picsum.photos/seed/${itinerary.id}/400/240`
-
-  const locationLabel = itinerary.destinationData
-    ? `${itinerary.destinationData.city}, ${itinerary.destinationData.country}`
-    : null
-
-  const destinationSlug = itinerary.destinationData?.id
+  const title = trip.title || trip.name || "Roteiro";
+  const location = trip.destinationData?.name || trip.destination_name || trip.city || trip.country || "";
+  const image = trip.image_url || trip.image || "";
+  const budget = formatCurrency(trip.budget_total ?? trip.cost ?? trip.cost_from);
+  const duration = formatDuration(trip.duration_days ?? trip.duration);
 
   return (
-    <div className="flex flex-col w-64 sm:w-72 shrink-0">
-      <div className="relative h-44 rounded-2xl overflow-hidden bg-neutral-100">
-        <img
-          src={imageUrl}
-          alt={itinerary.title}
-          className="w-full h-full object-cover"
-        />
-        <span className={`absolute top-3 right-3 text-xs font-medium px-2.5 py-1 rounded-full ${status.className}`}>
-          {status.label}
-        </span>
-      </div>
-
-      <div className="flex flex-col gap-2 pt-3 px-1">
-        <div>
-          <h2 className="font-semibold text-sm text-neutral-900 leading-snug line-clamp-1">
-            {itinerary.title}
-          </h2>
-          {locationLabel && (
-            <p className="text-xs text-neutral-400 mt-0.5">{locationLabel}</p>
+    <article
+      className={`overflow-hidden rounded-3xl border border-white/10 bg-slate-950/80 text-white shadow-lg ${props.className ?? ""}`}
+    >
+      <div className="grid gap-0 md:grid-cols-[220px_1fr]">
+        <div className="min-h-52 bg-slate-800">
+          {image ? (
+            <img src={image} alt={title} className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full min-h-52 items-end bg-gradient-to-br from-cyan-500/30 via-slate-900 to-emerald-500/20 p-5">
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-cyan-200/80">Roteiro</p>
+                <p className="mt-2 text-2xl font-semibold text-white">{title}</p>
+              </div>
+            </div>
           )}
         </div>
 
-        <div className="flex flex-wrap gap-x-3 gap-y-1">
-          <div className="flex items-center gap-1 text-xs text-neutral-500">
-            <Calendar className="size-3 shrink-0" />
-            <span>{startDate} → {endDate}</span>
+        <div className="space-y-4 p-5">
+          <div className="space-y-2">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-semibold">{title}</h3>
+                <p className="text-sm text-slate-300">{location || "Destino não informado"}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Orçamento</p>
+                <p className="text-sm font-semibold text-cyan-300">{budget}</p>
+              </div>
+            </div>
+            <p className="text-sm leading-6 text-slate-300">
+              {trip.summary || trip.description || "Sem resumo disponível no momento."}
+            </p>
           </div>
-          <div className="flex items-center gap-1 text-xs text-neutral-500">
-            <Clock className="size-3 shrink-0" />
-            <span>{itinerary.duration_days} dias</span>
-          </div>
-          <div className="flex items-center gap-1 text-xs text-neutral-500">
-            <Wallet className="size-3 shrink-0" />
-            <span>{budget}</span>
-          </div>
-        </div>
 
-        {itinerary.summary && (
-          <p className="text-xs text-neutral-400 line-clamp-2 leading-relaxed">
-            {itinerary.summary}
-          </p>
-        )}
-
-        <div className="flex gap-2 pt-1">
-          <button
-            onClick={() => onView?.(itinerary.id)}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium py-2 rounded-xl transition-colors"
-          >
-            Ver roteiro
-          </button>
-          <button
-            onClick={() => destinationSlug && navigate(`/destinos/${destinationSlug}`)}
-            disabled={!destinationSlug}
-            className="flex-1 bg-neutral-50 hover:bg-neutral-100 disabled:opacity-40 text-neutral-700 text-xs font-medium py-2 rounded-xl border border-neutral-200 transition-colors"
-          >
-            Ver destino
-          </button>
+          <div className="grid grid-cols-3 gap-3 border-t border-white/10 pt-4 text-sm text-slate-300">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Duração</p>
+              <p className="mt-1 font-medium text-white">{duration}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Status</p>
+              <p className="mt-1 font-medium text-white">{trip.generation_status || "Pronto"}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">POIs</p>
+              <p className="mt-1 font-medium text-white">{trip.pois?.length || trip.points_of_interest?.length || 0}</p>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  )
+    </article>
+  );
 }
+
+export default TripCard;

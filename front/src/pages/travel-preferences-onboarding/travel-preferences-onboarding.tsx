@@ -1,5 +1,5 @@
 import { PartyPopper, AlertCircle, Loader2 } from "lucide-react";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import OnboardingSidebar from "@/components/ui/onboarding-sidebar";
 import OnboardingStepFields from "@/components/ui/onboarding-step-fields";
@@ -57,7 +57,7 @@ function buildSnapshotFromPreferences(preferences: UserTripPreference): Onboardi
 }
 
 export default function TravelPreferencesOnboarding() {
-  const { token: contextToken, isAuthenticated } = useAuth();
+  const { token: contextToken } = useAuth();
   const token = contextToken || localStorage.getItem("viajero.access_token") || "";
   const [submitError, setSubmitError] = useState<string | null>(null);
   const hydratedRef = useRef(false);
@@ -92,10 +92,6 @@ export default function TravelPreferencesOnboarding() {
     setSnapshot(buildSnapshotFromPreferences(preferences));
     hydratedRef.current = true;
   }, [preferences, setSnapshot]);
-
-  if (!isAuthenticated && !token) {
-    return <Navigate to="/login" replace />;
-  }
 
   const canAdvance = hasSelection();
   const flexibleDatesValue = getCardValues("timing")[0] === "true";

@@ -25,6 +25,21 @@ export interface AuthPayload {
   user: AuthUser;
 }
 
+export const GUEST_USER: AuthUser = {
+  id: 0,
+  email: "visitante@viajero.local",
+  username: "visitante",
+  display_name: "Visitante",
+  first_name: "Visitante",
+  last_name: "",
+  avatar_url: null,
+  home_airport: null,
+  preferred_currency: "BRL",
+  is_profile_complete: false,
+  created_at: new Date(0).toISOString(),
+  updated_at: new Date(0).toISOString(),
+};
+
 export interface LoginInput {
   email: string;
   password: string;
@@ -42,6 +57,35 @@ export function persistAuth(payload: AuthPayload) {
   localStorage.setItem(ACCESS_TOKEN_KEY, payload.access);
   localStorage.setItem(REFRESH_TOKEN_KEY, payload.refresh);
   localStorage.setItem(USER_KEY, JSON.stringify(payload.user));
+}
+
+export function getStoredUser() {
+  const raw = localStorage.getItem(USER_KEY);
+
+  if (!raw) {
+    return GUEST_USER;
+  }
+
+  try {
+    return {
+      ...GUEST_USER,
+      ...JSON.parse(raw),
+    } as AuthUser;
+  } catch {
+    return GUEST_USER;
+  }
+}
+
+export function persistGuestUser(user: Partial<AuthUser>) {
+  const nextUser = {
+    ...getStoredUser(),
+    ...user,
+    id: 0,
+    updated_at: new Date().toISOString(),
+  } satisfies AuthUser;
+
+  localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
+  return nextUser;
 }
 
 export function isAuthenticated() {

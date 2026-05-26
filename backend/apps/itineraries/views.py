@@ -102,6 +102,7 @@ class ItineraryViewSet(StandardModelViewSet):
 
 
 class FavoriteItineraryViewSet(StandardModelViewSet):
+    print('FavoriteItineraryViewSet loaded')
     serializer_class = FavoriteItinerarySerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -114,6 +115,7 @@ class FavoriteItineraryViewSet(StandardModelViewSet):
 
 
 class ReviewViewSet(StandardModelViewSet):
+    print('ReviewViewSet loaded')
     serializer_class = ReviewSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = Review.objects.select_related("itinerary", "user")
