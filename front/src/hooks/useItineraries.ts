@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { fetchItineraries } from "../lib/itineraries";
+import { fetchFeaturedItineraries, fetchItineraries } from "../lib/itineraries";
 import type { Itinerary } from "../types/travel";
 export type { ItineraryWithDestination } from "../lib/itineraries";
 
-export function useItineraries() {
+type ItineraryMode = "mine" | "featured";
+
+export function useItineraries(mode: ItineraryMode = "mine") {
   const [itineraries, setItineraries] = useState<Itinerary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +18,10 @@ export function useItineraries() {
       setError(null);
 
       try {
-        const data = await fetchItineraries();
+        const data =
+          mode === "featured"
+            ? await fetchFeaturedItineraries()
+            : await fetchItineraries();
         if (active) {
           setItineraries(data);
         }
@@ -36,7 +41,7 @@ export function useItineraries() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [mode]);
 
   return { itineraries, loading, error };
 }

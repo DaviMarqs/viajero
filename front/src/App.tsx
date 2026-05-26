@@ -21,6 +21,7 @@ import "./index.css";
 import ProfilePage from "./pages/user-profile/user";
 import Recommendations from "./pages/recommendations/recommendations";
 import Explorer from "./pages/explorer/explorer";
+import Roteiros from "./pages/roteiros/roteiros";
 
 function PrivateRoute() {
   const { token, logout, isGuest, isAuthenticated } = useAuth();
@@ -74,10 +75,7 @@ function App() {
             path="/onboard/preferencias"
             element={<TravelPreferencesOnboarding />}
           />
-          <Route
-            path="/roteiros"
-            element={<div className="p-8">Roteiros</div>}
-          />
+          <Route path="/roteiros" element={<Roteiros />} />
           <Route path="/perfil" element={<ProfilePageWrapper />} />
           <Route path="/test" element={<Test />} />
 

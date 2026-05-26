@@ -3,107 +3,130 @@ import Filter from "@/components/ui/filter.updated";
 import TripRecomendation, {
   type TripRecommendation,
 } from "@/components/ui/trip-recomendation.updated";
-import { useDestinations } from "@/hooks/useDestinations";
-import type { Destination } from "@/types/travel";
+import { useItineraries } from "@/hooks/useItineraries";
+import type { Itinerary } from "@/types/travel";
 
-function getDestinationImage(destination: Destination) {
+function getDestinationName(itinerary: Itinerary) {
+  if (typeof itinerary.destination === "string") return itinerary.destination;
+  if (itinerary.destination?.name) return itinerary.destination.name;
+  return itinerary.metadata?.destination_name || "Destino";
+}
+
+function getDestinationSlug(itinerary: Itinerary) {
+  if (
+    typeof itinerary.destination === "object" &&
+    itinerary.destination?.slug
+  ) {
+    return itinerary.destination.slug;
+  }
+
   return (
-    destination.hero_image_url ||
-    destination.image_url ||
-    destination.image ||
-    destination.cover_image ||
-    ""
+    itinerary.metadata?.destination_slug ||
+    itinerary.slug ||
+    String(itinerary.id)
   );
 }
 
-function getDestinationBudget(destination: Destination) {
-  const costProfile = destination.cost_profile;
-
-  if (costProfile && typeof costProfile === "object") {
-    const profile = costProfile as { daily_budget_mid?: unknown };
-    const dailyBudgetMid = Number(profile.daily_budget_mid);
-    if (Number.isFinite(dailyBudgetMid)) {
-      return dailyBudgetMid;
-    }
+function getDestinationCountry(itinerary: Itinerary) {
+  if (
+    typeof itinerary.destination === "object" &&
+    itinerary.destination?.country
+  ) {
+    return itinerary.destination.country;
   }
 
-  return Number(destination.cost_from || destination.cost || 0);
+  return itinerary.metadata?.country || itinerary.country || "";
 }
 
-function getDestinationCurrency(destination: Destination) {
-  const costProfile = destination.cost_profile;
+function getTripImage(itinerary: Itinerary) {
+  if (itinerary.metadata?.hero_image_url)
+    return itinerary.metadata.hero_image_url;
+  if (itinerary.metadata?.image_url) return itinerary.metadata.image_url;
 
-  if (costProfile && typeof costProfile === "object") {
-    const profile = costProfile as { currency_code?: unknown };
-    if (typeof profile.currency_code === "string") {
-      return profile.currency_code;
-    }
+  if (
+    typeof itinerary.destination === "object" &&
+    itinerary.destination?.hero_image_url
+  ) {
+    return itinerary.destination.hero_image_url;
   }
 
-  return "BRL";
+  if (
+    typeof itinerary.destination === "object" &&
+    itinerary.destination?.image_url
+  ) {
+    return itinerary.destination.image_url;
+  }
+
+  return itinerary.image_url || itinerary.image || "";
 }
 
-function getDestinationTags(destination: Destination) {
-  if (Array.isArray(destination.metadata?.tags)) {
-    return destination.metadata.tags.filter(
-      (tag): tag is string => typeof tag === "string",
-    );
-  }
+function getTripRating(itinerary: Itinerary) {
+  const reviewAverage = itinerary.review_stats?.average_rating;
+  const destinationAverage =
+    typeof itinerary.destination === "object"
+      ? itinerary.destination?.average_rating
+      : undefined;
 
-  if (Array.isArray(destination.tags)) {
-    return destination.tags.filter((tag): tag is string => typeof tag === "string");
-  }
+  return Number(reviewAverage ?? destinationAverage ?? 0);
+}
 
+function getTripTags(itinerary: Itinerary) {
+  if (Array.isArray(itinerary.metadata?.tags)) return itinerary.metadata.tags;
+  if (Array.isArray(itinerary.tags)) return itinerary.tags;
   return [];
 }
 
-function getDestinationHighlights(destination: Destination) {
-  if (Array.isArray(destination.metadata?.highlights)) {
-    return destination.metadata.highlights.filter(
-      (highlight): highlight is string => typeof highlight === "string",
-    );
-  }
+function getTripHighlights(itinerary: Itinerary) {
+  if (Array.isArray(itinerary.metadata?.highlights))
+    return itinerary.metadata.highlights;
 
-  if (Array.isArray(destination.pois)) {
-    return destination.pois
+  if (Array.isArray(itinerary.days)) {
+    return itinerary.days
+      .flatMap((day) => (Array.isArray(day?.pois) ? day.pois : []))
       .map((poi) => poi?.name)
-      .filter((poi): poi is string => typeof poi === "string")
+      .filter(Boolean)
       .slice(0, 3);
   }
 
   return [];
 }
 
-function mapDestinationToTripRecommendation(
-  destination: Destination,
+function mapItineraryToTripRecommendation(
+  itinerary: Itinerary,
 ): TripRecommendation {
   return {
-    id: Number(destination.id),
-    title: destination.name,
-    destinationName: destination.name,
-    destinationSlug: destination.slug || String(destination.id),
-    country: destination.country || "",
-    summary: destination.summary || "",
-    imageUrl: getDestinationImage(destination),
-    durationDays: Number(destination.duration_days || destination.duration || 3),
-    budgetTotal: getDestinationBudget(destination),
-    currencyCode: getDestinationCurrency(destination),
-    rating: Number(destination.average_rating || destination.rating || 0),
-    bestSeason: destination.best_season || "Ano todo",
-    travelStyle: "Destino",
-    generationStatus: "ready",
-    tags: getDestinationTags(destination),
-    highlights: getDestinationHighlights(destination),
+    id: Number(itinerary.id),
+    title: itinerary.title,
+    destinationName: getDestinationName(itinerary),
+    destinationSlug: getDestinationSlug(itinerary),
+    country: getDestinationCountry(itinerary),
+    summary: itinerary.summary || "",
+    imageUrl: getTripImage(itinerary),
+    durationDays: Number(itinerary.duration_days || 0),
+    budgetTotal: Number(itinerary.budget_total || 0),
+    currencyCode: itinerary.currency_code || "BRL",
+    rating: getTripRating(itinerary),
+    bestSeason:
+      (typeof itinerary.destination === "object" &&
+        itinerary.destination?.best_season) ||
+      itinerary.metadata?.best_season ||
+      "Ano todo",
+    travelStyle: itinerary.metadata?.travel_style || "Roteiro",
+    generationStatus:
+      (itinerary.generation_status as TripRecommendation["generationStatus"]) ||
+      "draft",
+    tags: getTripTags(itinerary),
+    highlights: getTripHighlights(itinerary),
   };
 }
 
-export default function Explorer() {
-  const { destinations, loading, error } = useDestinations();
+export default function Roteiros() {
+  const { itineraries, loading, error } = useItineraries("featured");
   const [sortBy, setSortBy] = useState("recommended");
 
   const trips = useMemo(
-    () => destinations.map(mapDestinationToTripRecommendation),
-    [destinations],
+    () => itineraries.map(mapItineraryToTripRecommendation),
+    [itineraries],
   );
 
   const readyTrips = trips.filter((trip) => trip.generationStatus === "ready");

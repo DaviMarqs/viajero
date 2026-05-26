@@ -155,7 +155,7 @@ export default function TripRecomendation({ trip }: TripRecomendationProps) {
 
         <div className="mt-auto flex flex-col gap-2 sm:flex-row">
           <Link
-            to={`/roteiros/${trip.id}`}
+            to={`/destinos/${trip.id}`}
             className="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700"
           >
             Ver roteiro

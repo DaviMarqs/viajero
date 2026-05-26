@@ -13,10 +13,33 @@ interface DestinationInfoProps {
   destination: Destination
 }
 
+function getCostLabel(destination: Destination) {
+  const costProfile = destination.cost_profile
+
+  if (!costProfile) return null
+
+  if (typeof costProfile === 'string' || typeof costProfile === 'number') {
+    return String(costProfile)
+  }
+
+  if (typeof costProfile === 'object') {
+    const profile = costProfile as { currency_code?: unknown; daily_budget_mid?: unknown }
+    const currencyCode = typeof profile.currency_code === 'string' ? profile.currency_code : ''
+    const dailyBudgetMid = Number(profile.daily_budget_mid)
+
+    if (Number.isFinite(dailyBudgetMid) && dailyBudgetMid > 0) {
+      return `${currencyCode} ${dailyBudgetMid.toFixed(0)}/dia`.trim()
+    }
+  }
+
+  return null
+}
+
 export default function DestinationInfo({ destination }: DestinationInfoProps) {
   const bestSeason = destination.best_season ?? ''
   const season = seasonLabel[bestSeason.toLowerCase()] ?? bestSeason
   const ratingNum = Number(destination.average_rating)
+  const costLabel = getCostLabel(destination)
 
   const items = [
     {
@@ -39,9 +62,9 @@ export default function DestinationInfo({ destination }: DestinationInfoProps) {
       value: `${ratingNum.toFixed(1)} / 5.0`,
       icon: <Star className="size-4" />,
     }] : []),
-    ...(destination.cost_profile ? [{
+    ...(costLabel ? [{
       label: 'Custo',
-      value: destination.cost_profile,
+      value: costLabel,
       icon: <DollarSign className="size-4" />,
     }] : []),
   ]

@@ -14,3 +14,15 @@ export async function fetchItineraries() {
   const payload = await apiFetch<ItinerariesPayload>("/api/itineraries/");
   return unwrapListResponse(payload);
 }
+
+export async function fetchFeaturedItineraries() {
+  const topRatedPayload = await apiFetch<ItinerariesPayload>("/api/itineraries/top-rated/");
+  const topRated = unwrapListResponse(topRatedPayload);
+
+  if (topRated.length > 0) {
+    return topRated;
+  }
+
+  const templatesPayload = await apiFetch<ItinerariesPayload>("/api/itineraries/templates/");
+  return unwrapListResponse(templatesPayload);
+}
