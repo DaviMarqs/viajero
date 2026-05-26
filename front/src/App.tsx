@@ -4,6 +4,7 @@ import {
   Route,
   Outlet,
   useOutletContext,
+  Navigate,
 } from "react-router-dom";
 import { useAuth } from "@/contexts/authContext";
 import Sidebar from "@/components/ui/sidebar";
@@ -22,7 +23,12 @@ import Recommendations from "./pages/recommendations/recommendations";
 import Explorer from "./pages/explorer/explorer";
 
 function PrivateRoute() {
-  const { token, logout, isGuest } = useAuth();
+  const { token, logout, isGuest, isAuthenticated } = useAuth();
+
+  if (!isAuthenticated || !token) {
+    return <Navigate to="/login" replace />;
+  }
+
   return (
     <div className="flex h-screen overflow-hidden">
       <aside className="hidden lg:block w-64 shrink-0 h-full">
@@ -63,6 +69,11 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/explorar" element={<Explorer />} />
           <Route path="/destinos/:id" element={<DestinationPage />} />
+          <Route path="/onboard" element={<Onboard />} />
+          <Route
+            path="/onboard/preferencias"
+            element={<TravelPreferencesOnboarding />}
+          />
           <Route
             path="/roteiros"
             element={<div className="p-8">Roteiros</div>}
@@ -72,12 +83,6 @@ function App() {
 
           <Route path="/recomendacoes" element={<Recommendations />} />
         </Route>
-
-        <Route path="/onboard" element={<Onboard />} />
-        <Route
-          path="/onboard/preferencias"
-          element={<TravelPreferencesOnboarding />}
-        />
       </Routes>
     </BrowserRouter>
   );

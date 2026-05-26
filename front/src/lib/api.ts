@@ -1,4 +1,5 @@
 const DEFAULT_API_BASE_URL = "http://localhost:8000";
+const ACCESS_TOKEN_KEY = "viajero.access_token";
 
 export class ApiError extends Error {
   status: number;
@@ -52,12 +53,23 @@ export async function apiFetch<T>(
   init: RequestInit = {},
   params?: Record<string, string | number | boolean | null | undefined>,
 ): Promise<T> {
+  const token = typeof window !== "undefined" ? window.localStorage.getItem(ACCESS_TOKEN_KEY) : null;
+  const headers = new Headers(init.headers || {});
+
+  if (!headers.has("Accept")) {
+    headers.set("Accept", "application/json");
+  }
+
+  if (init.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
   const response = await fetch(buildUrl(path, params), {
-    headers: {
-      Accept: "application/json",
-      ...(init.body ? { "Content-Type": "application/json" } : {}),
-      ...(init.headers || {}),
-    },
+    headers,
     ...init,
   });
 
@@ -91,7 +103,13 @@ export async function apiRequest<T>(
   return apiFetch<T>(path, init, params);
 }
 
-export function unwrapListResponse<T>(payload: T[] | { results?: T[]; data?: T[]; items?: T[] } | null | undefined) {
+export function unwrapListResponse<T>(
+  payload:
+    | T[]
+    | { results?: T[]; data?: T[] | { results?: T[]; items?: T[] }; items?: T[] }
+    | null
+    | undefined,
+) {
   if (Array.isArray(payload)) {
     return payload;
   }
@@ -106,6 +124,16 @@ export function unwrapListResponse<T>(payload: T[] | { results?: T[]; data?: T[]
 
   if ("data" in payload && Array.isArray(payload.data)) {
     return payload.data;
+  }
+
+  if ("data" in payload && payload.data && typeof payload.data === "object") {
+    if ("results" in payload.data && Array.isArray(payload.data.results)) {
+      return payload.data.results;
+    }
+
+    if ("items" in payload.data && Array.isArray(payload.data.items)) {
+      return payload.data.items;
+    }
   }
 
   if ("items" in payload && Array.isArray(payload.items)) {

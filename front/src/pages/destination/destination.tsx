@@ -23,7 +23,8 @@ export default function DestinationPage() {
 
   if (loading) return <div className="px-6 py-6 lg:px-8">Carregando...</div>;
   if (error) return <div className="px-6 py-6 lg:px-8">{error}</div>;
-  if (!destination) return <div className="px-6 py-6 lg:px-8">Destino nÃ£o encontrado</div>;
+  if (!destination)
+    return <div className="px-6 py-6 lg:px-8">Destino nÃ£o encontrado</div>;
 
   return (
     <section className="px-6 py-6 lg:px-8">
