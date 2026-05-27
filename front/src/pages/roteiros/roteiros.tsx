@@ -212,7 +212,7 @@ export default function Roteiros() {
                 Roteiros em destaque
               </h2>
               <p className="text-sm text-neutral-600">
-                SugestÃµes carregadas da API para validar layout, filtros e
+                Sugestões carregadas da API para validar layout, filtros e
                 navegação.
               </p>
             </div>

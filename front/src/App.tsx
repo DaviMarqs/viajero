@@ -21,7 +21,7 @@ import ProfilePage from "./pages/user-profile/user";
 import Recommendations from "./pages/recommendations/recommendations";
 import Explorer from "./pages/explorer/explorer";
 import Roteiros from "./pages/roteiros/roteiros";
-import Sidebar from "./components/ui/sidebar";
+import Sidebar from "./components/ui/Sidebar";
 
 function PrivateRoute() {
   const { token, logout, isGuest, isAuthenticated } = useAuth();
@@ -72,7 +72,7 @@ function App() {
           <Route path="/destinos/:id" element={<DestinationPage />} />
           <Route path="/onboard" element={<Onboard />} />
           <Route
-            path="/onboard/preferências"
+            path="/onboard/preferencias"
             element={<TravelPreferencesOnboarding />}
           />
           <Route path="/roteiros" element={<Roteiros />} />
