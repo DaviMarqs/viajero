@@ -168,25 +168,40 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
   }, [isLast]);
 
   const buildProfilePayload = useCallback(() => {
-    const companionship = getCardValues("companhia")[0] ?? "";
+    const companionship = getCardValues("companhia")[0];
     const additionalPreferences = getCardValues("adicionais");
+    const userTypedNotes = fieldValues.notes ? String(fieldValues.notes) : "";
+
+    const notesPayload: Record<string, any> = {};
+
+    if (userTypedNotes) {
+      notesPayload.text = userTypedNotes;
+    }
+    if (companionship) {
+      notesPayload.companionship = companionship;
+    }
+    if (additionalPreferences.length > 0) {
+      notesPayload.additional_preferences = additionalPreferences;
+    }
+
+    const finalNotes = Object.keys(notesPayload).length > 0 
+      ? JSON.stringify(notesPayload) 
+      : "";
 
     return {
-      travel_style: getCardValues("experiencia")[0] ?? "",
+      travel_style: getCardValues("estilo")[0] ?? "",
       pace: getCardValues("ritmo")[0] ?? "",
       comfort_level: getCardValues("conforto")[0] ?? "",
-      social_energy: 5,
-      adventure_level: 5,
-      food_focus: 5,
-      cultural_interest: 5,
-      nature_interest: 5,
-      nightlife_interest: 5,
-      notes: JSON.stringify({
-        companionship,
-        additional_preferences: additionalPreferences,
-      }),
+            social_energy: Number(fieldValues.social_energy) || 5,
+      adventure_level: Number(fieldValues.adventure_level) || 5,
+      food_focus: Number(fieldValues.food_focus) || 5,
+      cultural_interest: Number(fieldValues.cultural_interest) || 5,
+      nature_interest: Number(fieldValues.nature_interest) || 5,
+      nightlife_interest: Number(fieldValues.nightlife_interest) || 5,
+      
+      notes: finalNotes,
     };
-  }, [getCardValues]);
+  }, [getCardValues, fieldValues]);
 
   const buildTravelPayload = useCallback(() => {
     const budget = toNumber(fieldValues.budget);

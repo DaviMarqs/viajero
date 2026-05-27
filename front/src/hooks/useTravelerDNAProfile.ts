@@ -71,34 +71,20 @@ export function useTravelerDNAProfile(token?: string) {
       setSaving(true);
       setSaveError(null);
 
-      const safeInput = {
-        ...input,
-        travel_style: input.travel_style || "A definir",
-        pace: input.pace || "A definir",
-        comfort_level: input.comfort_level || "A definir",
-        social_energy: Number(input.social_energy || 5),
-        adventure_level: Number(input.adventure_level || 5),
-        food_focus: Number(input.food_focus || 5),
-        cultural_interest: Number(input.cultural_interest || 5),
-        nature_interest: Number(input.nature_interest || 5),
-        nightlife_interest: Number(input.nightlife_interest || 5),
-        notes: input.notes || "",
-      };
-
       if (!token) {
         const nextProfile = {
           id: 0,
           user: 0,
-          travel_style: safeInput.travel_style,
-          pace: safeInput.pace,
-          comfort_level: safeInput.comfort_level,
-          social_energy: safeInput.social_energy,
-          adventure_level: safeInput.adventure_level,
-          food_focus: safeInput.food_focus,
-          cultural_interest: safeInput.cultural_interest,
-          nature_interest: safeInput.nature_interest,
-          nightlife_interest: safeInput.nightlife_interest,
-          notes: safeInput.notes,
+          travel_style: input.travel_style,
+          pace: input.pace,
+          comfort_level: input.comfort_level,
+          social_energy: input.social_energy,
+          adventure_level: input.adventure_level,
+          food_focus: input.food_focus,
+          cultural_interest: input.cultural_interest,
+          nature_interest: input.nature_interest,
+          nightlife_interest: input.nightlife_interest,
+          notes: input.notes,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         } as TravelerDNAProfile;
@@ -119,7 +105,7 @@ export function useTravelerDNAProfile(token?: string) {
           "/api/traveler-dna/me/",
           {
             method: "PATCH",
-            body: JSON.stringify(safeInput),
+            body: JSON.stringify(input),
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,

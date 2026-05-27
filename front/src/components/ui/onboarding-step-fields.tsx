@@ -151,7 +151,6 @@ export default function OnboardingStepFields({
           key={field.key}
           label={field.label}
           hint={field.hint}
-          required={field.required}
           placeholder={field.placeholder}
           value={fieldValues[field.key] ?? ""}
           onChange={(value: string) => onSetField(field.key, value)}

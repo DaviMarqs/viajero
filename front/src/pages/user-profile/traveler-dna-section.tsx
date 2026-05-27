@@ -92,6 +92,20 @@ interface Props {
   token: string;
 }
 
+function getSafeNotesText(rawNotes: string | null | undefined): string {
+  if (!rawNotes) return "";
+  
+  try {
+    const parsed = JSON.parse(rawNotes);
+    if (parsed && typeof parsed === "object" && typeof parsed.text === "string") {
+      return parsed.text;
+    }
+    return "";
+  } catch {
+    return rawNotes;
+  }
+}
+
 export function TravelerDNASection({ token }: Props) {
   const { profile, loading, error, saving, saveError, save } = useTravelerDNAProfile(token);
 
@@ -111,8 +125,8 @@ export function TravelerDNASection({ token }: Props) {
       cultural_interest: profile.cultural_interest ?? 5,
       nature_interest: profile.nature_interest ?? 5,
       nightlife_interest: profile.nightlife_interest ?? 5,
-      notes: profile.notes ?? "",
-    });
+      notes: getSafeNotesText(profile.notes),   
+     });
   }, [profile]);
 
   async function handleSave() {
@@ -192,9 +206,9 @@ export function TravelerDNASection({ token }: Props) {
               />
             ))}
           </div>
-          {profile?.notes && (
+          {profile?.notes && getSafeNotesText(profile.notes) && (
             <ReadOnly icon={<StickyNote className="size-3.5" />} label="Notas">
-              {profile.notes}
+              {getSafeNotesText(profile.notes)}
             </ReadOnly>
           )}
         </div>
