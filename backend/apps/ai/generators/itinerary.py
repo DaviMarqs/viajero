@@ -104,7 +104,7 @@ class GeminiItineraryGenerator(BaseItineraryGenerator):
         pois: list[PointOfInterest],
     ) -> dict[str, Any]:
         ranked = sorted(pois, key=lambda p: (-(p.rating or 0), p.name))[:30]
-        return {
+        context: dict[str, Any] = {
             "destination": {
                 "id": itinerary.destination_id,
                 "name": itinerary.destination.name,
@@ -115,13 +115,6 @@ class GeminiItineraryGenerator(BaseItineraryGenerator):
             "duration_days": itinerary.duration_days,
             "currency_code": itinerary.currency_code,
             "budget_total": str(itinerary.budget_total),
-            "profile": {
-                "travel_style": getattr(profile, "travel_style", "flexivel"),
-                "pace": getattr(profile, "pace", "balanced"),
-            } if profile else None,
-            "preferences": {
-                "currency_code": getattr(preferences, "currency_code", itinerary.currency_code),
-            } if preferences else None,
             "pois": [
                 {
                     "id": p.id,
@@ -132,16 +125,44 @@ class GeminiItineraryGenerator(BaseItineraryGenerator):
                 for p in ranked
             ],
         }
+        if profile:
+            context["profile"] = {
+                "travel_style": getattr(profile, "travel_style", "flexivel"),
+                "pace": getattr(profile, "pace", "balanced"),
+            }
+        if preferences:
+            context["preferences"] = {
+                "budget_min": str(preferences.budget_min),
+                "budget_max": str(preferences.budget_max),
+                "currency_code": preferences.currency_code,
+                "preferred_trip_length_days": preferences.preferred_trip_length_days,
+                "hotel_level": preferences.hotel_level or None,
+                "transportation_style": preferences.transportation_style or None,
+                "dietary_preferences": list(preferences.dietary_preferences or []),
+                "accessibility_needs": list(preferences.accessibility_needs or []),
+                "interests": list(preferences.interests or []),
+            }
+        return context
 
     def _build_prompt(self, context: dict[str, Any], prompt_template) -> str:
+        prefs_hint = ""
+        if context.get("preferences"):
+            p = context["preferences"]
+            prefs_hint = (
+                f" Orcamento entre {p['budget_min']} e {p['budget_max']} {p['currency_code']}."
+                f" Interesses: {', '.join(p['interests']) or 'nao informados'}."
+                f" Estilo de hospedagem: {p.get('hotel_level') or 'nao informado'}."
+                f" Restricoes alimentares: {', '.join(p['dietary_preferences']) or 'nenhuma'}."
+            )
         intro = (
             "Voce e um planejador de viagens. "
-            f"Crie um roteiro de {context['duration_days']} dias para "
+            f"Crie um roteiro de EXATAMENTE {context['duration_days']} dias para "
             f"{context['destination']['name']} ({context['destination']['country']}). "
-            f"Orcamento total: {context['budget_total']} {context['currency_code']}. "
-            "Prefira eventos que referenciem POIs existentes via 'poi_id'. "
+            f"Orcamento total: {context['budget_total']} {context['currency_code']}."
+            f"{prefs_hint}"
+            " Prefira eventos que referenciem POIs existentes via 'poi_id'. "
             "Voce pode incluir eventos extras (refeicoes, transporte) com poi_id=null. "
-            "Cada dia deve ter entre 2 e 5 eventos. "
+            "Cada dia deve ter entre 3 e 6 eventos. "
             "estimated_cost de cada evento e do roteiro inteiro como string decimal."
         )
         if prompt_template and getattr(prompt_template, "template", ""):

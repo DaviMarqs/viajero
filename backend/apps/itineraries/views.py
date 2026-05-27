@@ -38,7 +38,24 @@ class ItineraryViewSet(StandardModelViewSet):
         return super().get_permissions()
 
     def perform_create(self, serializer):
-        itinerary = serializer.save(user=self.request.user)
+        from apps.profiles.models import UserTripPreference
+
+        prefs = UserTripPreference.objects.filter(user=self.request.user).first()
+        extra = {}
+        if prefs:
+            if not serializer.validated_data.get("duration_days"):
+                extra["duration_days"] = prefs.preferred_trip_length_days
+            if not serializer.validated_data.get("budget_total"):
+                # Usa media de budget_min/budget_max como ponto de partida
+                extra["budget_total"] = (prefs.budget_min + prefs.budget_max) / 2
+            if not serializer.validated_data.get("currency_code"):
+                extra["currency_code"] = prefs.currency_code
+        if not serializer.validated_data.get("duration_days") and "duration_days" not in extra:
+            extra["duration_days"] = 5  # fallback final
+        if not serializer.validated_data.get("title"):
+            destination = serializer.validated_data.get("destination")
+            extra["title"] = f"Roteiro {destination.name}" if destination else "Novo roteiro"
+        itinerary = serializer.save(user=self.request.user, **extra)
         audit("itinerary.created", actor=self.request.user, target=itinerary)
 
     @action(detail=True, methods=["post"])

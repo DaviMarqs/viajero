@@ -24,6 +24,11 @@ class ItinerarySerializer(serializers.ModelSerializer):
         model = Itinerary
         fields = "__all__"
         read_only_fields = ("user", "generation_status", "generation_context", "metadata")
+        extra_kwargs = {
+            "duration_days": {"required": False},
+            "budget_total": {"required": False},
+            "title": {"required": False},
+        }
 
     def validate_duration_days(self, value):
         if value < 1 or value > 60:

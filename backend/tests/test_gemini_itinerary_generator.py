@@ -202,3 +202,35 @@ def test_run_job_persists_valid_poi_id_in_event():
     itinerary.refresh_from_db()
     assert itinerary.generation_status == "ready"
     assert itinerary.days.count() == 1
+
+
+def test_build_context_includes_preferences():
+    """Gemini context inclui budget_min/max, interests, hotel_level, etc."""
+    from apps.profiles.models import UserTripPreference
+
+    itinerary, destination = _make_itinerary()
+    poi = PointOfInterest.objects.create(
+        destination=destination,
+        slug="jardim-botanico",
+        name="Jardim Botanico",
+        poi_type="attraction",
+    )
+    prefs = UserTripPreference.objects.create(
+        user=itinerary.user,
+        budget_min=Decimal("500"),
+        budget_max=Decimal("2500"),
+        currency_code="BRL",
+        preferred_trip_length_days=7,
+        hotel_level="boutique",
+        interests=["cultura", "gastronomia"],
+        dietary_preferences=["vegetarian"],
+    )
+
+    gen = GeminiItineraryGenerator()
+    ctx = gen._build_context(itinerary, profile=None, preferences=prefs, pois=[poi])
+    assert Decimal(ctx["preferences"]["budget_min"]) == Decimal("500")
+    assert Decimal(ctx["preferences"]["budget_max"]) == Decimal("2500")
+    assert ctx["preferences"]["preferred_trip_length_days"] == 7
+    assert ctx["preferences"]["interests"] == ["cultura", "gastronomia"]
+    assert ctx["preferences"]["dietary_preferences"] == ["vegetarian"]
+    assert ctx["preferences"]["hotel_level"] == "boutique"
