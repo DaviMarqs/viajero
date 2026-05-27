@@ -67,6 +67,13 @@ def get_generator() -> BaseItineraryGenerator:
     if provider == "gemini" and settings.GEMINI_API_KEY:
         from apps.ai.generators.itinerary import GeminiItineraryGenerator
         return GeminiItineraryGenerator()
+    if provider == "groq" and settings.GROQ_API_KEY:
+        from apps.ai.generators.itinerary_groq import GroqItineraryGenerator
+        return GroqItineraryGenerator()
+    # Auto-fallback: se gemini setado mas sem key, tenta groq
+    if provider == "gemini" and not settings.GEMINI_API_KEY and settings.GROQ_API_KEY:
+        from apps.ai.generators.itinerary_groq import GroqItineraryGenerator
+        return GroqItineraryGenerator()
     return MockItineraryGenerator()
 
 

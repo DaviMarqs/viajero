@@ -1,0 +1,195 @@
+"""Helpers compartilhados entre geradores de roteiro (Gemini, Groq, etc)."""
+from __future__ import annotations
+
+import json
+import logging
+from typing import Any
+
+from apps.destinations.models import PointOfInterest
+from apps.itineraries.models import Itinerary
+from apps.profiles.models import TravelerDNAProfile, UserTripPreference
+
+
+logger = logging.getLogger(__name__)
+
+
+ITINERARY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "title": {"type": "string"},
+        "summary": {"type": "string"},
+        "estimated_cost": {"type": "string"},
+        "currency_code": {"type": "string"},
+        "days": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "summary": {"type": "string"},
+                    "events": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "poi_id": {"type": ["integer", "null"]},
+                                "title": {"type": "string"},
+                                "description": {"type": "string"},
+                                "start_time": {"type": "string"},
+                                "end_time": {"type": "string"},
+                                "estimated_cost": {"type": "string"},
+                                "order_index": {"type": "integer"},
+                            },
+                            "required": ["title", "description", "order_index"],
+                        },
+                    },
+                },
+                "required": ["title", "events"],
+            },
+        },
+    },
+    "required": ["title", "days"],
+}
+
+
+def build_context(
+    itinerary: Itinerary,
+    profile: TravelerDNAProfile | None,
+    preferences: UserTripPreference | None,
+    pois: list[PointOfInterest],
+) -> dict[str, Any]:
+    ranked = sorted(pois, key=lambda p: (-(p.rating or 0), p.name))[:30]
+    context: dict[str, Any] = {
+        "destination": {
+            "id": itinerary.destination_id,
+            "name": itinerary.destination.name,
+            "country": itinerary.destination.country,
+            "city": itinerary.destination.city,
+            "summary": itinerary.destination.summary[:500],
+        },
+        "duration_days": itinerary.duration_days,
+        "currency_code": itinerary.currency_code,
+        "budget_total": str(itinerary.budget_total),
+        "pois": [
+            {"id": p.id, "name": p.name, "type": p.poi_type, "rating": str(p.rating)}
+            for p in ranked
+        ],
+    }
+    if profile:
+        context["profile"] = {
+            "travel_style": getattr(profile, "travel_style", "flexivel"),
+            "pace": getattr(profile, "pace", "balanced"),
+        }
+    if preferences:
+        context["preferences"] = {
+            "budget_min": str(preferences.budget_min),
+            "budget_max": str(preferences.budget_max),
+            "currency_code": preferences.currency_code,
+            "preferred_trip_length_days": preferences.preferred_trip_length_days,
+            "hotel_level": preferences.hotel_level or None,
+            "transportation_style": preferences.transportation_style or None,
+            "dietary_preferences": list(preferences.dietary_preferences or []),
+            "accessibility_needs": list(preferences.accessibility_needs or []),
+            "interests": list(preferences.interests or []),
+        }
+    return context
+
+
+def build_prompt(context: dict[str, Any], prompt_template) -> str:
+    prefs_hint = ""
+    if context.get("preferences"):
+        p = context["preferences"]
+        prefs_hint = (
+            f" Orcamento entre {p['budget_min']} e {p['budget_max']} {p['currency_code']}."
+            f" Interesses: {', '.join(p['interests']) or 'nao informados'}."
+            f" Estilo de hospedagem: {p.get('hotel_level') or 'nao informado'}."
+            f" Restricoes alimentares: {', '.join(p['dietary_preferences']) or 'nenhuma'}."
+        )
+    intro = (
+        "Voce e um planejador de viagens. "
+        f"Crie um roteiro de EXATAMENTE {context['duration_days']} dias para "
+        f"{context['destination']['name']} ({context['destination']['country']}). "
+        f"Orcamento total: {context['budget_total']} {context['currency_code']}."
+        f"{prefs_hint}"
+        " Prefira eventos que referenciem POIs existentes via 'poi_id'. "
+        "Voce pode incluir eventos extras (refeicoes, transporte) com poi_id=null. "
+        "Cada dia deve ter entre 3 e 6 eventos. "
+        "estimated_cost de cada evento e do roteiro inteiro como string decimal."
+    )
+    if prompt_template and getattr(prompt_template, "template", ""):
+        intro = f"{intro}\n\nTemplate adicional:\n{prompt_template.template}"
+    return f"{intro}\n\nContexto:\n{json.dumps(context, ensure_ascii=False)}"
+
+
+def reinforce_prompt(prompt: str) -> str:
+    return (
+        f"{prompt}\n\n"
+        "IMPORTANTE: Sua resposta anterior nao era JSON valido. "
+        "Responda APENAS com JSON, sem texto antes ou depois."
+    )
+
+
+def normalize_payload(
+    payload: dict[str, Any],
+    itinerary: Itinerary,
+    pois: list[PointOfInterest],
+) -> dict[str, Any]:
+    valid_poi_ids = set(
+        PointOfInterest.objects.filter(
+            destination=itinerary.destination,
+            id__in=_collect_poi_ids(payload),
+        ).values_list("id", flat=True)
+    )
+
+    days_out = []
+    for day in payload.get("days") or []:
+        events_out = []
+        for event in day.get("events") or []:
+            poi_id = event.get("poi_id")
+            if poi_id is not None and poi_id not in valid_poi_ids:
+                logger.warning(
+                    "Generator referenciou poi_id=%s invalido para destino=%s; descartando FK",
+                    poi_id,
+                    itinerary.destination_id,
+                )
+                poi_id = None
+            events_out.append(
+                {
+                    "poi_id": poi_id,
+                    "title": str(event.get("title") or "")[:160],
+                    "description": str(event.get("description") or "")[:4000],
+                    "estimated_cost": str(event.get("estimated_cost") or "0"),
+                    "order_index": int(event.get("order_index") or 0),
+                }
+            )
+        days_out.append(
+            {
+                "title": str(day.get("title") or "")[:120],
+                "summary": str(day.get("summary") or "")[:4000],
+                "events": events_out,
+            }
+        )
+
+    return {
+        "title": str(payload.get("title") or itinerary.title)[:160],
+        "summary": str(payload.get("summary") or ""),
+        "estimated_cost": str(payload.get("estimated_cost") or "0"),
+        "currency_code": str(payload.get("currency_code") or itinerary.currency_code),
+        "days": days_out,
+        "metadata": {
+            "generator": "unknown",  # overridden by caller
+            "model": "",  # overridden by caller
+            "poi_count": len(pois),
+        },
+    }
+
+
+def _collect_poi_ids(payload: dict[str, Any]) -> list[int]:
+    ids: list[int] = []
+    for day in payload.get("days") or []:
+        for event in day.get("events") or []:
+            poi_id = event.get("poi_id")
+            if isinstance(poi_id, int):
+                ids.append(poi_id)
+    return ids
