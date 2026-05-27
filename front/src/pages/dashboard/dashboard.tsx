@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useAuth } from "@/contexts/authContext";
 import { useItineraries } from "@/hooks/useItineraries";
 import { Button } from "@/components/ui/button";
@@ -16,94 +15,12 @@ function getGreeting() {
 }
 
 export function Dashboard() {
-  const { user, token, isGuest } = useAuth();
+  const { user } = useAuth();
   const { itineraries, loading } = useItineraries();
   const navigate = useNavigate();
 
-  const [checkingOnboard, setCheckingOnboard] = useState(false);
-
   async function handleCreateItinerary() {
-    if (!token || isGuest) {
-      navigate("/explorar");
-      return;
-    }
-
-    try {
-      setCheckingOnboard(true);
-
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      };
-
-      const [dnaResponse, preferencesResponse] = await Promise.all([
-        fetch("http://127.0.0.1:8000/api/traveler-dna/", {
-          method: "GET",
-          headers,
-        }),
-
-        fetch("http://127.0.0.1:8000/api/trip-preferences/", {
-          method: "GET",
-          headers,
-        }),
-      ]);
-
-      if (!dnaResponse.ok || !preferencesResponse.ok) {
-        throw new Error("Erro ao validar onboarding");
-      }
-
-      console.log("Respostas do onboard:", {
-        dnaStatus: dnaResponse.status,
-        preferencesStatus: preferencesResponse.status,
-      });
-
-      const dnaData = await dnaResponse.json();
-      const preferencesData = await preferencesResponse.json();
-
-      console.log("Dados do onboard:", {
-        dnaData,
-        preferencesData,
-      });
-
-      const dnaList = dnaData?.data?.results || [];
-
-      const preferencesList = preferencesData?.data?.results || [];
-
-      const hasTravelerDNA = dnaList.length > 0;
-
-      const hasTripPreferences = preferencesList.length > 0;
-
-      /**
-       * Decide rota
-       */
-      if (!hasTravelerDNA) {
-        navigate("/onboard");
-        console.log("Usuário sem DNA, redirecionando para onboarding de DNA");
-        return;
-      }
-
-      if (!hasTripPreferences) {
-        navigate("/onboard");
-        console.log(
-          "Usuário sem preferências, redirecionando para onboarding de preferências",
-        );
-        return;
-      }
-
-      /**
-       * Usuário já possui tudo
-       */
-
-      console.log(
-        "Usuário já completou onboarding, redirecionando para explorar",
-      );
-
-      navigate("/explorar");
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setCheckingOnboard(false);
-    }
+    navigate("/onboard/preferencias");
   }
 
   if (!user) return <p>Carregando...</p>;
@@ -142,11 +59,8 @@ export function Dashboard() {
             <Button
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-5 rounded-lg transition-colors"
               onClick={handleCreateItinerary}
-              disabled={checkingOnboard}
             >
-              {checkingOnboard
-                ? "Verificando perfil..."
-                : "Criar roteiro do zero"}
+              Criar roteiro do zero
             </Button>
 
             <Button

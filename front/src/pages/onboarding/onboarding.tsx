@@ -11,12 +11,7 @@ import { useTravelerDNAProfile } from "@/hooks/useTravelerDNAProfile";
 import { useTripPreferences } from "@/hooks/useTripPreferences";
 import { useAuth } from "@/contexts/authContext";
 import { ONBOARDING_STEPS } from "./onboarding.data";
-import type { TravelerDNAProfile, UserTripPreference } from "@/lib/profiles";
-
-interface TravelerDNANotes {
-  companionship?: string;
-  additional_preferences?: string[];
-}
+import type { TravelerDNAProfile } from "@/lib/profiles";
 
 function getCardIndexes(stepKey: string, values: string[]) {
   const step = ONBOARDING_STEPS.find((item) => item.key === stepKey);
@@ -29,73 +24,41 @@ function getCardIndexes(stepKey: string, values: string[]) {
     .map((card) => card.index);
 }
 
-function formatMoneyToInput(value: string | number) {
-  const normalized = Number.parseFloat(String(value));
-  if (!Number.isFinite(normalized)) return "";
-  return String(Math.round(normalized * 100));
-}
-
-function parseTravelerNotes(raw: string): TravelerDNANotes {
-  try {
-    const parsed = JSON.parse(raw) as TravelerDNANotes;
-    return typeof parsed === "object" && parsed ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
 function buildSnapshotFromExistingData(
   profile: TravelerDNAProfile | null,
-  preferences: UserTripPreference | null,
 ): OnboardingSnapshot {
-  const parsedNotes = profile?.notes ? parseTravelerNotes(profile.notes) : {};
-  const selectedExperiences = Array.isArray(
-    preferences?.metadata?.selected_experiences,
-  )
-    ? preferences?.metadata?.selected_experiences
-    : [];
-  const additionalPreferences = Array.isArray(
-    preferences?.metadata?.additional_preferences,
-  )
-    ? preferences?.metadata?.additional_preferences
-    : (parsedNotes.additional_preferences ?? []);
-  const restrictions =
-    preferences?.metadata?.restrictions ||
-    (preferences?.dietary_preferences?.[0] ??
-      preferences?.accessibility_needs?.[0] ??
-      "none");
-
   return {
     fieldValues: {
-      budget: preferences ? formatMoneyToInput(preferences.budget_max) : "",
-      trip_length: preferences
-        ? String(preferences.preferred_trip_length_days)
-        : "",
-      restrictions: typeof restrictions === "string" ? restrictions : "none",
-      notes:
-        typeof preferences?.metadata?.notes === "string"
-          ? preferences.metadata.notes
-          : "",
+      travel_style: profile?.travel_style ?? "",
+      pace: profile?.pace ?? "",
+      comfort_level: profile?.comfort_level ?? "",
+      social_energy: profile?.social_energy
+        ? String(profile.social_energy)
+        : "5",
+      adventure_level: profile?.adventure_level
+        ? String(profile.adventure_level)
+        : "5",
+      food_focus: profile?.food_focus ? String(profile.food_focus) : "5",
+      cultural_interest: profile?.cultural_interest
+        ? String(profile.cultural_interest)
+        : "5",
+      nature_interest: profile?.nature_interest
+        ? String(profile.nature_interest)
+        : "5",
+      nightlife_interest: profile?.nightlife_interest
+        ? String(profile.nightlife_interest)
+        : "5",
+      notes: profile?.notes ?? "",
     },
-    tagValues: {
-      destination_types: Array.isArray(preferences?.metadata?.destination_types)
-        ? preferences?.metadata?.destination_types
-        : [],
-      climate: Array.isArray(preferences?.metadata?.climate)
-        ? preferences?.metadata?.climate
-        : [],
-      interests: preferences?.interests ?? [],
-    },
+    tagValues: {},
     cardSelections: {
+      estilo: profile?.travel_style
+        ? getCardIndexes("estilo", [profile.travel_style])
+        : [],
       ritmo: profile?.pace ? getCardIndexes("ritmo", [profile.pace]) : [],
-      experiencia: getCardIndexes("experiencia", selectedExperiences),
       conforto: profile?.comfort_level
         ? getCardIndexes("conforto", [profile.comfort_level])
         : [],
-      companhia: parsedNotes.companionship
-        ? getCardIndexes("companhia", [parsedNotes.companionship])
-        : [],
-      adicionais: getCardIndexes("adicionais", additionalPreferences),
     },
   };
 }
@@ -122,7 +85,6 @@ export default function Onboarding() {
     next,
     skip,
     buildProfilePayload,
-    buildTravelPayload,
   } = useOnboarding(ONBOARDING_STEPS);
   const dna = useTravelerDNAProfile(token);
   const tripPreferences = useTripPreferences(token);
@@ -131,9 +93,7 @@ export default function Onboarding() {
     if (hydratedRef.current) return;
     if (dna.loading || tripPreferences.loading) return;
 
-    setSnapshot(
-      buildSnapshotFromExistingData(dna.profile, tripPreferences.preferences),
-    );
+    setSnapshot(buildSnapshotFromExistingData(dna.profile));
     hydratedRef.current = true;
   }, [
     dna.loading,
@@ -143,42 +103,24 @@ export default function Onboarding() {
     tripPreferences.preferences,
   ]);
 
-  const loading = dna.loading || tripPreferences.loading;
-  const saving = dna.saving || tripPreferences.saving;
-  const loadError = dna.error || tripPreferences.error;
-  const saveError = dna.saveError || tripPreferences.saveError;
+  const loading = dna.loading;
+  const saving = dna.saving;
+  const loadError = dna.error;
+  const saveError = dna.saveError;
   const canAdvance = hasSelection();
 
   async function handleFinish() {
-    const travelPayload = buildTravelPayload();
-
-    if (
-      !travelPayload.budget_max ||
-      !travelPayload.preferred_trip_length_days
-    ) {
-      setSubmitError(
-        "Preencha orcamento e duracao da viagem antes de concluir.",
-      );
-      return;
-    }
-
-    if (travelPayload.budget_min > travelPayload.budget_max) {
-      setSubmitError("O valor minimo nao pode ser maior que o valor maximo.");
-      return;
-    }
-
     setSubmitError(null);
+
     try {
-      await Promise.all([
-        dna.save(buildProfilePayload()),
-        tripPreferences.save(travelPayload),
-      ]);
+      await dna.save(buildProfilePayload());
       next();
     } catch (error) {
       if (error instanceof Error) {
         setSubmitError(error.message);
         return;
       }
+
       setSubmitError("Nao foi possivel salvar suas respostas agora.");
     }
   }

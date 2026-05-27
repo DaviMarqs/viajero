@@ -7,14 +7,632 @@
       "name": "Lisbon",
       "country": "Portugal",
       "city": "Lisbon",
-      "summary": "Coastal capital with neighborhoods, viewpoints, food, and rail access.",
-      "hero_image_url": "",
+      "summary": "Capital costeira com miradouros, bairros historicos, gastronomia e acesso facil por trem.",
+      "hero_image_url": "https://images.unsplash.com/photo-1555881400-74d7acaacd8b?auto=format&fit=crop&w=1600&q=80",
       "timezone": "Europe/Lisbon",
-      "best_season": "Spring and Fall",
+      "best_season": "Primavera e outono",
       "average_rating": "4.70",
-      "metadata": {},
+      "metadata": {
+        "seed": true,
+        "recommended_for": [
+          "listagem",
+          "detalhe",
+          "roteiros"
+        ],
+        "image_source": "https://unsplash.com/s/photos/lisbon-portugal"
+      },
       "created_at": "2026-04-29T12:00:00Z",
-      "updated_at": "2026-04-29T12:00:00Z"
+      "updated_at": "2026-04-29T12:00:00Z",
+      "created_by": null
+    }
+  },
+  {
+    "model": "destinations.destination",
+    "pk": 2,
+    "fields": {
+      "slug": "tokyo",
+      "name": "Tokyo",
+      "country": "Japan",
+      "city": "Tokyo",
+      "summary": "Metropole com templos, gastronomia, tecnologia, bairros tematicos e transporte eficiente.",
+      "hero_image_url": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1600&q=80",
+      "timezone": "Asia/Tokyo",
+      "best_season": "Primavera e outono",
+      "average_rating": "4.90",
+      "metadata": {
+        "seed": true,
+        "recommended_for": [
+          "listagem",
+          "detalhe",
+          "roteiros"
+        ],
+        "image_source": "https://unsplash.com/s/photos/tokyo-japan"
+      },
+      "created_at": "2026-04-29T12:00:00Z",
+      "updated_at": "2026-04-29T12:00:00Z",
+      "created_by": null
+    }
+  },
+  {
+    "model": "destinations.destination",
+    "pk": 3,
+    "fields": {
+      "slug": "rio-de-janeiro",
+      "name": "Rio de Janeiro",
+      "country": "Brazil",
+      "city": "Rio de Janeiro",
+      "summary": "Praias, montanhas, musica, mirantes e experiencias ao ar livre.",
+      "hero_image_url": "https://images.unsplash.com/photo-1483729558449-99ef09a8c325?auto=format&fit=crop&w=1600&q=80",
+      "timezone": "America/Sao_Paulo",
+      "best_season": "Maio a setembro",
+      "average_rating": "4.60",
+      "metadata": {
+        "seed": true,
+        "recommended_for": [
+          "listagem",
+          "detalhe",
+          "roteiros"
+        ],
+        "image_source": "https://unsplash.com/s/photos/rio-de-janeiro"
+      },
+      "created_at": "2026-04-29T12:00:00Z",
+      "updated_at": "2026-04-29T12:00:00Z",
+      "created_by": null
+    }
+  },
+  {
+    "model": "destinations.destination",
+    "pk": 4,
+    "fields": {
+      "slug": "buenos-aires",
+      "name": "Buenos Aires",
+      "country": "Argentina",
+      "city": "Buenos Aires",
+      "summary": "Arquitetura europeia, cafes, tango, parques e restaurantes tradicionais.",
+      "hero_image_url": "https://images.unsplash.com/photo-1589909202802-8f4aadce1849?auto=format&fit=crop&w=1600&q=80",
+      "timezone": "America/Argentina/Buenos_Aires",
+      "best_season": "Março a maio",
+      "average_rating": "4.50",
+      "metadata": {
+        "seed": true,
+        "recommended_for": [
+          "listagem",
+          "detalhe",
+          "roteiros"
+        ],
+        "image_source": "https://unsplash.com/s/photos/buenos-aires"
+      },
+      "created_at": "2026-04-29T12:00:00Z",
+      "updated_at": "2026-04-29T12:00:00Z",
+      "created_by": null
+    }
+  },
+  {
+    "model": "destinations.destinationcostprofile",
+    "pk": 1,
+    "fields": {
+      "currency_code": "EUR",
+      "daily_budget_low": "65.00",
+      "daily_budget_mid": "130.00",
+      "daily_budget_high": "260.00",
+      "source_url": "https://www.numbeo.com/cost-of-living/",
+      "notes": "Bom para testar conversao e exibicao de moeda estrangeira.",
+      "destination": 1
+    }
+  },
+  {
+    "model": "destinations.destinationcostprofile",
+    "pk": 2,
+    "fields": {
+      "currency_code": "JPY",
+      "daily_budget_low": "9000.00",
+      "daily_budget_mid": "18000.00",
+      "daily_budget_high": "35000.00",
+      "source_url": "https://www.numbeo.com/cost-of-living/",
+      "notes": "Valores diarios em ienes para hospedagem, comida e transporte.",
+      "destination": 2
+    }
+  },
+  {
+    "model": "destinations.destinationcostprofile",
+    "pk": 3,
+    "fields": {
+      "currency_code": "BRL",
+      "daily_budget_low": "180.00",
+      "daily_budget_mid": "380.00",
+      "daily_budget_high": "850.00",
+      "source_url": "https://www.numbeo.com/cost-of-living/",
+      "notes": "Valores diarios em reais para perfis economico, medio e alto.",
+      "destination": 3
+    }
+  },
+  {
+    "model": "destinations.destinationcostprofile",
+    "pk": 4,
+    "fields": {
+      "currency_code": "ARS",
+      "daily_budget_low": "25000.00",
+      "daily_budget_mid": "60000.00",
+      "daily_budget_high": "130000.00",
+      "source_url": "https://www.numbeo.com/cost-of-living/",
+      "notes": "Valores diarios em pesos argentinos para teste de grandes numeros.",
+      "destination": 4
+    }
+  },
+  {
+    "model": "destinations.poitag",
+    "pk": 1,
+    "fields": {
+      "name": "Cultura",
+      "slug": "cultura"
+    }
+  },
+  {
+    "model": "destinations.poitag",
+    "pk": 2,
+    "fields": {
+      "name": "Gastronomia",
+      "slug": "gastronomia"
+    }
+  },
+  {
+    "model": "destinations.poitag",
+    "pk": 3,
+    "fields": {
+      "name": "Natureza",
+      "slug": "natureza"
+    }
+  },
+  {
+    "model": "destinations.poitag",
+    "pk": 4,
+    "fields": {
+      "name": "Historia",
+      "slug": "historia"
+    }
+  },
+  {
+    "model": "destinations.poitag",
+    "pk": 5,
+    "fields": {
+      "name": "Familia",
+      "slug": "familia"
+    }
+  },
+  {
+    "model": "destinations.poitag",
+    "pk": 6,
+    "fields": {
+      "name": "Noturno",
+      "slug": "noturno"
+    }
+  },
+  {
+    "model": "destinations.poitag",
+    "pk": 7,
+    "fields": {
+      "name": "Compras",
+      "slug": "compras"
+    }
+  },
+  {
+    "model": "destinations.poitag",
+    "pk": 8,
+    "fields": {
+      "name": "Praia",
+      "slug": "praia"
+    }
+  },
+  {
+    "model": "destinations.pointofinterest",
+    "pk": 1,
+    "fields": {
+      "name": "Torre de Belem",
+      "slug": "torre-de-belem",
+      "poi_type": "attraction",
+      "summary": "Monumento historico a beira do Tejo.",
+      "address": "Av. Brasilia, Lisboa",
+      "opening_hours": "10:00-17:30",
+      "source_url": "https://www.google.com/search?q=torre+de+belem",
+      "price_level": 2,
+      "rating": "4.60",
+      "estimated_visit_minutes": 90,
+      "metadata": {
+        "seed": true,
+        "image_url": "https://images.unsplash.com/photo-1587974928442-77dc3e0dba72?auto=format&fit=crop&w=1200&q=80",
+        "image_source": "https://unsplash.com"
+      },
+      "destination": 1,
+      "tags": [
+        1,
+        4,
+        5
+      ]
+    }
+  },
+  {
+    "model": "destinations.pointofinterest",
+    "pk": 2,
+    "fields": {
+      "name": "Time Out Market",
+      "slug": "time-out-market",
+      "poi_type": "restaurant",
+      "summary": "Mercado gastronomico com varias opcoes locais.",
+      "address": "Av. 24 de Julho, Lisboa",
+      "opening_hours": "10:00-00:00",
+      "source_url": "https://www.google.com/search?q=time+out+market",
+      "price_level": 3,
+      "rating": "4.40",
+      "estimated_visit_minutes": 75,
+      "metadata": {
+        "seed": true,
+        "image_url": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
+        "image_source": "https://unsplash.com"
+      },
+      "destination": 1,
+      "tags": [
+        2,
+        6
+      ]
+    }
+  },
+  {
+    "model": "destinations.pointofinterest",
+    "pk": 3,
+    "fields": {
+      "name": "Passeio de Tram 28",
+      "slug": "tram-28",
+      "poi_type": "activity",
+      "summary": "Rota classica por bairros historicos.",
+      "address": "Martim Moniz, Lisboa",
+      "opening_hours": "06:00-22:00",
+      "source_url": "https://www.google.com/search?q=tram+28",
+      "price_level": 1,
+      "rating": "4.30",
+      "estimated_visit_minutes": 60,
+      "metadata": {
+        "seed": true,
+        "image_url": "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1200&q=80",
+        "image_source": "https://unsplash.com"
+      },
+      "destination": 1,
+      "tags": [
+        1,
+        4
+      ]
+    }
+  },
+  {
+    "model": "destinations.pointofinterest",
+    "pk": 4,
+    "fields": {
+      "name": "Hotel Chiado Seed",
+      "slug": "hotel-chiado-seed",
+      "poi_type": "lodging",
+      "summary": "Hospedagem central ficticia para teste.",
+      "address": "Chiado, Lisboa",
+      "opening_hours": "24h",
+      "source_url": "https://www.google.com/search?q=hotel+chiado+seed",
+      "price_level": 4,
+      "rating": "4.50",
+      "estimated_visit_minutes": 0,
+      "metadata": {
+        "seed": true,
+        "image_url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
+        "image_source": "https://unsplash.com"
+      },
+      "destination": 1,
+      "tags": [
+        5
+      ]
+    }
+  },
+  {
+    "model": "destinations.pointofinterest",
+    "pk": 5,
+    "fields": {
+      "name": "Templo Senso-ji",
+      "slug": "senso-ji",
+      "poi_type": "attraction",
+      "summary": "Templo tradicional em Asakusa.",
+      "address": "Asakusa, Tokyo",
+      "opening_hours": "06:00-17:00",
+      "source_url": "https://www.google.com/search?q=senso+ji",
+      "price_level": 1,
+      "rating": "4.70",
+      "estimated_visit_minutes": 90,
+      "metadata": {
+        "seed": true,
+        "image_url": "https://images.unsplash.com/photo-1526481280693-3bfa7568e0f3?auto=format&fit=crop&w=1200&q=80",
+        "image_source": "https://unsplash.com"
+      },
+      "destination": 2,
+      "tags": [
+        1,
+        4
+      ]
+    }
+  },
+  {
+    "model": "destinations.pointofinterest",
+    "pk": 6,
+    "fields": {
+      "name": "Tsukiji Outer Market",
+      "slug": "tsukiji-outer-market",
+      "poi_type": "restaurant",
+      "summary": "Mercado conhecido por frutos do mar e comida de rua.",
+      "address": "Tsukiji, Tokyo",
+      "opening_hours": "05:00-14:00",
+      "source_url": "https://www.google.com/search?q=tsukiji+outer+market",
+      "price_level": 3,
+      "rating": "4.50",
+      "estimated_visit_minutes": 120,
+      "metadata": {
+        "seed": true,
+        "image_url": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
+        "image_source": "https://unsplash.com"
+      },
+      "destination": 2,
+      "tags": [
+        2
+      ]
+    }
+  },
+  {
+    "model": "destinations.pointofinterest",
+    "pk": 7,
+    "fields": {
+      "name": "Shibuya Crossing",
+      "slug": "shibuya-crossing",
+      "poi_type": "activity",
+      "summary": "Cruzamento iconico e area movimentada para fotos.",
+      "address": "Shibuya, Tokyo",
+      "opening_hours": "24h",
+      "source_url": "https://www.google.com/search?q=shibuya+crossing",
+      "price_level": 1,
+      "rating": "4.40",
+      "estimated_visit_minutes": 45,
+      "metadata": {
+        "seed": true,
+        "image_url": "https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=1200&q=80",
+        "image_source": "https://unsplash.com"
+      },
+      "destination": 2,
+      "tags": [
+        6,
+        7
+      ]
+    }
+  },
+  {
+    "model": "destinations.pointofinterest",
+    "pk": 8,
+    "fields": {
+      "name": "Ryokan Seed Tokyo",
+      "slug": "ryokan-seed-tokyo",
+      "poi_type": "lodging",
+      "summary": "Hospedagem ficticia de estilo japones para teste.",
+      "address": "Taito, Tokyo",
+      "opening_hours": "24h",
+      "source_url": "https://www.google.com/search?q=ryokan+seed+tokyo",
+      "price_level": 4,
+      "rating": "4.80",
+      "estimated_visit_minutes": 0,
+      "metadata": {
+        "seed": true,
+        "image_url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80",
+        "image_source": "https://unsplash.com"
+      },
+      "destination": 2,
+      "tags": [
+        5
+      ]
+    }
+  },
+  {
+    "model": "destinations.pointofinterest",
+    "pk": 9,
+    "fields": {
+      "name": "Cristo Redentor",
+      "slug": "cristo-redentor",
+      "poi_type": "attraction",
+      "summary": "Monumento no Corcovado com vista panoramica.",
+      "address": "Parque Nacional da Tijuca, Rio de Janeiro",
+      "opening_hours": "08:00-18:00",
+      "source_url": "https://www.google.com/search?q=cristo+redentor",
+      "price_level": 3,
+      "rating": "4.80",
+      "estimated_visit_minutes": 120,
+      "metadata": {
+        "seed": true,
+        "image_url": "https://images.unsplash.com/photo-1483729558449-99ef09a8c325?auto=format&fit=crop&w=1200&q=80",
+        "image_source": "https://unsplash.com"
+      },
+      "destination": 3,
+      "tags": [
+        1,
+        3,
+        5
+      ]
+    }
+  },
+  {
+    "model": "destinations.pointofinterest",
+    "pk": 10,
+    "fields": {
+      "name": "Confeitaria Colombo",
+      "slug": "confeitaria-colombo",
+      "poi_type": "restaurant",
+      "summary": "Cafe historico no centro do Rio.",
+      "address": "Rua Goncalves Dias, Rio de Janeiro",
+      "opening_hours": "09:00-18:00",
+      "source_url": "https://www.google.com/search?q=confeitaria+colombo",
+      "price_level": 3,
+      "rating": "4.50",
+      "estimated_visit_minutes": 75,
+      "metadata": {
+        "seed": true,
+        "image_url": "https://images.unsplash.com/photo-1445116572660-236099ec97a0?auto=format&fit=crop&w=1200&q=80",
+        "image_source": "https://unsplash.com"
+      },
+      "destination": 3,
+      "tags": [
+        2,
+        4
+      ]
+    }
+  },
+  {
+    "model": "destinations.pointofinterest",
+    "pk": 11,
+    "fields": {
+      "name": "Trilha Morro da Urca",
+      "slug": "trilha-morro-da-urca",
+      "poi_type": "activity",
+      "summary": "Trilha leve com vista para a Baia de Guanabara.",
+      "address": "Urca, Rio de Janeiro",
+      "opening_hours": "08:00-17:00",
+      "source_url": "https://www.google.com/search?q=trilha+morro+da+urca",
+      "price_level": 1,
+      "rating": "4.70",
+      "estimated_visit_minutes": 120,
+      "metadata": {
+        "seed": true,
+        "image_url": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
+        "image_source": "https://unsplash.com"
+      },
+      "destination": 3,
+      "tags": [
+        3
+      ]
+    }
+  },
+  {
+    "model": "destinations.pointofinterest",
+    "pk": 12,
+    "fields": {
+      "name": "Hotel Copacabana Seed",
+      "slug": "hotel-copacabana-seed",
+      "poi_type": "lodging",
+      "summary": "Hospedagem ficticia na orla para teste.",
+      "address": "Copacabana, Rio de Janeiro",
+      "opening_hours": "24h",
+      "source_url": "https://www.google.com/search?q=hotel+copacabana+seed",
+      "price_level": 5,
+      "rating": "4.60",
+      "estimated_visit_minutes": 0,
+      "metadata": {
+        "seed": true,
+        "image_url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
+        "image_source": "https://unsplash.com"
+      },
+      "destination": 3,
+      "tags": [
+        8
+      ]
+    }
+  },
+  {
+    "model": "destinations.pointofinterest",
+    "pk": 13,
+    "fields": {
+      "name": "Teatro Colon",
+      "slug": "teatro-colon",
+      "poi_type": "attraction",
+      "summary": "Teatro historico com visitas guiadas.",
+      "address": "Cerrito 628, Buenos Aires",
+      "opening_hours": "10:00-16:45",
+      "source_url": "https://www.google.com/search?q=teatro+colon",
+      "price_level": 3,
+      "rating": "4.80",
+      "estimated_visit_minutes": 90,
+      "metadata": {
+        "seed": true,
+        "image_url": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1200&q=80",
+        "image_source": "https://unsplash.com"
+      },
+      "destination": 4,
+      "tags": [
+        1,
+        4
+      ]
+    }
+  },
+  {
+    "model": "destinations.pointofinterest",
+    "pk": 14,
+    "fields": {
+      "name": "Cafe Tortoni",
+      "slug": "cafe-tortoni",
+      "poi_type": "restaurant",
+      "summary": "Cafe tradicional para testar POI gastronomico.",
+      "address": "Av. de Mayo 825, Buenos Aires",
+      "opening_hours": "08:00-00:00",
+      "source_url": "https://www.google.com/search?q=cafe+tortoni",
+      "price_level": 3,
+      "rating": "4.40",
+      "estimated_visit_minutes": 60,
+      "metadata": {
+        "seed": true,
+        "image_url": "https://images.unsplash.com/photo-1445116572660-236099ec97a0?auto=format&fit=crop&w=1200&q=80",
+        "image_source": "https://unsplash.com"
+      },
+      "destination": 4,
+      "tags": [
+        2,
+        4
+      ]
+    }
+  },
+  {
+    "model": "destinations.pointofinterest",
+    "pk": 15,
+    "fields": {
+      "name": "Show de Tango Seed",
+      "slug": "show-de-tango-seed",
+      "poi_type": "activity",
+      "summary": "Atividade noturna ficticia com jantar e tango.",
+      "address": "San Telmo, Buenos Aires",
+      "opening_hours": "20:00-23:30",
+      "source_url": "https://www.google.com/search?q=show+de+tango+seed",
+      "price_level": 4,
+      "rating": "4.30",
+      "estimated_visit_minutes": 180,
+      "metadata": {
+        "seed": true,
+        "image_url": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80",
+        "image_source": "https://unsplash.com"
+      },
+      "destination": 4,
+      "tags": [
+        1,
+        6
+      ]
+    }
+  },
+  {
+    "model": "destinations.pointofinterest",
+    "pk": 16,
+    "fields": {
+      "name": "Hotel Palermo Seed",
+      "slug": "hotel-palermo-seed",
+      "poi_type": "lodging",
+      "summary": "Hospedagem ficticia em Palermo para teste.",
+      "address": "Palermo, Buenos Aires",
+      "opening_hours": "24h",
+      "source_url": "https://www.google.com/search?q=hotel+palermo+seed",
+      "price_level": 4,
+      "rating": "4.40",
+      "estimated_visit_minutes": 0,
+      "metadata": {
+        "seed": true,
+        "image_url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
+        "image_source": "https://unsplash.com"
+      },
+      "destination": 4,
+      "tags": [
+        5
+      ]
     }
   }
 ]

@@ -64,7 +64,6 @@ O Viajero é um projeto criado do zero (_greenfield_) com um backend em Django p
    ```bash
    uv run manage.py migrate
    uv run manage.py loaddata seed_data.json
-   uv run manage.py loaddata seed_data_complete.json
    uv run manage.py runserver
    ```
 

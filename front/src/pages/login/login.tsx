@@ -1,13 +1,14 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 
-import { ApiError } from "../../lib/api";
-import { isAuthenticated, login } from "../../lib/auth";
+import { ApiError, apiRequest } from "../../lib/api";
+import { login } from "../../lib/auth";
 import { useAuth } from "@/contexts/authContext";
+import type { TravelerDNAProfile } from "@/lib/profiles";
 
 const loginSchema = z.object({
   email: z.string().email("Email invalido"),
@@ -17,16 +18,30 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 function getFieldError(error: unknown) {
-  if (!error || typeof error !== "object") {
-    return undefined;
-  }
+  if (!error || typeof error !== "object") return undefined;
+
   const detail = (error as Record<string, unknown>).detail;
+
   return typeof detail === "string" ? detail : undefined;
+}
+
+async function getTravelerDNAProfile(token: string) {
+  const response = await apiRequest<{ data?: TravelerDNAProfile | null }>(
+    "/api/traveler-dna/me/",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+
+  return response.data ?? null;
 }
 
 export default function Login() {
   const navigate = useNavigate();
   const { setAuth } = useAuth();
+
   const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -38,12 +53,6 @@ export default function Login() {
     resolver: zodResolver(loginSchema),
   });
 
-  useEffect(() => {
-    if (isAuthenticated()) {
-      navigate("/onboard", { replace: true });
-    }
-  }, [navigate]);
-
   const onSubmit = async (data: LoginForm) => {
     setSubmitError(null);
 
@@ -53,7 +62,15 @@ export default function Login() {
         password: data.senha,
       });
 
-      setAuth(response.data); // ← avisa o context
+      setAuth(response.data);
+
+      const token = response.data.access;
+      const profile = await getTravelerDNAProfile(token);
+
+      if (profile) {
+        navigate("/", { replace: true });
+        return;
+      }
 
       navigate("/onboard", { replace: true });
     } catch (error) {
@@ -61,6 +78,7 @@ export default function Login() {
         setSubmitError(getFieldError(error.errors) ?? error.message);
         return;
       }
+
       setSubmitError("Nao foi possivel entrar agora. Tente novamente.");
     }
   };

@@ -1,5 +1,5 @@
 import { PartyPopper, AlertCircle, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import OnboardingSidebar from "@/components/ui/onboarding-sidebar";
 import OnboardingStepFields from "@/components/ui/onboarding-step-fields";
@@ -69,6 +69,7 @@ function buildSnapshotFromPreferences(
 
 export default function TravelPreferencesOnboarding() {
   const { token: contextToken } = useAuth();
+  const navigate = useNavigate();
   const token =
     contextToken || localStorage.getItem("viajero.access_token") || "";
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -152,6 +153,8 @@ export default function TravelPreferencesOnboarding() {
     setSubmitError(null);
     try {
       await save(payload);
+
+      navigate("/roteiros/criacao", { replace: true });
       next();
     } catch (error) {
       if (error instanceof Error) {
