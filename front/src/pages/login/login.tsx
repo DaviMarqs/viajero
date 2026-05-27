@@ -76,11 +76,12 @@ export default function Login() {
           <div className="relative z-10 max-w-xl space-y-6">
             <div className="space-y-4">
               <h1 className="max-w-lg text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
-                Sua proxima viagem nao terminou.
+                Sua próxima viagem nao terminou.
               </h1>
               <p className="max-w-xl text-base leading-7 text-white/72 sm:text-lg">
-                Acesse sua conta para continuar seus roteiros, recuperar preferencias e
-                deixar a IA montar a proxima experiencia com contexto real.
+                Acesse sua conta para continuar seus roteiros, recuperar
+                preferências e deixar a IA montar a próxima experiencia com
+                contexto real.
               </p>
             </div>
           </div>
@@ -99,7 +100,10 @@ export default function Login() {
 
             <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700" htmlFor="email">
+                <label
+                  className="text-sm font-medium text-slate-700"
+                  htmlFor="email"
+                >
                   Email
                 </label>
                 <div className="flex h-14 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 transition focus-within:border-sky-500 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(46,140,255,0.12)]">
@@ -112,11 +116,16 @@ export default function Login() {
                     {...register("email")}
                   />
                 </div>
-                {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
+                {errors.email && (
+                  <p className="text-sm text-red-500">{errors.email.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700" htmlFor="senha">
+                <label
+                  className="text-sm font-medium text-slate-700"
+                  htmlFor="senha"
+                >
                   Senha
                 </label>
                 <div className="flex h-14 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 transition focus-within:border-sky-500 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(46,140,255,0.12)]">
@@ -132,12 +141,20 @@ export default function Login() {
                     type="button"
                     className="text-slate-400 transition hover:text-slate-700"
                     onClick={() => setShowPassword((current) => !current)}
-                    aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    aria-label={
+                      showPassword ? "Ocultar senha" : "Mostrar senha"
+                    }
                   >
-                    {showPassword ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+                    {showPassword ? (
+                      <Eye className="h-5 w-5" />
+                    ) : (
+                      <EyeOff className="h-5 w-5" />
+                    )}
                   </button>
                 </div>
-                {errors.senha && <p className="text-sm text-red-500">{errors.senha.message}</p>}
+                {errors.senha && (
+                  <p className="text-sm text-red-500">{errors.senha.message}</p>
+                )}
               </div>
 
               {submitError && (

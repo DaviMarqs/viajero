@@ -10,7 +10,10 @@ import {
   TRAVEL_PREFERENCES_SIDEBAR,
   TRAVEL_PREFERENCES_STEPS,
 } from "./travel-preferences-onboarding.data";
-import type { TripPreferenceUpsertInput, UserTripPreference } from "@/lib/profiles";
+import type {
+  TripPreferenceUpsertInput,
+  UserTripPreference,
+} from "@/lib/profiles";
 
 function currencyStringToNumber(value: string) {
   const parsed = parseInt(value || "0", 10);
@@ -34,13 +37,17 @@ function getCardIndexes(stepKey: string, values: string[]) {
     .map((card) => card.index);
 }
 
-function buildSnapshotFromPreferences(preferences: UserTripPreference): OnboardingSnapshot {
+function buildSnapshotFromPreferences(
+  preferences: UserTripPreference,
+): OnboardingSnapshot {
   return {
     fieldValues: {
       budget_min: formatMoneyToInput(preferences.budget_min),
       budget_max: formatMoneyToInput(preferences.budget_max),
       currency_code: preferences.currency_code,
-      preferred_trip_length_days: String(preferences.preferred_trip_length_days),
+      preferred_trip_length_days: String(
+        preferences.preferred_trip_length_days,
+      ),
       travel_month: preferences.travel_month,
     },
     tagValues: {
@@ -49,16 +56,21 @@ function buildSnapshotFromPreferences(preferences: UserTripPreference): Onboardi
       interests: preferences.interests ?? [],
     },
     cardSelections: {
-      timing: getCardIndexes("timing", [String(Boolean(preferences.metadata?.flexible_dates))]),
+      timing: getCardIndexes("timing", [
+        String(Boolean(preferences.metadata?.flexible_dates)),
+      ]),
       stay: getCardIndexes("stay", [preferences.hotel_level]),
-      transport: getCardIndexes("transport", [preferences.transportation_style]),
+      transport: getCardIndexes("transport", [
+        preferences.transportation_style,
+      ]),
     },
   };
 }
 
 export default function TravelPreferencesOnboarding() {
   const { token: contextToken } = useAuth();
-  const token = contextToken || localStorage.getItem("viajero.access_token") || "";
+  const token =
+    contextToken || localStorage.getItem("viajero.access_token") || "";
   const [submitError, setSubmitError] = useState<string | null>(null);
   const hydratedRef = useRef(false);
   const {
@@ -78,14 +90,8 @@ export default function TravelPreferencesOnboarding() {
     skip,
     getCardValues,
   } = useOnboarding(TRAVEL_PREFERENCES_STEPS);
-  const {
-    preferences,
-    loading,
-    saving,
-    error,
-    saveError,
-    save,
-  } = useTripPreferences(token);
+  const { preferences, loading, saving, error, saveError, save } =
+    useTripPreferences(token);
 
   useEffect(() => {
     if (!preferences || hydratedRef.current) return;
@@ -99,7 +105,10 @@ export default function TravelPreferencesOnboarding() {
   async function handleFinish() {
     const budgetMin = currencyStringToNumber(fieldValues.budget_min ?? "");
     const budgetMax = currencyStringToNumber(fieldValues.budget_max ?? "");
-    const tripLength = parseInt(fieldValues.preferred_trip_length_days ?? "0", 10);
+    const tripLength = parseInt(
+      fieldValues.preferred_trip_length_days ?? "0",
+      10,
+    );
     const hotelLevel = getCardValues("stay")[0] ?? "";
     const transportationStyle = getCardValues("transport")[0] ?? "";
 
@@ -113,7 +122,13 @@ export default function TravelPreferencesOnboarding() {
       return;
     }
 
-    if (!tripLength || !fieldValues.currency_code || !fieldValues.travel_month || !hotelLevel || !transportationStyle) {
+    if (
+      !tripLength ||
+      !fieldValues.currency_code ||
+      !fieldValues.travel_month ||
+      !hotelLevel ||
+      !transportationStyle
+    ) {
       setSubmitError("Preencha as etapas obrigatorias antes de concluir.");
       return;
     }
@@ -143,7 +158,7 @@ export default function TravelPreferencesOnboarding() {
         setSubmitError(error.message);
         return;
       }
-      setSubmitError("Nao foi possivel salvar suas preferencias agora.");
+      setSubmitError("Nao foi possivel salvar suas preferências agora.");
     }
   }
 
@@ -152,7 +167,7 @@ export default function TravelPreferencesOnboarding() {
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="size-6 animate-spin text-slate-400" />
-          <p className="text-sm text-slate-500">Carregando preferencias...</p>
+          <p className="text-sm text-slate-500">Carregando preferências...</p>
         </div>
       </div>
     );
@@ -181,10 +196,17 @@ export default function TravelPreferencesOnboarding() {
         <main className="flex flex-1 px-6 py-8 sm:px-8 lg:p-10">
           <div className="flex flex-1 items-center justify-center rounded-[32px] bg-white px-6 py-10 shadow-[0_18px_60px_rgba(15,23,42,0.08)]">
             <div className="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
-              <PartyPopper size={52} strokeWidth={1.5} className="text-sky-500" />
-              <h2 className="text-4xl font-semibold text-slate-950">Preferencias salvas!</h2>
+              <PartyPopper
+                size={52}
+                strokeWidth={1.5}
+                className="text-sky-500"
+              />
+              <h2 className="text-4xl font-semibold text-slate-950">
+                preferências salvas!
+              </h2>
               <p className="text-base leading-7 text-slate-500">
-                Seu perfil de viagem foi atualizado e ja pode ser usado na geracao de roteiros.
+                Seu perfil de viagem foi atualizado e ja pode ser usado na
+                geracao de roteiros.
               </p>
               <Link
                 to="/"
@@ -213,13 +235,18 @@ export default function TravelPreferencesOnboarding() {
       <main className="flex flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:p-10">
         <div className="flex w-full flex-col rounded-[32px] bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.08)] sm:p-8 lg:p-10">
           <header className="flex flex-col gap-3">
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-950">{currentStep.title}</h2>
-            <p className="max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">{currentStep.sub}</p>
-            {hasCards && currentStep.fields.some((field) => field.type === "cards") && (
-              <span className="inline-flex w-fit rounded-full bg-sky-50 px-3 py-1 text-sm font-medium text-sky-700">
-                Escolha a opcao que melhor descreve sua preferencia
-              </span>
-            )}
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
+              {currentStep.title}
+            </h2>
+            <p className="max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
+              {currentStep.sub}
+            </p>
+            {hasCards &&
+              currentStep.fields.some((field) => field.type === "cards") && (
+                <span className="inline-flex w-fit rounded-full bg-sky-50 px-3 py-1 text-sm font-medium text-sky-700">
+                  Escolha a opcao que melhor descreve sua preferencia
+                </span>
+              )}
           </header>
 
           <div className="mt-8 flex flex-1 flex-col gap-5">
@@ -248,7 +275,11 @@ export default function TravelPreferencesOnboarding() {
               onClick={isLast ? handleFinish : next}
               disabled={!canAdvance || saving}
             >
-              {saving ? "Salvando..." : isLast ? "Concluir preferencias" : "Proximo"}
+              {saving
+                ? "Salvando..."
+                : isLast
+                  ? "Concluir preferências"
+                  : "Proximo"}
             </button>
 
             {!isLast && (

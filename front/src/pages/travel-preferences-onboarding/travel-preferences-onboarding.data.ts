@@ -10,7 +10,10 @@ import {
   Wallet,
   Plane,
 } from "lucide-react";
-import type { DropdownOption, OnboardingStep } from "@/pages/onboarding/onboarding.data";
+import type {
+  DropdownOption,
+  OnboardingStep,
+} from "@/pages/onboarding/onboarding.data";
 
 const CURRENCY_OPTIONS: DropdownOption[] = [
   { label: "Real (BRL)", value: "BRL" },
@@ -49,9 +52,27 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
     title: "Faixa de investimento",
     sub: "Defina o intervalo de gasto ideal para que as recomendacoes respeitem sua realidade.",
     fields: [
-      { type: "currency", key: "budget_min", label: "Orcamento minimo", required: true, hint: "Valor aproximado para iniciar a busca." },
-      { type: "currency", key: "budget_max", label: "Orcamento maximo", required: true, hint: "Limite confortavel para a viagem." },
-      { type: "dropdown", key: "currency_code", label: "Moeda", required: true, options: CURRENCY_OPTIONS },
+      {
+        type: "currency",
+        key: "budget_min",
+        label: "Orcamento minimo",
+        required: true,
+        hint: "Valor apróximado para iniciar a busca.",
+      },
+      {
+        type: "currency",
+        key: "budget_max",
+        label: "Orcamento maximo",
+        required: true,
+        hint: "Limite confortavel para a viagem.",
+      },
+      {
+        type: "dropdown",
+        key: "currency_code",
+        label: "Moeda",
+        required: true,
+        options: CURRENCY_OPTIONS,
+      },
     ],
   },
   {
@@ -60,13 +81,37 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
     title: "Duracao e epoca",
     sub: "Ajuste tempo de viagem, mes de preferencia e flexibilidade de datas.",
     fields: [
-      { type: "dropdown", key: "preferred_trip_length_days", label: "Duracao ideal", required: true, icon: "calendar", options: TRIP_LENGTH_OPTIONS },
-      { type: "dropdown", key: "travel_month", label: "Mes preferido", required: true, icon: "calendar", options: MONTH_OPTIONS },
+      {
+        type: "dropdown",
+        key: "preferred_trip_length_days",
+        label: "Duracao ideal",
+        required: true,
+        icon: "calendar",
+        options: TRIP_LENGTH_OPTIONS,
+      },
+      {
+        type: "dropdown",
+        key: "travel_month",
+        label: "Mes preferido",
+        required: true,
+        icon: "calendar",
+        options: MONTH_OPTIONS,
+      },
       {
         type: "cards",
         cards: [
-          { icon: CalendarDays, title: "Datas flexiveis", desc: "Posso adaptar o periodo se isso melhorar preco ou experiencia.", value: "true" },
-          { icon: Wallet, title: "Datas fixas", desc: "Preciso manter um periodo especifico para viajar.", value: "false" },
+          {
+            icon: CalendarDays,
+            title: "Datas flexiveis",
+            desc: "Posso adaptar o periodo se isso melhorar preco ou experiencia.",
+            value: "true",
+          },
+          {
+            icon: Wallet,
+            title: "Datas fixas",
+            desc: "Preciso manter um periodo especifico para viajar.",
+            value: "false",
+          },
         ],
       },
     ],
@@ -80,9 +125,24 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
       {
         type: "cards",
         cards: [
-          { icon: Plane, title: "Essencial", desc: "Funcional, pratico e com foco em custo-beneficio.", value: "budget" },
-          { icon: Hotel, title: "Confortavel", desc: "Boa estrutura e conforto na medida certa.", value: "mid" },
-          { icon: Crown, title: "Elevado", desc: "Mais comodidade, servico e experiencia premium.", value: "luxury" },
+          {
+            icon: Plane,
+            title: "Essencial",
+            desc: "Funcional, pratico e com foco em custo-beneficio.",
+            value: "budget",
+          },
+          {
+            icon: Hotel,
+            title: "Confortavel",
+            desc: "Boa estrutura e conforto na medida certa.",
+            value: "mid",
+          },
+          {
+            icon: Crown,
+            title: "Elevado",
+            desc: "Mais comodidade, servico e experiencia premium.",
+            value: "luxury",
+          },
         ],
       },
     ],
@@ -96,9 +156,24 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
       {
         type: "cards",
         cards: [
-          { icon: Bus, title: "Transporte publico", desc: "Metro, onibus e modais locais com boa autonomia.", value: "public" },
-          { icon: Car, title: "Misto", desc: "Combino apps, transfers e transporte publico conforme a necessidade.", value: "mixed" },
-          { icon: Crown, title: "Privado", desc: "Prefiro carro, transfer ou deslocamentos mais exclusivos.", value: "private" },
+          {
+            icon: Bus,
+            title: "Transporte publico",
+            desc: "Metro, onibus e modais locais com boa autonomia.",
+            value: "public",
+          },
+          {
+            icon: Car,
+            title: "Misto",
+            desc: "Combino apps, transfers e transporte publico conforme a necessidade.",
+            value: "mixed",
+          },
+          {
+            icon: Crown,
+            title: "Privado",
+            desc: "Prefiro carro, transfer ou deslocamentos mais exclusivos.",
+            value: "private",
+          },
         ],
       },
     ],
@@ -112,7 +187,7 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
       {
         type: "tags",
         key: "dietary_preferences",
-        label: "Preferencias alimentares",
+        label: "preferências alimentares",
         multi: true,
         options: [
           { label: "Vegetariana", value: "vegetarian" },
@@ -160,6 +235,7 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
 ];
 
 export const TRAVEL_PREFERENCES_SIDEBAR = {
-  title: "Configure suas preferencias de viagem",
-  description: "Esses dados refinam os roteiros com faixa de gasto, periodo e necessidades reais da sua viagem.",
+  title: "Configure suas preferências de viagem",
+  description:
+    "Esses dados refinam os roteiros com faixa de gasto, periodo e necessidades reais da sua viagem.",
 };

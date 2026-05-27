@@ -171,14 +171,14 @@ export default function Roteiros() {
             <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
               <div className="max-w-3xl">
                 <h1 className="text-3xl font-medium leading-tight text-neutral-950 md:text-5xl">
-                  Encontre roteiros prontos para sua prÃ³xima viagem.
+                  Encontre roteiros prontos para sua próxima viagem.
                 </h1>
 
                 <p className="mt-4 text-sm leading-6 text-neutral-600 md:text-base">
                   Veja exemplos de roteiros criados com base em destinos,
-                  orÃ§amento, duraÃ§Ã£o e preferÃªncias de viagem. Use os filtros
+                  orçamento, duração e preferências de viagem. Use os filtros
                   para encontrar o roteiro ideal ou para se inspirar a criar o
-                  seu prÃ³prio roteiro personalizado.
+                  seu próprio roteiro personalizado.
                 </p>
               </div>
             </div>
@@ -213,7 +213,7 @@ export default function Roteiros() {
               </h2>
               <p className="text-sm text-neutral-600">
                 SugestÃµes carregadas da API para validar layout, filtros e
-                navegaÃ§Ã£o.
+                navegação.
               </p>
             </div>
 
@@ -223,9 +223,9 @@ export default function Roteiros() {
               onChange={(event) => setSortBy(event.target.value)}
             >
               <option value="recommended">Mais recomendados</option>
-              <option value="budget">Menor orÃ§amento</option>
-              <option value="duration">Menor duraÃ§Ã£o</option>
-              <option value="rating">Melhor avaliaÃ§Ã£o</option>
+              <option value="budget">Menor orçamento</option>
+              <option value="duration">Menor duração</option>
+              <option value="rating">Melhor avaliação</option>
             </select>
           </div>
 

@@ -221,7 +221,7 @@ export default function Onboarding() {
                 DNA configurado!
               </h2>
               <p className="text-base leading-7 text-slate-500">
-                Suas preferencias foram salvas. A IA do Viajero ja pode montar
+                Suas preferências foram salvas. A IA do Viajero ja pode montar
                 roteiros personalizados para voce.
               </p>
               <div className="mt-2 flex flex-col gap-3 sm:flex-row">
@@ -232,10 +232,10 @@ export default function Onboarding() {
                   Ir para a home
                 </Link>
                 <Link
-                  to="/onboard/preferencias"
+                  to="/onboard/preferências"
                   className="inline-flex h-14 items-center justify-center rounded-2xl border border-slate-200 px-6 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                 >
-                  Refinar preferencias
+                  Refinar preferências
                 </Link>
               </div>
             </div>

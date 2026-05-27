@@ -104,13 +104,21 @@ function toggleInArray(arr: string[], value: string) {
   return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
 }
 
-function labelFor(options: { label: string; value: string | number }[], value: string | number | undefined | null) {
+function labelFor(
+  options: { label: string; value: string | number }[],
+  value: string | number | undefined | null,
+) {
   return options.find((o) => String(o.value) === String(value))?.label ?? "—";
 }
 
-function joinLabels(options: { label: string; value: string }[], values: string[] | undefined | null) {
+function joinLabels(
+  options: { label: string; value: string }[],
+  values: string[] | undefined | null,
+) {
   if (!values || values.length === 0) return "—";
-  return values.map((v) => options.find((o) => o.value === v)?.label ?? v).join(", ");
+  return values
+    .map((v) => options.find((o) => o.value === v)?.label ?? v)
+    .join(", ");
 }
 
 interface Props {
@@ -118,7 +126,8 @@ interface Props {
 }
 
 export function TripPreferencesSection({ token }: Props) {
-  const { preferences, loading, error, saving, saveError, save } = useTripPreferences(token);
+  const { preferences, loading, error, saving, saveError, save } =
+    useTripPreferences(token);
 
   const [editing, setEditing] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -158,7 +167,8 @@ export function TripPreferencesSection({ token }: Props) {
         budget_min: Number(form.budget_min) || 0,
         budget_max: Number(form.budget_max) || 0,
         currency_code: form.currency_code,
-        preferred_trip_length_days: Number(form.preferred_trip_length_days) || 0,
+        preferred_trip_length_days:
+          Number(form.preferred_trip_length_days) || 0,
         travel_month: form.travel_month,
         hotel_level: form.hotel_level,
         transportation_style: form.transportation_style,
@@ -179,7 +189,7 @@ export function TripPreferencesSection({ token }: Props) {
     return (
       <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex items-center gap-2 text-sm text-neutral-400">
         <Loader2 className="size-4 animate-spin" />
-        Carregando preferencias de viagem…
+        Carregando preferências de viagem…
       </div>
     );
   }
@@ -199,7 +209,9 @@ export function TripPreferencesSection({ token }: Props) {
     <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
-          <h2 className="text-sm font-semibold text-neutral-700">Preferencias de viagem</h2>
+          <h2 className="text-sm font-semibold text-neutral-700">
+            preferências de viagem
+          </h2>
           {!hasData && !editing && (
             <p className="text-xs text-neutral-400 mt-0.5">
               Nenhuma preferencia salva ainda. Clique em editar para preencher.
@@ -220,12 +232,22 @@ export function TripPreferencesSection({ token }: Props) {
       {!editing && hasData && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-sm">
           <ReadOnly icon={<Wallet className="size-3.5" />} label="Orcamento">
-            {preferences?.budget_min} – {preferences?.budget_max} {preferences?.currency_code}
+            {preferences?.budget_min} – {preferences?.budget_max}{" "}
+            {preferences?.currency_code}
           </ReadOnly>
-          <ReadOnly icon={<CalendarDays className="size-3.5" />} label="Duracao ideal">
-            {labelFor(TRIP_LENGTH_OPTIONS, preferences?.preferred_trip_length_days)}
+          <ReadOnly
+            icon={<CalendarDays className="size-3.5" />}
+            label="Duracao ideal"
+          >
+            {labelFor(
+              TRIP_LENGTH_OPTIONS,
+              preferences?.preferred_trip_length_days,
+            )}
           </ReadOnly>
-          <ReadOnly icon={<CalendarDays className="size-3.5" />} label="Mes preferido">
+          <ReadOnly
+            icon={<CalendarDays className="size-3.5" />}
+            label="Mes preferido"
+          >
             {labelFor(MONTH_OPTIONS, preferences?.travel_month)}
           </ReadOnly>
           <ReadOnly icon={<Hotel className="size-3.5" />} label="Hospedagem">
@@ -237,11 +259,20 @@ export function TripPreferencesSection({ token }: Props) {
           <ReadOnly icon={<Sparkles className="size-3.5" />} label="Interesses">
             {joinLabels(INTEREST_OPTIONS, preferences?.interests)}
           </ReadOnly>
-          <ReadOnly icon={<Salad className="size-3.5" />} label="Restricoes alimentares">
+          <ReadOnly
+            icon={<Salad className="size-3.5" />}
+            label="Restricoes alimentares"
+          >
             {joinLabels(DIETARY_OPTIONS, preferences?.dietary_preferences)}
           </ReadOnly>
-          <ReadOnly icon={<Accessibility className="size-3.5" />} label="Acessibilidade">
-            {joinLabels(ACCESSIBILITY_OPTIONS, preferences?.accessibility_needs)}
+          <ReadOnly
+            icon={<Accessibility className="size-3.5" />}
+            label="Acessibilidade"
+          >
+            {joinLabels(
+              ACCESSIBILITY_OPTIONS,
+              preferences?.accessibility_needs,
+            )}
           </ReadOnly>
         </div>
       )}
@@ -249,27 +280,39 @@ export function TripPreferencesSection({ token }: Props) {
       {editing && (
         <div className="flex flex-col gap-5">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <FieldGroup icon={<Wallet className="size-3.5" />} label="Orcamento minimo">
+            <FieldGroup
+              icon={<Wallet className="size-3.5" />}
+              label="Orcamento minimo"
+            >
               <input
                 type="number"
                 className={inputClass}
                 value={form.budget_min}
-                onChange={(e) => setForm((f) => ({ ...f, budget_min: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, budget_min: e.target.value }))
+                }
               />
             </FieldGroup>
-            <FieldGroup icon={<Wallet className="size-3.5" />} label="Orcamento maximo">
+            <FieldGroup
+              icon={<Wallet className="size-3.5" />}
+              label="Orcamento maximo"
+            >
               <input
                 type="number"
                 className={inputClass}
                 value={form.budget_max}
-                onChange={(e) => setForm((f) => ({ ...f, budget_max: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, budget_max: e.target.value }))
+                }
               />
             </FieldGroup>
             <FieldGroup icon={<Wallet className="size-3.5" />} label="Moeda">
               <select
                 className={inputClass}
                 value={form.currency_code}
-                onChange={(e) => setForm((f) => ({ ...f, currency_code: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, currency_code: e.target.value }))
+                }
               >
                 {CURRENCY_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
@@ -281,12 +324,18 @@ export function TripPreferencesSection({ token }: Props) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldGroup icon={<CalendarDays className="size-3.5" />} label="Duracao ideal">
+            <FieldGroup
+              icon={<CalendarDays className="size-3.5" />}
+              label="Duracao ideal"
+            >
               <select
                 className={inputClass}
                 value={form.preferred_trip_length_days}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, preferred_trip_length_days: Number(e.target.value) }))
+                  setForm((f) => ({
+                    ...f,
+                    preferred_trip_length_days: Number(e.target.value),
+                  }))
                 }
               >
                 {TRIP_LENGTH_OPTIONS.map((o) => (
@@ -296,11 +345,16 @@ export function TripPreferencesSection({ token }: Props) {
                 ))}
               </select>
             </FieldGroup>
-            <FieldGroup icon={<CalendarDays className="size-3.5" />} label="Mes preferido">
+            <FieldGroup
+              icon={<CalendarDays className="size-3.5" />}
+              label="Mes preferido"
+            >
               <select
                 className={inputClass}
                 value={form.travel_month}
-                onChange={(e) => setForm((f) => ({ ...f, travel_month: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, travel_month: e.target.value }))
+                }
               >
                 <option value="">Selecionar…</option>
                 {MONTH_OPTIONS.map((o) => (
@@ -313,11 +367,16 @@ export function TripPreferencesSection({ token }: Props) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldGroup icon={<Hotel className="size-3.5" />} label="Hospedagem">
+            <FieldGroup
+              icon={<Hotel className="size-3.5" />}
+              label="Hospedagem"
+            >
               <select
                 className={inputClass}
                 value={form.hotel_level}
-                onChange={(e) => setForm((f) => ({ ...f, hotel_level: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, hotel_level: e.target.value }))
+                }
               >
                 <option value="">Selecionar…</option>
                 {HOTEL_LEVEL_OPTIONS.map((o) => (
@@ -332,7 +391,10 @@ export function TripPreferencesSection({ token }: Props) {
                 className={inputClass}
                 value={form.transportation_style}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, transportation_style: e.target.value }))
+                  setForm((f) => ({
+                    ...f,
+                    transportation_style: e.target.value,
+                  }))
                 }
               >
                 <option value="">Selecionar…</option>
@@ -350,7 +412,12 @@ export function TripPreferencesSection({ token }: Props) {
             label="Interesses"
             options={INTEREST_OPTIONS}
             values={form.interests}
-            onToggle={(v) => setForm((f) => ({ ...f, interests: toggleInArray(f.interests, v) }))}
+            onToggle={(v) =>
+              setForm((f) => ({
+                ...f,
+                interests: toggleInArray(f.interests, v),
+              }))
+            }
           />
 
           <TagPicker
@@ -359,7 +426,10 @@ export function TripPreferencesSection({ token }: Props) {
             options={DIETARY_OPTIONS}
             values={form.dietary_preferences}
             onToggle={(v) =>
-              setForm((f) => ({ ...f, dietary_preferences: toggleInArray(f.dietary_preferences, v) }))
+              setForm((f) => ({
+                ...f,
+                dietary_preferences: toggleInArray(f.dietary_preferences, v),
+              }))
             }
           />
 
@@ -369,7 +439,10 @@ export function TripPreferencesSection({ token }: Props) {
             options={ACCESSIBILITY_OPTIONS}
             values={form.accessibility_needs}
             onToggle={(v) =>
-              setForm((f) => ({ ...f, accessibility_needs: toggleInArray(f.accessibility_needs, v) }))
+              setForm((f) => ({
+                ...f,
+                accessibility_needs: toggleInArray(f.accessibility_needs, v),
+              }))
             }
           />
 
@@ -379,7 +452,11 @@ export function TripPreferencesSection({ token }: Props) {
               disabled={saving}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
             >
-              {saving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+              {saving ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Check className="size-4" />
+              )}
               {saving ? "Salvando…" : "Salvar"}
             </button>
             <button
@@ -404,7 +481,7 @@ export function TripPreferencesSection({ token }: Props) {
       {success && (
         <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
           <Check className="size-4 shrink-0" />
-          Preferencias atualizadas com sucesso!
+          preferências atualizadas com sucesso!
         </div>
       )}
     </div>

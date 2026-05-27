@@ -264,7 +264,7 @@ def test_discover_destination_returns_none_when_search_and_wiki_fallback_both_fa
 
 
 def test_discover_destination_skips_firecrawl_when_recently_failed(settings):
-    """Apos uma falha, a proxima busca dentro do TTL nao chama Firecrawl."""
+    """Apos uma falha, a próxima busca dentro do TTL nao chama Firecrawl."""
     settings.FIRECRAWL_API_KEY = "test-key"
     settings.FIRECRAWL_DISCOVERY_FAILURE_TTL = 60
 

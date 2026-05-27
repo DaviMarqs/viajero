@@ -93,13 +93,17 @@ export default function Register() {
                 Crie sua conta
               </h1>
               <p className="text-sm leading-6 text-slate-500 sm:text-base">
-                Configure seu acesso para salvar preferencias e montar roteiros personalizados.
+                Configure seu acesso para salvar preferências e montar roteiros
+                personalizados.
               </p>
             </div>
 
             <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700" htmlFor="nome">
+                <label
+                  className="text-sm font-medium text-slate-700"
+                  htmlFor="nome"
+                >
                   Nome completo
                 </label>
                 <div className="flex h-14 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 transition focus-within:border-sky-500 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(46,140,255,0.12)]">
@@ -112,11 +116,16 @@ export default function Register() {
                     {...register("nome")}
                   />
                 </div>
-                {errors.nome && <p className="text-sm text-red-500">{errors.nome.message}</p>}
+                {errors.nome && (
+                  <p className="text-sm text-red-500">{errors.nome.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700" htmlFor="email">
+                <label
+                  className="text-sm font-medium text-slate-700"
+                  htmlFor="email"
+                >
                   Email
                 </label>
                 <div className="flex h-14 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 transition focus-within:border-sky-500 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(46,140,255,0.12)]">
@@ -129,11 +138,16 @@ export default function Register() {
                     {...register("email")}
                   />
                 </div>
-                {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
+                {errors.email && (
+                  <p className="text-sm text-red-500">{errors.email.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700" htmlFor="senha">
+                <label
+                  className="text-sm font-medium text-slate-700"
+                  htmlFor="senha"
+                >
                   Senha
                 </label>
                 <div className="flex h-14 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 transition focus-within:border-sky-500 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(46,140,255,0.12)]">
@@ -149,16 +163,27 @@ export default function Register() {
                     type="button"
                     className="text-slate-400 transition hover:text-slate-700"
                     onClick={() => setShowPassword((current) => !current)}
-                    aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    aria-label={
+                      showPassword ? "Ocultar senha" : "Mostrar senha"
+                    }
                   >
-                    {showPassword ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+                    {showPassword ? (
+                      <Eye className="h-5 w-5" />
+                    ) : (
+                      <EyeOff className="h-5 w-5" />
+                    )}
                   </button>
                 </div>
-                {errors.senha && <p className="text-sm text-red-500">{errors.senha.message}</p>}
+                {errors.senha && (
+                  <p className="text-sm text-red-500">{errors.senha.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700" htmlFor="confirmar">
+                <label
+                  className="text-sm font-medium text-slate-700"
+                  htmlFor="confirmar"
+                >
                   Confirmar senha
                 </label>
                 <div className="flex h-14 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 transition focus-within:border-sky-500 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(46,140,255,0.12)]">
@@ -174,12 +199,24 @@ export default function Register() {
                     type="button"
                     className="text-slate-400 transition hover:text-slate-700"
                     onClick={() => setShowConfirm((current) => !current)}
-                    aria-label={showConfirm ? "Ocultar confirmacao" : "Mostrar confirmacao"}
+                    aria-label={
+                      showConfirm
+                        ? "Ocultar confirmacao"
+                        : "Mostrar confirmacao"
+                    }
                   >
-                    {showConfirm ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+                    {showConfirm ? (
+                      <Eye className="h-5 w-5" />
+                    ) : (
+                      <EyeOff className="h-5 w-5" />
+                    )}
                   </button>
                 </div>
-                {errors.confirmar && <p className="text-sm text-red-500">{errors.confirmar.message}</p>}
+                {errors.confirmar && (
+                  <p className="text-sm text-red-500">
+                    {errors.confirmar.message}
+                  </p>
+                )}
               </div>
 
               <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
@@ -190,10 +227,16 @@ export default function Register() {
                   {...register("termos")}
                 />
                 <span>
-                  Concordo com os <span className="font-medium text-slate-900">termos de privacidade</span>.
+                  Concordo com os{" "}
+                  <span className="font-medium text-slate-900">
+                    termos de privacidade
+                  </span>
+                  .
                 </span>
               </label>
-              {errors.termos && <p className="text-sm text-red-500">{errors.termos.message}</p>}
+              {errors.termos && (
+                <p className="text-sm text-red-500">{errors.termos.message}</p>
+              )}
 
               {submitError && (
                 <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -211,7 +254,10 @@ export default function Register() {
             </form>
 
             <div className="mt-6 flex items-center justify-center">
-              <Link to="/" className="text-sm font-medium text-slate-600 transition hover:text-slate-950">
+              <Link
+                to="/"
+                className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
+              >
                 Fazer login
               </Link>
             </div>
@@ -228,8 +274,8 @@ export default function Register() {
               Seu proximo destino comeca aqui.
             </h2>
             <p className="max-w-xl text-base leading-7 text-white/72 sm:text-lg">
-              Crie a conta, configure seu perfil de viagem e deixe o Viajero usar esse
-              contexto para recomendar experiencias com mais precisao.
+              Crie a conta, configure seu perfil de viagem e deixe o Viajero
+              usar esse contexto para recomendar experiencias com mais precisao.
             </p>
           </div>
         </section>
