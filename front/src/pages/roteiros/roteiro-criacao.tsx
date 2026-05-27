@@ -38,12 +38,13 @@ function formatDateISO(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-function buildDefaultDates() {
+function buildItineraryDates(durationDays: number) {
   const start = new Date();
   start.setDate(start.getDate() + 5);
 
+  const safeDays = Number.isFinite(durationDays) && durationDays > 0 ? durationDays : 5;
   const end = new Date(start);
-  end.setDate(start.getDate() + 2);
+  end.setDate(start.getDate() + safeDays - 1);
 
   return {
     start_date: formatDateISO(start),
@@ -177,16 +178,13 @@ export default function RoteiroCriacaoPage() {
     setBuildingStatus("Criando a estrutura inicial do roteiro...");
 
     try {
-      const dates = buildDefaultDates();
       const createResponse = await apiRequest<ItineraryResponse>("/api/itineraries/", {
         method: "POST",
         body: JSON.stringify({
           destination: destination.id,
-          title: `${destination.name} 3 dias`,
-          duration_days: 3,
-          start_date: dates.start_date,
-          end_date: dates.end_date,
-          currency_code: "BRL",
+          title: destination.name,
+          // duration_days, currency_code e budget_total omitidos:
+          // backend herda de UserTripPreference do usuario.
         }),
       });
 
@@ -195,6 +193,15 @@ export default function RoteiroCriacaoPage() {
       if (!itinerary?.id) {
         throw new Error("Nao foi possivel criar o roteiro.");
       }
+
+      const dates = buildItineraryDates(Number(itinerary.duration_days ?? 5));
+      await apiRequest(`/api/itineraries/${itinerary.id}/`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          start_date: dates.start_date,
+          end_date: dates.end_date,
+        }),
+      });
 
       setBuildingStatus("Destino encontrado. Solicitando a geracao do roteiro...");
 
