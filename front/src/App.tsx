@@ -21,6 +21,8 @@ import ProfilePage from "./pages/user-profile/user";
 import Recommendations from "./pages/recommendations/recommendations";
 import Explorer from "./pages/explorer/explorer";
 import Roteiros from "./pages/roteiros/roteiros";
+import RoteiroCriacaoPage from "./pages/roteiros/roteiro-criacao";
+import RoteiroDetalhePage from "./pages/roteiros/roteiro-detalhe";
 import Sidebar from "./components/ui/sidebar";
 
 function PrivateRoute() {
@@ -32,7 +34,7 @@ function PrivateRoute() {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <aside className="hidden lg:block w-64 shrink-0 h-full">
+      <aside className="hidden h-full w-64 shrink-0 lg:block">
         <Sidebar />
       </aside>
       <div className="lg:hidden">
@@ -75,18 +77,11 @@ function App() {
             path="/onboard/preferencias"
             element={<TravelPreferencesOnboarding />}
           />
-          <Route
-            path="/roteiros/:id"
-            element={<div>Detalhes do roteiro</div>}
-          />
-          <Route
-            path="/roteiros/criacao"
-            element={<div>Criação de roteiro</div>}
-          />
+          <Route path="/roteiros/:id" element={<RoteiroDetalhePage />} />
+          <Route path="/roteiros/criacao" element={<RoteiroCriacaoPage />} />
           <Route path="/roteiros" element={<Roteiros />} />
           <Route path="/perfil" element={<ProfilePageWrapper />} />
           <Route path="/test" element={<Test />} />
-
           <Route path="/recomendacoes" element={<Recommendations />} />
         </Route>
       </Routes>

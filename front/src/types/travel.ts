@@ -33,6 +33,30 @@ export interface Destination {
   points_of_interest?: Array<Record<string, any>> | null;
 }
 
+export interface ItineraryEvent {
+  [key: string]: any;
+  id: number | string;
+  start_time?: string | null;
+  end_time?: string | null;
+  title: string;
+  description?: string | null;
+  estimated_cost?: number | string | null;
+  order_index?: number | null;
+  itinerary_day?: number | string | null;
+  poi?: Destination | Record<string, any> | null;
+}
+
+export interface ItineraryDay {
+  [key: string]: any;
+  id: number | string;
+  day_number: number;
+  title: string;
+  summary?: string | null;
+  estimated_cost?: number | string | null;
+  itinerary?: number | string | null;
+  events: ItineraryEvent[];
+}
+
 export interface Itinerary {
   [key: string]: any;
   id: number | string;
@@ -44,11 +68,14 @@ export interface Itinerary {
   city?: string | null;
   country?: string | null;
   summary?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
   budget_total?: number | string | null;
   currency_code?: string | null;
   generation_status?: "draft" | "generating" | "ready" | "failed" | string | null;
   review_stats?: Record<string, any> | null;
-  days?: Array<Record<string, any>> | null;
+  days?: ItineraryDay[] | null;
+  generation_context?: Record<string, any> | null;
   metadata?: Record<string, any> | null;
   description?: string | null;
   image?: string | null;

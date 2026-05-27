@@ -1,9 +1,10 @@
+import { useNavigate } from "react-router-dom";
+import { FileText, Plus } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/authContext";
 import { useItineraries } from "@/hooks/useItineraries";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { FileText } from "lucide-react";
-import CarouselRow from "@/components/ui/carousel-row";
+import ItineraryCard from "@/pages/roteiros/itinerary-card";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -16,70 +17,106 @@ function getGreeting() {
 
 export function Dashboard() {
   const { user } = useAuth();
-  const { itineraries, loading } = useItineraries();
+  const { itineraries, loading, error } = useItineraries();
   const navigate = useNavigate();
+  const recentItineraries = itineraries.slice(0, 3);
 
-  async function handleCreateItinerary() {
+  function handleCreateItinerary() {
     navigate("/onboard/preferencias");
   }
 
-  if (!user) return <p>Carregando...</p>;
+  if (!user) {
+    return <p className="p-8 text-sm text-slate-500">Carregando...</p>;
+  }
 
   return (
-    <section className="flex flex-col gap-8 p-8 w-full overflow-x-hidden">
+    <section className="flex w-full flex-col gap-8 overflow-x-hidden p-8">
       <div>
-        <h1 className="text-4xl font-bold">
-          {getGreeting()}, {user.display_name}! 👋
+        <h1 className="text-4xl font-bold text-slate-950">
+          {getGreeting()}, {user.display_name}!
         </h1>
 
-        <p className="text-sm text-neutral-500 mt-1">
-          Que tal uma viagem de aventura com clima tropical para sua próxima
-          folga?
+        <p className="mt-1 text-sm text-slate-500">
+          Seus roteiros ficam organizados aqui para voce continuar cada viagem.
         </p>
       </div>
 
+      <div className="flex flex-col gap-3 rounded-[28px] border border-sky-100 bg-white px-6 py-5 shadow-[0_18px_60px_rgba(56,189,248,0.08)] sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
+            Seus roteiros
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Abra um roteiro existente ou inicie uma nova geracao.
+          </p>
+        </div>
+
+        <Button
+          className="h-12 rounded-2xl bg-sky-600 px-5 text-sm font-semibold text-white hover:bg-sky-700"
+          onClick={handleCreateItinerary}
+        >
+          <Plus className="mr-2 size-4" />
+          Criar novo roteiro
+        </Button>
+      </div>
+
       {loading ? (
-        <p className="text-sm text-neutral-400">Carregando roteiros...</p>
+        <div className="rounded-[28px] border border-sky-100 bg-white px-6 py-10 text-sm text-slate-500 shadow-[0_18px_60px_rgba(56,189,248,0.08)]">
+          Carregando roteiros...
+        </div>
+      ) : error ? (
+        <div className="rounded-[28px] border border-red-200 bg-red-50 px-6 py-5 text-sm text-red-600">
+          {error}
+        </div>
       ) : itineraries.length === 0 ? (
-        <div className="flex flex-col items-center gap-4 border border-neutral-200 rounded-2xl py-12 px-6 text-center">
-          <div className="bg-neutral-100 p-4 rounded-xl">
-            <FileText className="size-6 text-neutral-400" />
+        <div className="flex flex-col items-center gap-4 rounded-[28px] border border-sky-100 bg-white px-6 py-12 text-center shadow-[0_18px_60px_rgba(56,189,248,0.08)]">
+          <div className="rounded-2xl bg-sky-50 p-4">
+            <FileText className="size-6 text-sky-500" />
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold">Nenhum roteiro salvo</h2>
+            <h2 className="text-lg font-semibold text-slate-950">
+              Nenhum roteiro salvo
+            </h2>
 
-            <p className="text-sm text-neutral-500 mt-1">
-              Explore destinos e salve os que mais combinam com você para
-              começar.
+            <p className="mt-1 text-sm text-slate-500">
+              Salve suas preferencias e gere o primeiro roteiro para comecar.
             </p>
           </div>
 
-          <div className="flex gap-3 mt-2">
-            <Button
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-5 rounded-lg transition-colors"
-              onClick={handleCreateItinerary}
-            >
-              Criar roteiro do zero
-            </Button>
-
-            <Button
-              variant="outline"
-              className="font-semibold px-6 py-5 rounded-lg transition-colors border-neutral-300"
-              onClick={() => navigate("/explorar")}
-            >
-              Explorar destinos
-            </Button>
-          </div>
+          <Button
+            className="mt-2 rounded-2xl bg-sky-600 px-6 py-5 font-semibold text-white transition-colors hover:bg-sky-700"
+            onClick={handleCreateItinerary}
+          >
+            Criar roteiro
+          </Button>
         </div>
       ) : (
-        <CarouselRow
-          title="Meus roteiros"
-          itineraries={itineraries}
-          onVerTodos={() => navigate("/roteiros")}
-          onView={(id) => navigate(`/roteiros/${id}`)}
-          onDetails={(id) => navigate(`/roteiros/${id}/detalhes`)}
-        />
+        <div className="space-y-5">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-slate-500">
+              {itineraries.length} roteiro(s) encontrado(s)
+            </p>
+
+            <button
+              type="button"
+              onClick={() => navigate("/roteiros")}
+              className="text-sm font-semibold text-sky-700 transition hover:text-sky-800"
+            >
+              Ver todos
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+            {recentItineraries.map((itinerary) => (
+              <ItineraryCard
+                key={itinerary.id}
+                itinerary={itinerary}
+                onOpen={(id) => navigate(`/roteiros/${id}`)}
+              />
+            ))}
+          </div>
+        </div>
       )}
     </section>
   );

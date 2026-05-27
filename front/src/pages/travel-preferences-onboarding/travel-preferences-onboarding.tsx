@@ -152,10 +152,18 @@ export default function TravelPreferencesOnboarding() {
 
     setSubmitError(null);
     try {
-      await save(payload);
+      const savedPreferences = await save(payload);
+      const preferencesId = savedPreferences?.id;
 
-      navigate("/roteiros/criacao", { replace: true });
-      next();
+      navigate(
+        preferencesId
+          ? `/roteiros/criacao?preferences_id=${preferencesId}`
+          : "/roteiros/criacao",
+        {
+          replace: true,
+          state: preferencesId ? { preferencesId } : undefined,
+        },
+      );
     } catch (error) {
       if (error instanceof Error) {
         setSubmitError(error.message);
