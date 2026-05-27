@@ -274,7 +274,7 @@ export default function RoteiroCriacaoPage() {
                 </p>
                 {preferencesId ? (
                   <p className="text-xs text-sky-700">
-                    Preferencias vinculadas: #{preferencesId}
+                    preferências vinculadas: #{preferencesId}
                   </p>
                 ) : null}
               </div>
@@ -335,7 +335,7 @@ export default function RoteiroCriacaoPage() {
 
             {preferencesId ? (
               <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
-                Preferencias recebidas: #{preferencesId}
+                preferências recebidas: #{preferencesId}
               </div>
             ) : null}
           </div>
@@ -453,7 +453,7 @@ export default function RoteiroCriacaoPage() {
                       <PlaneTakeoff className="size-4 text-sky-600" />
                     </div>
                     <p className="text-sm text-slate-500">
-                      {formatDestinationMeta(destination) || "Destino disponivel para roteiro"}
+                      {formatDestinationMeta(destination) || "Destino dispoNível para roteiro"}
                     </p>
                     <p className="line-clamp-3 text-sm leading-6 text-slate-600">
                       {destination.summary || "Use essa opcao para gerar um roteiro de 3 dias automaticamente."}

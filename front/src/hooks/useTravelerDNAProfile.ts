@@ -136,7 +136,7 @@ export function useTravelerDNAProfile(token?: string) {
         const message =
           err instanceof Error
             ? err.message
-            : "Não foi possível salvar o perfil Traveler DNA.";
+            : "Não foi possível salvar o perfil DNA do viajante.";
 
         setSaveError(message);
 

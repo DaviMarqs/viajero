@@ -86,7 +86,7 @@ export default function ItineraryCard({ itinerary, onOpen }: ItineraryCardProps)
           </div>
 
           <p className="line-clamp-3 text-sm leading-6 text-slate-600">
-            {itinerary.summary || "Resumo ainda nao disponivel para este roteiro."}
+            {itinerary.summary || "Resumo ainda nao dispoNível para este roteiro."}
           </p>
         </div>
 
@@ -95,7 +95,7 @@ export default function ItineraryCard({ itinerary, onOpen }: ItineraryCardProps)
             <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-sky-700">
               <CalendarDays className="size-4" />
             </div>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Inicio</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Início</p>
             <p className="mt-1 text-sm font-semibold text-slate-900">
               {formatDate(itinerary.start_date)}
             </p>
@@ -115,7 +115,7 @@ export default function ItineraryCard({ itinerary, onOpen }: ItineraryCardProps)
             <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-sky-700">
               <LoaderCircle className="size-4" />
             </div>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Duracao</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Duração</p>
             <p className="mt-1 text-sm font-semibold text-slate-900">
               {Number(itinerary.duration_days || 0)} dias
             </p>
@@ -125,7 +125,7 @@ export default function ItineraryCard({ itinerary, onOpen }: ItineraryCardProps)
             <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-sky-700">
               <Coins className="size-4" />
             </div>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Orcamento</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Orçamento</p>
             <p className="mt-1 text-sm font-semibold text-slate-900">
               {formatMoney(itinerary.budget_total, itinerary.currency_code)}
             </p>

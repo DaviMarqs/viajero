@@ -16,7 +16,7 @@ const registerSchema = z
     senha: z.string().min(8, "A senha deve ter pelo menos 8 caracteres"),
     confirmar: z.string().min(1, "Confirme sua senha"),
     termos: z.boolean().refine((value) => value === true, {
-      message: "Voce deve aceitar os termos",
+      message: "você deve aceitar os termos",
     }),
   })
   .refine((data) => data.senha === data.confirmar, {
@@ -133,7 +133,7 @@ export default function Register() {
                   <input
                     id="email"
                     type="email"
-                    placeholder="voce@exemplo.com"
+                    placeholder="você@exemplo.com"
                     className="h-full w-full border-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
                     {...register("email")}
                   />
@@ -271,11 +271,11 @@ export default function Register() {
 
           <div className="relative z-10 max-w-xl space-y-4">
             <h2 className="max-w-lg text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
-              Seu proximo destino comeca aqui.
+              Seu próximo destino comeca aqui.
             </h2>
             <p className="max-w-xl text-base leading-7 text-white/72 sm:text-lg">
               Crie a conta, configure seu perfil de viagem e deixe o Viajero
-              usar esse contexto para recomendar experiencias com mais precisao.
+              usar esse contexto para recomendar experiências com mais precisão.
             </p>
           </div>
         </section>

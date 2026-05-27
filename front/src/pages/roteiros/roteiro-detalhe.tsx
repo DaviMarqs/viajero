@@ -158,7 +158,7 @@ export default function RoteiroDetalhePage() {
                 {itinerary.title}
               </h1>
               <p className="max-w-3xl text-sm leading-7 text-slate-600">
-                {itinerary.summary || "Resumo ainda nao disponivel para este roteiro."}
+                {itinerary.summary || "Resumo ainda nao dispoNível para este roteiro."}
               </p>
             </div>
 
@@ -173,7 +173,7 @@ export default function RoteiroDetalhePage() {
             <div className="mb-3 inline-flex rounded-2xl bg-sky-100 p-3 text-sky-700">
               <CalendarDays className="size-5" />
             </div>
-            <p className="text-sm text-slate-500">Periodo</p>
+            <p className="text-sm text-slate-500">Período</p>
             <p className="mt-1 font-semibold text-slate-950">
               {formatDate(itinerary.start_date)} - {formatDate(itinerary.end_date)}
             </p>
@@ -193,7 +193,7 @@ export default function RoteiroDetalhePage() {
             <div className="mb-3 inline-flex rounded-2xl bg-sky-100 p-3 text-sky-700">
               <Coins className="size-5" />
             </div>
-            <p className="text-sm text-slate-500">Orcamento</p>
+            <p className="text-sm text-slate-500">Orçamento</p>
             <p className="mt-1 font-semibold text-slate-950">
               {formatMoney(itinerary.budget_total, itinerary.currency_code)}
             </p>
@@ -203,7 +203,7 @@ export default function RoteiroDetalhePage() {
             <div className="mb-3 inline-flex rounded-2xl bg-sky-100 p-3 text-sky-700">
               <CalendarDays className="size-5" />
             </div>
-            <p className="text-sm text-slate-500">Duracao</p>
+            <p className="text-sm text-slate-500">Duração</p>
             <p className="mt-1 font-semibold text-slate-950">
               {itinerary.duration_days || 0} dias
             </p>

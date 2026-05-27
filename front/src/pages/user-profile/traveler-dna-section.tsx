@@ -40,7 +40,7 @@ const COMFORT_OPTIONS = [
 
 const SLIDERS: { key: SliderKey; label: string; icon: React.ReactNode }[] = [
   { key: "social_energy", label: "Energia social", icon: <Users className="size-3.5" /> },
-  { key: "adventure_level", label: "Nivel de aventura", icon: <Mountain className="size-3.5" /> },
+  { key: "adventure_level", label: "Nível de aventura", icon: <Mountain className="size-3.5" /> },
   { key: "food_focus", label: "Foco em gastronomia", icon: <UtensilsCrossed className="size-3.5" /> },
   { key: "cultural_interest", label: "Interesse cultural", icon: <Crown className="size-3.5" /> },
   { key: "nature_interest", label: "Interesse em natureza", icon: <Leaf className="size-3.5" /> },
@@ -131,7 +131,7 @@ export function TravelerDNASection({ token }: Props) {
     return (
       <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex items-center gap-2 text-sm text-neutral-400">
         <Loader2 className="size-4 animate-spin" />
-        Carregando perfil Traveler DNA…
+        Carregando perfil DNA do viajante…
       </div>
     );
   }
@@ -151,10 +151,10 @@ export function TravelerDNASection({ token }: Props) {
     <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
-          <h2 className="text-sm font-semibold text-neutral-700">Traveler DNA</h2>
+          <h2 className="text-sm font-semibold text-neutral-700">DNA do Viajante</h2>
           {!hasData && !editing && (
             <p className="text-xs text-neutral-400 mt-0.5">
-              Sem DNA salvo ainda. Clique em editar para preencher.
+              Sem DNA preenchido ainda. Clique em editar para responder o onboarding.
             </p>
           )}
         </div>
@@ -306,7 +306,7 @@ export function TravelerDNASection({ token }: Props) {
       {success && (
         <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
           <Check className="size-4 shrink-0" />
-          Traveler DNA atualizado!
+          DNA do viajante atualizado!
         </div>
       )}
     </div>

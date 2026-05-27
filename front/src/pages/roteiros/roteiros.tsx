@@ -10,7 +10,7 @@ export default function Roteiros() {
   const { itineraries, loading, error } = useItineraries("mine");
 
   function handleCreateItinerary() {
-    navigate("/onboard/preferencias");
+    navigate("/onboard/preferências");
   }
 
   return (
@@ -23,10 +23,10 @@ export default function Roteiros() {
                 Meus roteiros
               </span>
               <h1 className="text-4xl font-semibold tracking-tight text-slate-950">
-                Todos os itinerarios criados por voce
+                Todos os roteiros criados por você
               </h1>
               <p className="max-w-3xl text-sm leading-7 text-slate-600">
-                Acompanhe status de geracao, orcamento, periodo da viagem e abra cada roteiro no detalhe.
+                Acompanhe status de geração, orçamento, período da viagem e abra cada roteiro no detalhe.
               </p>
             </div>
 

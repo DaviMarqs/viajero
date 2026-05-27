@@ -14,7 +14,7 @@ export default function OnboardingSidebar({
   currentIndex,
   steps = ONBOARDING_STEPS,
   title = "Configure o seu DNA de Viajante",
-  description = "Suas preferências alimentam a IA para recomendar destinos e montar roteiros feitos para voce.",
+  description = "Suas preferências permitem que a IA recomende destinos e monte roteiros feitos para você.",
 }: OnboardingSidebarProps) {
   return (
     <aside className="flex w-full flex-col gap-6 overflow-hidden bg-[linear-gradient(160deg,#2e8cff_0%,#1553c6_45%,#0c2f73_100%)] p-6 text-white lg:m-4 lg:w-[22rem] lg:rounded-[28px] lg:p-8">

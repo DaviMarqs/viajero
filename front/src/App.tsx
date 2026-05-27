@@ -74,7 +74,7 @@ function App() {
           <Route path="/destinos/:id" element={<DestinationPage />} />
           <Route path="/onboard" element={<Onboard />} />
           <Route
-            path="/onboard/preferencias"
+            path="/onboard/preferências"
             element={<TravelPreferencesOnboarding />}
           />
           <Route path="/roteiros/:id" element={<RoteiroDetalhePage />} />

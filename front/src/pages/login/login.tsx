@@ -94,11 +94,11 @@ export default function Login() {
           <div className="relative z-10 max-w-xl space-y-6">
             <div className="space-y-4">
               <h1 className="max-w-lg text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
-                Sua próxima viagem nao terminou.
+                Sua próxima viagem não terminou.
               </h1>
               <p className="max-w-xl text-base leading-7 text-white/72 sm:text-lg">
                 Acesse sua conta para continuar seus roteiros, recuperar
-                preferências e deixar a IA montar a próxima experiencia com
+                preferências e deixe a IA montar a próxima experiência com
                 contexto real.
               </p>
             </div>
@@ -129,7 +129,7 @@ export default function Login() {
                   <input
                     id="email"
                     type="email"
-                    placeholder="voce@exemplo.com"
+                    placeholder="você@exemplo.com"
                     className="h-full w-full border-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
                     {...register("email")}
                   />

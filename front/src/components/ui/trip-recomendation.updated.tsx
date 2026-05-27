@@ -35,7 +35,7 @@ const statusLabel: Record<TripRecommendation["generationStatus"], string> = {
   draft: "Rascunho",
   generating: "Gerando",
   ready: "Pronto",
-  failed: "Falhou",
+  failed: "Falha",
 };
 
 function formatCurrency(value: number, currencyCode: string) {
@@ -98,7 +98,7 @@ export default function TripRecomendation({ trip }: TripRecomendationProps) {
           <div className="rounded-2xl bg-neutral-50 px-3 py-3">
             <div className="mb-1 flex items-center gap-1 text-neutral-500">
               <CircleDollarSign size={14} />
-              <span className="text-xs">Budget</span>
+              <span className="text-xs">Orçamento</span>
             </div>
             <p className="text-sm font-medium text-neutral-900">
               {formatCurrency(trip.budgetTotal, trip.currencyCode)}

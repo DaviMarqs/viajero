@@ -114,12 +114,12 @@ export default function TravelPreferencesOnboarding() {
     const transportationStyle = getCardValues("transport")[0] ?? "";
 
     if (!budgetMin || !budgetMax) {
-      setSubmitError("Informe a faixa de orcamento antes de continuar.");
+      setSubmitError("Informe a faixa de Orçamento antes de continuar.");
       return;
     }
 
     if (budgetMin > budgetMax) {
-      setSubmitError("O orcamento minimo nao pode ser maior que o maximo.");
+      setSubmitError("O Orçamento minimo nao pode ser maior que o maximo.");
       return;
     }
 
@@ -290,7 +290,7 @@ export default function TravelPreferencesOnboarding() {
                 ? "Salvando..."
                 : isLast
                   ? "Concluir preferências"
-                  : "Proximo"}
+                  : "Próximo"}
             </button>
 
             {!isLast && (

@@ -192,10 +192,6 @@ export default function Explorer() {
               <h2 className="text-xl font-medium text-neutral-950">
                 Roteiros em destaque
               </h2>
-              <p className="text-sm text-neutral-600">
-                Sugestões carregadas da API para validar layout, filtros e
-                navegação.
-              </p>
             </div>
 
             <select

@@ -38,31 +38,31 @@ const MONTH_OPTIONS: DropdownOption[] = [
 
 const TRIP_LENGTH_OPTIONS: DropdownOption[] = [
   { label: "Final de semana (2-3 dias)", value: "3" },
-  { label: "Escapada curta (4-6 dias)", value: "5" },
+  { label: "Semana curta (4-6 dias)", value: "5" },
   { label: "1 semana", value: "7" },
   { label: "2 semanas", value: "14" },
   { label: "3 semanas", value: "21" },
-  { label: "1 mes ou mais", value: "30" },
+  { label: "1 mês ou mais", value: "30" },
 ];
 
 export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
   {
     key: "budget",
-    label: "Orcamento",
+    label: "Orçamento",
     title: "Faixa de investimento",
     sub: "Defina o intervalo de gasto ideal para que as recomendacoes respeitem sua realidade.",
     fields: [
       {
         type: "currency",
         key: "budget_min",
-        label: "Orcamento minimo",
+        label: "Orçamento minimo",
         required: true,
         hint: "Valor apróximado para iniciar a busca.",
       },
       {
         type: "currency",
         key: "budget_max",
-        label: "Orcamento maximo",
+        label: "Orçamento maximo",
         required: true,
         hint: "Limite confortavel para a viagem.",
       },
@@ -77,14 +77,14 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
   },
   {
     key: "timing",
-    label: "Periodo",
-    title: "Duracao e epoca",
+    label: "Período",
+    title: "Duração e epoca",
     sub: "Ajuste tempo de viagem, mes de preferencia e flexibilidade de datas.",
     fields: [
       {
         type: "dropdown",
         key: "preferred_trip_length_days",
-        label: "Duracao ideal",
+        label: "Duração ideal",
         required: true,
         icon: "calendar",
         options: TRIP_LENGTH_OPTIONS,
@@ -102,14 +102,14 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
         cards: [
           {
             icon: CalendarDays,
-            title: "Datas flexiveis",
-            desc: "Posso adaptar o periodo se isso melhorar preco ou experiencia.",
+            title: "Datas flexíveis",
+            desc: "Posso adaptar o período se isso melhorar preço ou experiência.",
             value: "true",
           },
           {
             icon: Wallet,
             title: "Datas fixas",
-            desc: "Preciso manter um periodo especifico para viajar.",
+            desc: "Preciso manter um período específico para viajar.",
             value: "false",
           },
         ],
@@ -119,8 +119,8 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
   {
     key: "stay",
     label: "Hospedagem",
-    title: "Nivel de hospedagem",
-    sub: "Escolha o equilibrio entre custo, conforto e exclusividade.",
+    title: "Nível de hospedagem",
+    sub: "Escolha o equilíbrio entre custo, conforto e exclusividade.",
     fields: [
       {
         type: "cards",
@@ -128,7 +128,7 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
           {
             icon: Plane,
             title: "Essencial",
-            desc: "Funcional, pratico e com foco em custo-beneficio.",
+            desc: "Funcional, prático e com foco em custo-beneficio.",
             value: "budget",
           },
           {
@@ -140,7 +140,7 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
           {
             icon: Crown,
             title: "Elevado",
-            desc: "Mais comodidade, servico e experiencia premium.",
+            desc: "Mais comodidade, serviço e experiência premium.",
             value: "luxury",
           },
         ],
@@ -151,7 +151,7 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
     key: "transport",
     label: "Deslocamento",
     title: "Estilo de deslocamento",
-    sub: "Como voce prefere circular pelo destino durante a viagem?",
+    sub: "Como você prefere circular pelo destino durante a viagem?",
     fields: [
       {
         type: "cards",
@@ -159,13 +159,13 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
           {
             icon: Bus,
             title: "Transporte publico",
-            desc: "Metro, onibus e modais locais com boa autonomia.",
+            desc: "Metro, ônibus e modais locais com boa autonomia.",
             value: "public",
           },
           {
             icon: Car,
             title: "Misto",
-            desc: "Combino apps, transfers e transporte publico conforme a necessidade.",
+            desc: "Combino apps, transfers e transporte público conforme a necessidade.",
             value: "mixed",
           },
           {
@@ -182,7 +182,7 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
     key: "needs",
     label: "Cuidados",
     title: "Restricoes e acessibilidade",
-    sub: "Selecione os pontos que precisam ser considerados para sua experiencia ficar realmente adequada.",
+    sub: "Selecione os pontos que precisam ser considerados para sua experiência ficar realmente adequada.",
     fields: [
       {
         type: "tags",
@@ -192,7 +192,7 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
         options: [
           { label: "Vegetariana", value: "vegetarian" },
           { label: "Vegana", value: "vegan" },
-          { label: "Sem gluten", value: "gluten_free" },
+          { label: "Sem glúten", value: "gluten_free" },
           { label: "Sem lactose", value: "lactose_free" },
         ],
       },
@@ -213,12 +213,12 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
     key: "interests",
     label: "Interesses",
     title: "Interesses da viagem",
-    sub: "Esses temas ajudam a IA a priorizar experiencias mais aderentes ao seu perfil.",
+    sub: "Esses temas ajudam a IA a priorizar experiências mais aderentes ao seu perfil.",
     fields: [
       {
         type: "tags",
         key: "interests",
-        label: "O que voce quer priorizar?",
+        label: "O que você quer priorizar?",
         required: true,
         multi: true,
         options: [
@@ -237,5 +237,5 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
 export const TRAVEL_PREFERENCES_SIDEBAR = {
   title: "Configure suas preferências de viagem",
   description:
-    "Esses dados refinam os roteiros com faixa de gasto, periodo e necessidades reais da sua viagem.",
+    "Esses dados refinam os roteiros com faixa de gasto, período e necessidades reais da sua viagem.",
 };

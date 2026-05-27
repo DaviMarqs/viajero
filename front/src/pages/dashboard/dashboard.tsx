@@ -22,7 +22,7 @@ export function Dashboard() {
   const recentItineraries = itineraries.slice(0, 3);
 
   function handleCreateItinerary() {
-    navigate("/onboard/preferencias");
+    navigate("/onboard/preferências");
   }
 
   if (!user) {
@@ -37,7 +37,7 @@ export function Dashboard() {
         </h1>
 
         <p className="mt-1 text-sm text-slate-500">
-          Seus roteiros ficam organizados aqui para voce continuar cada viagem.
+          Seus roteiros ficam organizados aqui para você continuar o planejamento de cada viagem.
         </p>
       </div>
 
@@ -47,7 +47,7 @@ export function Dashboard() {
             Seus roteiros
           </h2>
           <p className="mt-1 text-sm text-slate-600">
-            Abra um roteiro existente ou inicie uma nova geracao.
+            Abra um roteiro existente ou inicie uma nova geração.
           </p>
         </div>
 
@@ -80,7 +80,7 @@ export function Dashboard() {
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Salve suas preferencias e gere o primeiro roteiro para comecar.
+              Salve suas preferências e gere o primeiro roteiro para comecar.
             </p>
           </div>
 
