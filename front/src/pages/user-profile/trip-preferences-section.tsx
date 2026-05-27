@@ -42,22 +42,22 @@ const MONTH_OPTIONS = [
 
 const TRIP_LENGTH_OPTIONS = [
   { label: "Final de semana (2-3 dias)", value: 3 },
-  { label: "Escapada curta (4-6 dias)", value: 5 },
+  { label: "Semana curta (4-6 dias)", value: 5 },
   { label: "1 semana", value: 7 },
   { label: "2 semanas", value: 14 },
   { label: "3 semanas", value: 21 },
-  { label: "1 mes ou mais", value: 30 },
+  { label: "1 mês ou mais", value: 30 },
 ];
 
 const HOTEL_LEVEL_OPTIONS = [
   { label: "Essencial", value: "budget" },
-  { label: "Confortavel", value: "mid" },
-  { label: "Padrao", value: "standard" },
+  { label: "Confortável", value: "mid" },
+  { label: "Padrão", value: "standard" },
   { label: "Elevado", value: "luxury" },
 ];
 
 const TRANSPORT_OPTIONS = [
-  { label: "Transporte publico", value: "public" },
+  { label: "Transporte público", value: "public" },
   { label: "Misto", value: "mixed" },
   { label: "Privado", value: "private" },
 ];
@@ -65,7 +65,7 @@ const TRANSPORT_OPTIONS = [
 const DIETARY_OPTIONS = [
   { label: "Vegetariana", value: "vegetarian" },
   { label: "Vegana", value: "vegan" },
-  { label: "Sem gluten", value: "gluten_free" },
+  { label: "Sem glúten", value: "gluten_free" },
   { label: "Sem lactose", value: "lactose_free" },
 ];
 
@@ -231,13 +231,13 @@ export function TripPreferencesSection({ token }: Props) {
 
       {!editing && hasData && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-sm">
-          <ReadOnly icon={<Wallet className="size-3.5" />} label="Orcamento">
+          <ReadOnly icon={<Wallet className="size-3.5" />} label="Orçamento">
             {preferences?.budget_min} – {preferences?.budget_max}{" "}
             {preferences?.currency_code}
           </ReadOnly>
           <ReadOnly
             icon={<CalendarDays className="size-3.5" />}
-            label="Duracao ideal"
+            label="Duração ideal"
           >
             {labelFor(
               TRIP_LENGTH_OPTIONS,
@@ -282,7 +282,7 @@ export function TripPreferencesSection({ token }: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <FieldGroup
               icon={<Wallet className="size-3.5" />}
-              label="Orcamento minimo"
+              label="Orçamento minimo"
             >
               <input
                 type="number"
@@ -295,7 +295,7 @@ export function TripPreferencesSection({ token }: Props) {
             </FieldGroup>
             <FieldGroup
               icon={<Wallet className="size-3.5" />}
-              label="Orcamento maximo"
+              label="Orçamento maximo"
             >
               <input
                 type="number"
@@ -326,7 +326,7 @@ export function TripPreferencesSection({ token }: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FieldGroup
               icon={<CalendarDays className="size-3.5" />}
-              label="Duracao ideal"
+              label="Duração ideal"
             >
               <select
                 className={inputClass}

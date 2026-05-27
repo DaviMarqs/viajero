@@ -69,6 +69,7 @@ export type StepField =
       type: "range";
       key: string;
       label: string;
+      span: string;
       min: number;
       max: number;
       step?: number;
@@ -193,7 +194,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     ],
   },
   {
-    key: "preferencias",
+    key: "preferências",
     label: "Preferências",
     title: "O que combina mais com você?",
     sub: "Dê uma nota de 0 a 10 para cada preferência.",
@@ -202,6 +203,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
         type: "range",
         key: "social_energy",
         label: "Energia social",
+        span: "Seu nível de interesse em atividades sociais e interação com pessoas.",
         min: 0,
         max: 10,
         step: 1,
@@ -210,6 +212,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
         type: "range",
         key: "adventure_level",
         label: "Nível de aventura",
+        span: "Preferência por experiências aventureiras.",
         min: 0,
         max: 10,
         step: 1,
@@ -218,6 +221,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
         type: "range",
         key: "food_focus",
         label: "Interesse em gastronomia",
+        span: "Quanto a gastronomia importa na sua viagem.",
         min: 0,
         max: 10,
         step: 1,
@@ -226,6 +230,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
         type: "range",
         key: "cultural_interest",
         label: "Interesse cultural",
+        span: "Interesse por cultura, arte e história.",
         min: 0,
         max: 10,
         step: 1,
@@ -234,6 +239,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
         type: "range",
         key: "nature_interest",
         label: "Interesse em natureza",
+        span: "Interesse por natureza e atividades ao ar livre.",
         min: 0,
         max: 10,
         step: 1,
@@ -242,6 +248,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
         type: "range",
         key: "nightlife_interest",
         label: "Interesse em vida noturna",
+        span: "Interesse em bares, festas e vida noturna.",
         min: 0,
         max: 10,
         step: 1,

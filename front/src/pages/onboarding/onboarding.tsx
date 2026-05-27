@@ -163,8 +163,8 @@ export default function Onboarding() {
                 DNA configurado!
               </h2>
               <p className="text-base leading-7 text-slate-500">
-                Suas preferências foram salvas. A IA do Viajero ja pode montar
-                roteiros personalizados para voce.
+                Suas preferências foram salvas. A IA do Viajero já pode montar
+                roteiros personalizados para você.
               </p>
               <div className="mt-2 flex flex-col gap-3 sm:flex-row">
                 <Link
@@ -241,8 +241,8 @@ export default function Onboarding() {
               {saving
                 ? "Salvando..."
                 : isLast
-                  ? "Concluir configuracao"
-                  : "Proximo"}
+                  ? "Concluir configuração"
+                  : "Próximo"}
             </button>
 
             {!isLast && currentStep.key !== "conta" && (

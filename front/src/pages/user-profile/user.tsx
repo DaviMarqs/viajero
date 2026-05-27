@@ -442,7 +442,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
           )}
         </div>
 
-        {token && <TripPreferencesSection token={token} />}
+        {/* {token && <TripPreferencesSection token={token} />} */}
         {token && <TravelerDNASection token={token} />}
 
         <div className="bg-white rounded-2xl border border-neutral-100 px-6 py-4 flex flex-col gap-1">
