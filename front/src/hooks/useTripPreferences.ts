@@ -67,6 +67,7 @@ export function useTripPreferences(token?: string) {
           budget_min: String(input.budget_min ?? ""),
           budget_max: String(input.budget_max ?? ""),
           currency_code: input.currency_code ?? "BRL",
+          companionship: input.companionship ?? "",
           preferred_trip_length_days: input.preferred_trip_length_days ?? 0,
           travel_month: input.travel_month ?? "",
           hotel_level: input.hotel_level ?? "",

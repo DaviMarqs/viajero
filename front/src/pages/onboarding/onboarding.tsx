@@ -13,6 +13,17 @@ import { useAuth } from "@/contexts/authContext";
 import { ONBOARDING_STEPS } from "./onboarding.data";
 import type { TravelerDNAProfile } from "@/lib/profiles";
 
+function getProfileNotes(rawNotes: string | null | undefined) {
+  if (!rawNotes) return "";
+
+  try {
+    const parsed = JSON.parse(rawNotes) as { text?: unknown };
+    return typeof parsed?.text === "string" ? parsed.text : "";
+  } catch {
+    return rawNotes;
+  }
+}
+
 function getCardIndexes(stepKey: string, values: string[]) {
   const step = ONBOARDING_STEPS.find((item) => item.key === stepKey);
   const cardsField = step?.fields.find((item) => item.type === "cards");
@@ -48,7 +59,7 @@ function buildSnapshotFromExistingData(
       nightlife_interest: profile?.nightlife_interest
         ? String(profile.nightlife_interest)
         : "5",
-      notes: profile?.notes ?? "",
+      notes: getProfileNotes(profile?.notes),
     },
     tagValues: {},
     cardSelections: {

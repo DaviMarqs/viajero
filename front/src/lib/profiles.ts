@@ -46,6 +46,7 @@ export interface UserTripPreference {
   budget_min: string;
   budget_max: string;
   currency_code: string;
+  companionship: string;
   preferred_trip_length_days: number;
   travel_month: string;
   hotel_level: string;
@@ -62,6 +63,7 @@ export interface TripPreferenceUpsertInput {
   budget_min: number;
   budget_max: number;
   currency_code: string;
+  companionship: string;
   preferred_trip_length_days: number;
   travel_month: string;
   hotel_level: string;

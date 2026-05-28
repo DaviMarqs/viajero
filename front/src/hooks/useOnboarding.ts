@@ -27,6 +27,16 @@ function toNumber(value: unknown) {
   return Number.parseInt(digits, 10) / 100;
 }
 
+function toScaleValue(value: unknown, fallback = 5) {
+  const parsed = Number.parseInt(String(value ?? fallback), 10);
+
+  if (!Number.isFinite(parsed)) return fallback;
+  if (parsed < 1) return 1;
+  if (parsed > 10) return 10;
+
+  return parsed;
+}
+
 export function useOnboarding(steps: OnboardingStep[] = []) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [cardSelections, setCardSelections] = useState<CardSelections>({});
@@ -86,7 +96,9 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
 
       if ("key" in field) {
         const value = fieldValues[field.key];
-        return value !== undefined && value !== null && String(value).trim() !== "";
+        return (
+          value !== undefined && value !== null && String(value).trim() !== ""
+        );
       }
 
       return false;
@@ -96,7 +108,9 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
   const toggleCard = useCallback(
     (cardIndex: number) => {
       setCardSelections((current) => {
-        const cardsField = currentStep.fields.find((field) => field.type === "cards");
+        const cardsField = currentStep.fields.find(
+          (field) => field.type === "cards",
+        );
         const isMulti = cardsField?.type === "cards" && cardsField.multi;
         const next = new Set(current[currentStep.key] ?? []);
 
@@ -130,24 +144,27 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
     setTagValues((current) => ({ ...current, [key]: values }));
   }, []);
 
-  const setSnapshot = useCallback((snapshot: Partial<OnboardingSnapshot> | null | undefined) => {
-    if (!snapshot) return;
-    if (typeof snapshot.currentIndex === "number") {
-      setCurrentIndex(snapshot.currentIndex);
-    }
-    if (snapshot.fieldValues) {
-      setFieldValues(snapshot.fieldValues);
-    }
-    if (snapshot.tagValues) {
-      setTagValues(snapshot.tagValues);
-    }
-    if (snapshot.cardSelections) {
-      setCardSelections(snapshot.cardSelections);
-    }
-    if (typeof snapshot.finished === "boolean") {
-      setFinished(snapshot.finished);
-    }
-  }, []);
+  const setSnapshot = useCallback(
+    (snapshot: Partial<OnboardingSnapshot> | null | undefined) => {
+      if (!snapshot) return;
+      if (typeof snapshot.currentIndex === "number") {
+        setCurrentIndex(snapshot.currentIndex);
+      }
+      if (snapshot.fieldValues) {
+        setFieldValues(snapshot.fieldValues);
+      }
+      if (snapshot.tagValues) {
+        setTagValues(snapshot.tagValues);
+      }
+      if (snapshot.cardSelections) {
+        setCardSelections(snapshot.cardSelections);
+      }
+      if (typeof snapshot.finished === "boolean") {
+        setFinished(snapshot.finished);
+      }
+    },
+    [],
+  );
 
   const next = useCallback(() => {
     if (isLast) {
@@ -168,25 +185,22 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
   }, [isLast]);
 
   const buildProfilePayload = useCallback(() => {
-    const companionship = getCardValues("companhia")[0] ?? "";
-    const additionalPreferences = getCardValues("adicionais");
-
     return {
-      travel_style: getCardValues("experiencia")[0] ?? "",
-      pace: getCardValues("ritmo")[0] ?? "",
-      comfort_level: getCardValues("conforto")[0] ?? "",
-      social_energy: 5,
-      adventure_level: 5,
-      food_focus: 5,
-      cultural_interest: 5,
-      nature_interest: 5,
-      nightlife_interest: 5,
-      notes: JSON.stringify({
-        companionship,
-        additional_preferences: additionalPreferences,
-      }),
+      travel_style:
+        getCardValues("estilo")[0] ?? String(fieldValues.travel_style ?? ""),
+      pace: getCardValues("ritmo")[0] ?? String(fieldValues.pace ?? ""),
+      comfort_level:
+        getCardValues("conforto")[0] ??
+        String(fieldValues.comfort_level ?? ""),
+      social_energy: toScaleValue(fieldValues.social_energy),
+      adventure_level: toScaleValue(fieldValues.adventure_level),
+      food_focus: toScaleValue(fieldValues.food_focus),
+      cultural_interest: toScaleValue(fieldValues.cultural_interest),
+      nature_interest: toScaleValue(fieldValues.nature_interest),
+      nightlife_interest: toScaleValue(fieldValues.nightlife_interest),
+      notes: String(fieldValues.notes ?? "").trim(),
     };
-  }, [getCardValues]);
+  }, [fieldValues, getCardValues]);
 
   const buildTravelPayload = useCallback(() => {
     const budget = toNumber(fieldValues.budget);
@@ -196,11 +210,15 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
       budget_min: budget,
       budget_max: budget,
       currency_code: "BRL",
-      preferred_trip_length_days: Number.parseInt(String(fieldValues.trip_length ?? "0"), 10) || 0,
+      preferred_trip_length_days:
+        Number.parseInt(String(fieldValues.trip_length ?? "0"), 10) || 0,
       travel_month: String(fieldValues.travel_month ?? ""),
       hotel_level: getCardValues("conforto")[0] ?? "",
       transportation_style: "",
-      dietary_preferences: restrictions === "vegetarian" || restrictions === "vegan" ? [restrictions] : [],
+      dietary_preferences:
+        restrictions === "vegetarian" || restrictions === "vegan"
+          ? [restrictions]
+          : [],
       accessibility_needs: restrictions === "mobility" ? [restrictions] : [],
       interests: tagValues.interests ?? [],
       metadata: {
@@ -255,7 +273,8 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
     setStep: setCurrentIndex,
     nextStep: next,
     prevStep: skip,
-    updateAnswers: (patch: Partial<FieldValues>) => setFieldValues((current) => ({ ...current, ...patch })),
+    updateAnswers: (patch: Partial<FieldValues>) =>
+      setFieldValues((current) => ({ ...current, ...patch })),
     submit: async () => {
       setFinished(true);
       return {

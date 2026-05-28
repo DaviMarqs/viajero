@@ -9,6 +9,9 @@ import {
   Sparkles,
   Wallet,
   Plane,
+  Users,
+  Heart,
+  Baby,
 } from "lucide-react";
 import type {
   DropdownOption,
@@ -72,6 +75,43 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
         label: "Moeda",
         required: true,
         options: CURRENCY_OPTIONS,
+      },
+    ],
+  },
+  {
+    key: "companionship",
+    label: "Companhia",
+    title: "Com quem voce pretende viajar?",
+    sub: "Essa escolha ajusta sugestoes, ritmo e tipos de experiencias para o contexto da viagem.",
+    fields: [
+      {
+        type: "cards",
+        cards: [
+          {
+            icon: Plane,
+            title: "Sozinho",
+            desc: "Roteiros com autonomia, flexibilidade e exploracao individual.",
+            value: "solo",
+          },
+          {
+            icon: Baby,
+            title: "Familia",
+            desc: "Sugestoes pensando em conforto, praticidade e atividades em grupo.",
+            value: "family",
+          },
+          {
+            icon: Heart,
+            title: "Casal",
+            desc: "Experiencias mais intimistas, romanticas ou equilibradas para dois.",
+            value: "couple",
+          },
+          {
+            icon: Users,
+            title: "Amigos",
+            desc: "Opcao ideal para viagens mais sociais, dinamicas e compartilhadas.",
+            value: "friends",
+          },
+        ],
       },
     ],
   },
