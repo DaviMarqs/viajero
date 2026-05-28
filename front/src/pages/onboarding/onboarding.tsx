@@ -1,4 +1,4 @@
-import { AlertCircle, Loader2, PartyPopper } from "lucide-react";
+import { AlertCircle, Loader2, PartyPopper, ArrowLeft } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import OnboardingSidebar from "../../components/ui/onboarding-sidebar";
@@ -82,6 +82,7 @@ export default function Onboarding() {
     setField,
     setTags,
     setSnapshot,
+    prev,
     next,
     skip,
     buildProfilePayload,
@@ -196,6 +197,18 @@ export default function Onboarding() {
       <main className="flex flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:p-10">
         <div className="flex w-full flex-col rounded-[32px] bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.08)] sm:p-8 lg:p-10">
           <header className="flex flex-col gap-3">
+            {currentIndex > 0 && (
+              <button
+                type="button"
+                onClick={prev}
+                disabled={saving}
+                className="mb-2 flex w-fit items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-slate-900 disabled:opacity-50"
+              >
+                <ArrowLeft className="size-4" />
+                Voltar
+              </button>
+            )}
+
             <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
               {currentStep.title}
             </h2>
@@ -231,7 +244,7 @@ export default function Onboarding() {
             </div>
           )}
 
-          <footer className="mt-8 flex flex-col gap-3">
+     <footer className="mt-8 flex flex-col gap-3">
             <button
               type="button"
               className="flex h-14 w-full items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"

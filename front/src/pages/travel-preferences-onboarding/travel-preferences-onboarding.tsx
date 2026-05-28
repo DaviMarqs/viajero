@@ -1,4 +1,4 @@
-import { PartyPopper, AlertCircle, Loader2 } from "lucide-react";
+import { PartyPopper, AlertCircle, Loader2, ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import OnboardingSidebar from "@/components/ui/onboarding-sidebar";
@@ -87,6 +87,7 @@ export default function TravelPreferencesOnboarding() {
     setField,
     setTags,
     setSnapshot,
+    prev,
     next,
     skip,
     getCardValues,
@@ -245,7 +246,20 @@ export default function TravelPreferencesOnboarding() {
 
       <main className="flex flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:p-10">
         <div className="flex w-full flex-col rounded-[32px] bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.08)] sm:p-8 lg:p-10">
-          <header className="flex flex-col gap-3">
+         <header className="flex flex-col gap-3">
+            {/* NOVO BOTÃO DE VOLTAR AQUI */}
+            {currentIndex > 0 && (
+              <button
+                type="button"
+                onClick={prev}
+                disabled={saving}
+                className="mb-2 flex w-fit items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-slate-900 disabled:opacity-50"
+              >
+                <ArrowLeft className="size-4" />
+                Voltar
+              </button>
+            )}
+
             <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
               {currentStep.title}
             </h2>

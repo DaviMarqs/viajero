@@ -167,6 +167,10 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
     setCurrentIndex((value) => value + 1);
   }, [isLast]);
 
+  const prev = useCallback(() => {
+    setCurrentIndex((value) => Math.max(0, value - 1));
+  }, []);
+
   const buildProfilePayload = useCallback(() => {
     const companionship = getCardValues("companhia")[0];
     const additionalPreferences = getCardValues("adicionais");
@@ -299,6 +303,7 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
     refetch: async () => undefined,
     setSnapshot,
     next,
+    prev,
     skip,
     toggleCard,
     setField,
