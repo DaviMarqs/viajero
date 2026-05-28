@@ -23,7 +23,7 @@ const TRAVEL_STYLE_OPTIONS = [
   { label: "Solo", value: "solo" },
   { label: "Casal", value: "couple" },
   { label: "Amigos", value: "friends" },
-  { label: "Familia", value: "family" },
+  { label: "Família", value: "family" },
 ];
 
 const PACE_OPTIONS = [
@@ -33,8 +33,8 @@ const PACE_OPTIONS = [
 ];
 
 const COMFORT_OPTIONS = [
-  { label: "Economico", value: "budget" },
-  { label: "Padrao", value: "standard" },
+  { label: "Econômico", value: "budget" },
+  { label: "Padrão", value: "standard" },
   { label: "Premium", value: "premium" },
 ];
 

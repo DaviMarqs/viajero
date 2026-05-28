@@ -130,7 +130,7 @@ export default function RoteiroCriacaoPage() {
         setRecommendationsError(
           error instanceof Error
             ? error.message
-            : "Nao foi possivel carregar as recomendacoes agora.",
+            : "Nao foi possível carregar as recomendações agora.",
         );
       } finally {
         if (active) {
@@ -330,19 +330,17 @@ export default function RoteiroCriacaoPage() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-3">
               <span className="inline-flex w-fit rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">
-                Criacao de roteiro
+                Criação de roteiro
               </span>
               <h1 className="text-4xl font-semibold tracking-tight text-slate-950">
-                Escolha um destino para montar sua proxima viagem
+                Escolha um destino para montar sua próxima viagem
               </h1>
-              <p className="max-w-2xl text-sm leading-7 text-slate-600">
-                Pesquise um destino especifico ou use uma das recomendacoes carregadas do banco para iniciar o roteiro.
-              </p>
+          
             </div>
 
             {preferencesId ? (
               <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
-                preferências recebidas: #{preferencesId}
+                Preferências recebidas: #{preferencesId}
               </div>
             ) : null}
           </div>
@@ -356,9 +354,6 @@ export default function RoteiroCriacaoPage() {
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-slate-950">Pesquisar destino</h2>
-                <p className="text-sm text-slate-500">
-                  A primeira busca pode demorar. As proximas tendem a responder do cache.
-                </p>
               </div>
             </div>
 
@@ -413,9 +408,9 @@ export default function RoteiroCriacaoPage() {
                 <Sparkles className="size-5" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-slate-950">Recomendacoes</h2>
+                <h2 className="text-xl font-semibold text-slate-950">Recomendações</h2>
                 <p className="text-sm text-slate-500">
-                  Tres opcoes simples carregadas dos destinos cadastrados.
+                  Três opções simples carregadas dos destinos cadastrados.
                 </p>
               </div>
             </div>
@@ -424,7 +419,7 @@ export default function RoteiroCriacaoPage() {
               {recommendationsLoading ? (
                 <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-10 text-center text-sm text-slate-500">
                   <Loader2 className="mx-auto mb-3 size-5 animate-spin text-sky-600" />
-                  Carregando recomendacoes...
+                  Carregando recomendações...
                 </div>
               ) : null}
 
@@ -470,22 +465,7 @@ export default function RoteiroCriacaoPage() {
               ))}
             </div>
           </article>
-        </div>
-
-        <article className="rounded-[28px] border border-sky-100 bg-white p-6 shadow-[0_18px_60px_rgba(56,189,248,0.10)]">
-          <div className="flex items-start gap-4">
-            <div className="rounded-2xl bg-sky-100 p-3 text-sky-700">
-              <MapPinned className="size-5" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-slate-950">Como funciona</h2>
-              <p className="mt-2 text-sm leading-7 text-slate-600">
-                1. Pesquise o destino ou escolha uma recomendacao. 2. Usamos o primeiro resultado encontrado para criar o roteiro.
-                3. Disparamos a geracao e aguardamos o status ficar <strong>ready</strong>. 4. Redirecionamos para a tela final do roteiro.
-              </p>
-            </div>
-          </div>
-        </article>
+        </div>  
       </div>
     </section>
   );

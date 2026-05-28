@@ -54,7 +54,7 @@ export default function DestinationInfo({ destination }: DestinationInfoProps) {
     },
     {
       label: 'Localização',
-      value: `${destination.city}, ${destination.country}`,
+      value: `${destination.name}, ${destination.country}`,
       icon: <Globe className="size-4" />,
     },
     ...(ratingNum > 0 ? [{

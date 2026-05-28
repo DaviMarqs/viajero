@@ -120,7 +120,7 @@ export default function TravelPreferencesOnboarding() {
     }
 
     if (budgetMin > budgetMax) {
-      setSubmitError("O Orçamento minimo nao pode ser maior que o maximo.");
+      setSubmitError("O Orçamento mínimo nao pode ser maior que o máximo.");
       return;
     }
 
@@ -269,7 +269,7 @@ export default function TravelPreferencesOnboarding() {
             {hasCards &&
               currentStep.fields.some((field) => field.type === "cards") && (
                 <span className="inline-flex w-fit rounded-full bg-sky-50 px-3 py-1 text-sm font-medium text-sky-700">
-                  Escolha a opcao que melhor descreve sua preferencia
+                  Escolha a opção que melhor descreve sua preferência
                 </span>
               )}
           </header>

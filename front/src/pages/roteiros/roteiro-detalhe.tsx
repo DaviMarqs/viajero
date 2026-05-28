@@ -10,7 +10,7 @@ type ItineraryResponse = ApiSuccessResponse<Itinerary>;
 
 function formatMoney(value?: string | number | null, currencyCode?: string | null) {
   if (value === null || value === undefined || value === "") {
-    return "Nao informado";
+    return "Não informado";
   }
 
   const amount = Number(value);
@@ -25,7 +25,7 @@ function formatMoney(value?: string | number | null, currencyCode?: string | nul
 }
 
 function formatDate(value?: string | null) {
-  if (!value) return "Nao informado";
+  if (!value) return "Não informado";
 
   const date = new Date(`${value}T00:00:00`);
   if (Number.isNaN(date.getTime())) return value;
@@ -43,7 +43,7 @@ export default function RoteiroDetalhePage() {
     return (
       <section className="px-6 py-8 lg:px-10">
         <div className="rounded-[28px] border border-red-200 bg-red-50 px-6 py-5 text-sm text-red-600">
-          Roteiro nao informado.
+          Roteiro não informado.
         </div>
       </section>
     );
@@ -185,7 +185,7 @@ export default function RoteiroDetalhePage() {
             </div>
             <p className="text-sm text-slate-500">Destino</p>
             <p className="mt-1 font-semibold text-slate-950">
-              {destinationLabel || "Nao informado"}
+              {destinationLabel || "Não informado"}
             </p>
           </div>
 
