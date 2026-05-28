@@ -24,6 +24,7 @@ class UserTripPreference(models.Model):
     budget_min = models.DecimalField(max_digits=10, decimal_places=2)
     budget_max = models.DecimalField(max_digits=10, decimal_places=2)
     currency_code = models.CharField(max_length=3, default="BRL")
+    companionship = models.CharField(max_length=40, blank=True)
     preferred_trip_length_days = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(60)])
     travel_month = models.CharField(max_length=20, blank=True)
     hotel_level = models.CharField(max_length=40, blank=True)

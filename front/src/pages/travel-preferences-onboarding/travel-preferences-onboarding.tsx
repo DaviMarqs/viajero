@@ -56,6 +56,7 @@ function buildSnapshotFromPreferences(
       interests: preferences.interests ?? [],
     },
     cardSelections: {
+      companionship: getCardIndexes("companionship", [preferences.companionship]),
       timing: getCardIndexes("timing", [
         String(Boolean(preferences.metadata?.flexible_dates)),
       ]),
@@ -103,6 +104,7 @@ export default function TravelPreferencesOnboarding() {
 
   const canAdvance = hasSelection();
   const flexibleDatesValue = getCardValues("timing")[0] === "true";
+  const companionship = getCardValues("companionship")[0] ?? "";
 
   async function handleFinish() {
     const budgetMin = currencyStringToNumber(fieldValues.budget_min ?? "");
@@ -127,6 +129,7 @@ export default function TravelPreferencesOnboarding() {
     if (
       !tripLength ||
       !fieldValues.currency_code ||
+      !companionship ||
       !fieldValues.travel_month ||
       !hotelLevel ||
       !transportationStyle
@@ -139,6 +142,7 @@ export default function TravelPreferencesOnboarding() {
       budget_min: budgetMin,
       budget_max: budgetMax,
       currency_code: fieldValues.currency_code,
+      companionship,
       preferred_trip_length_days: tripLength,
       travel_month: fieldValues.travel_month,
       hotel_level: hotelLevel,

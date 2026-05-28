@@ -51,6 +51,7 @@ def test_trip_preferences_me_supports_patch_upsert():
         "budget_min": "500.00",
         "budget_max": "1500.00",
         "currency_code": "BRL",
+        "companionship": "friends",
         "preferred_trip_length_days": 7,
         "travel_month": "June",
         "hotel_level": "mid",
@@ -66,4 +67,5 @@ def test_trip_preferences_me_supports_patch_upsert():
     assert response.status_code == 201
     data = response.json()["data"]
     assert data["currency_code"] == "BRL"
+    assert data["companionship"] == "friends"
     assert data["metadata"]["flexible_dates"] is True

@@ -7,6 +7,7 @@ import {
   CalendarDays,
   Hotel,
   Bus,
+  Users,
   Salad,
   Accessibility,
   Sparkles,
@@ -62,6 +63,13 @@ const TRANSPORT_OPTIONS = [
   { label: "Privado", value: "private" },
 ];
 
+const COMPANIONSHIP_OPTIONS = [
+  { label: "Sozinho", value: "solo" },
+  { label: "Família", value: "family" },
+  { label: "Casal", value: "couple" },
+  { label: "Amigos", value: "friends" },
+];
+
 const DIETARY_OPTIONS = [
   { label: "Vegetariana", value: "vegetarian" },
   { label: "Vegana", value: "vegan" },
@@ -88,6 +96,7 @@ interface FormState {
   budget_min: string;
   budget_max: string;
   currency_code: string;
+  companionship: string;
   preferred_trip_length_days: number;
   travel_month: string;
   hotel_level: string;
@@ -108,14 +117,14 @@ function labelFor(
   options: { label: string; value: string | number }[],
   value: string | number | undefined | null,
 ) {
-  return options.find((o) => String(o.value) === String(value))?.label ?? "—";
+  return options.find((o) => String(o.value) === String(value))?.label ?? "-";
 }
 
 function joinLabels(
   options: { label: string; value: string }[],
   values: string[] | undefined | null,
 ) {
-  if (!values || values.length === 0) return "—";
+  if (!values || values.length === 0) return "-";
   return values
     .map((v) => options.find((o) => o.value === v)?.label ?? v)
     .join(", ");
@@ -135,6 +144,7 @@ export function TripPreferencesSection({ token }: Props) {
     budget_min: "",
     budget_max: "",
     currency_code: "BRL",
+    companionship: "",
     preferred_trip_length_days: 7,
     travel_month: "",
     hotel_level: "",
@@ -150,6 +160,7 @@ export function TripPreferencesSection({ token }: Props) {
       budget_min: String(preferences.budget_min ?? ""),
       budget_max: String(preferences.budget_max ?? ""),
       currency_code: preferences.currency_code ?? "BRL",
+      companionship: preferences.companionship ?? "",
       preferred_trip_length_days: preferences.preferred_trip_length_days ?? 7,
       travel_month: preferences.travel_month ?? "",
       hotel_level: preferences.hotel_level ?? "",
@@ -167,6 +178,7 @@ export function TripPreferencesSection({ token }: Props) {
         budget_min: Number(form.budget_min) || 0,
         budget_max: Number(form.budget_max) || 0,
         currency_code: form.currency_code,
+        companionship: form.companionship,
         preferred_trip_length_days:
           Number(form.preferred_trip_length_days) || 0,
         travel_month: form.travel_month,
@@ -189,7 +201,7 @@ export function TripPreferencesSection({ token }: Props) {
     return (
       <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex items-center gap-2 text-sm text-neutral-400">
         <Loader2 className="size-4 animate-spin" />
-        Carregando preferências de viagem…
+        Carregando preferências da viagem...
       </div>
     );
   }
@@ -210,11 +222,11 @@ export function TripPreferencesSection({ token }: Props) {
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
           <h2 className="text-sm font-semibold text-neutral-700">
-            preferências de viagem
+            Preferências da viagem
           </h2>
           {!hasData && !editing && (
             <p className="text-xs text-neutral-400 mt-0.5">
-              Nenhuma preferencia salva ainda. Clique em editar para preencher.
+              Nenhuma preferência salva ainda. Clique em editar para preencher.
             </p>
           )}
         </div>
@@ -234,6 +246,9 @@ export function TripPreferencesSection({ token }: Props) {
           <ReadOnly icon={<Wallet className="size-3.5" />} label="Orçamento">
             {preferences?.budget_min} – {preferences?.budget_max}{" "}
             {preferences?.currency_code}
+          </ReadOnly>
+          <ReadOnly icon={<Users className="size-3.5" />} label="Companhia">
+            {labelFor(COMPANIONSHIP_OPTIONS, preferences?.companionship)}
           </ReadOnly>
           <ReadOnly
             icon={<CalendarDays className="size-3.5" />}
@@ -324,6 +339,22 @@ export function TripPreferencesSection({ token }: Props) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FieldGroup icon={<Users className="size-3.5" />} label="Companhia">
+              <select
+                className={inputClass}
+                value={form.companionship}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, companionship: e.target.value }))
+                }
+              >
+                <option value="">Selecionar...</option>
+                {COMPANIONSHIP_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </FieldGroup>
             <FieldGroup
               icon={<CalendarDays className="size-3.5" />}
               label="Duração ideal"
@@ -345,6 +376,9 @@ export function TripPreferencesSection({ token }: Props) {
                 ))}
               </select>
             </FieldGroup>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FieldGroup
               icon={<CalendarDays className="size-3.5" />}
               label="Mês preferido"
@@ -356,8 +390,24 @@ export function TripPreferencesSection({ token }: Props) {
                   setForm((f) => ({ ...f, travel_month: e.target.value }))
                 }
               >
-                <option value="">Selecionar…</option>
+                <option value="">Selecionar...</option>
                 {MONTH_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </FieldGroup>
+            <FieldGroup icon={<Hotel className="size-3.5" />} label="Hospedagem">
+              <select
+                className={inputClass}
+                value={form.hotel_level}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, hotel_level: e.target.value }))
+                }
+              >
+                <option value="">Selecionar...</option>
+                {HOTEL_LEVEL_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>
@@ -366,46 +416,25 @@ export function TripPreferencesSection({ token }: Props) {
             </FieldGroup>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldGroup
-              icon={<Hotel className="size-3.5" />}
-              label="Hospedagem"
+          <FieldGroup icon={<Bus className="size-3.5" />} label="Transporte">
+            <select
+              className={inputClass}
+              value={form.transportation_style}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  transportation_style: e.target.value,
+                }))
+              }
             >
-              <select
-                className={inputClass}
-                value={form.hotel_level}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, hotel_level: e.target.value }))
-                }
-              >
-                <option value="">Selecionar…</option>
-                {HOTEL_LEVEL_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </FieldGroup>
-            <FieldGroup icon={<Bus className="size-3.5" />} label="Transporte">
-              <select
-                className={inputClass}
-                value={form.transportation_style}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    transportation_style: e.target.value,
-                  }))
-                }
-              >
-                <option value="">Selecionar…</option>
-                {TRANSPORT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </FieldGroup>
-          </div>
+              <option value="">Selecionar...</option>
+              {TRANSPORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </FieldGroup>
 
           <TagPicker
             icon={<Sparkles className="size-3.5" />}
@@ -457,7 +486,7 @@ export function TripPreferencesSection({ token }: Props) {
               ) : (
                 <Check className="size-4" />
               )}
-              {saving ? "Salvando…" : "Salvar"}
+              {saving ? "Salvando..." : "Salvar"}
             </button>
             <button
               onClick={() => setEditing(false)}
@@ -481,7 +510,7 @@ export function TripPreferencesSection({ token }: Props) {
       {success && (
         <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
           <Check className="size-4 shrink-0" />
-          preferências atualizadas com sucesso!
+          Preferencias atualizadas com sucesso!
         </div>
       )}
     </div>

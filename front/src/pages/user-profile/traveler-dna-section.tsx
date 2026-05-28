@@ -20,21 +20,21 @@ import {
 } from "lucide-react";
 
 const TRAVEL_STYLE_OPTIONS = [
-  { label: "Solo", value: "solo" },
+  { label: "Sozinho", value: "solo" },
   { label: "Casal", value: "couple" },
   { label: "Amigos", value: "friends" },
   { label: "Família", value: "family" },
 ];
 
 const PACE_OPTIONS = [
-  { label: "Aventura imersiva", value: "adventure" },
-  { label: "Equilibrado", value: "balanced" },
-  { label: "Relaxado", value: "relaxed" },
+  { label: "Leve", value: "slow" },
+  { label: "Moderado", value: "moderate" },
+  { label: "Intenso", value: "fast" },
 ];
 
 const COMFORT_OPTIONS = [
   { label: "Econômico", value: "budget" },
-  { label: "Padrão", value: "standard" },
+  { label: "Confortável", value: "mid" },
   { label: "Premium", value: "premium" },
 ];
 
@@ -84,8 +84,11 @@ const initial: FormState = {
 const inputClass =
   "w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition";
 
-function labelFor(options: { label: string; value: string }[], value: string | undefined | null) {
-  return options.find((o) => o.value === value)?.label ?? "—";
+function labelFor(
+  options: { label: string; value: string }[],
+  value: string | undefined | null,
+) {
+  return options.find((o) => o.value === value)?.label ?? "-";
 }
 
 interface Props {
@@ -107,7 +110,8 @@ function getSafeNotesText(rawNotes: string | null | undefined): string {
 }
 
 export function TravelerDNASection({ token }: Props) {
-  const { profile, loading, error, saving, saveError, save } = useTravelerDNAProfile(token);
+  const { profile, loading, error, saving, saveError, save } =
+    useTravelerDNAProfile(token);
 
   const [editing, setEditing] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -143,10 +147,10 @@ export function TravelerDNASection({ token }: Props) {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex items-center gap-2 text-sm text-neutral-400">
+            <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex items-center gap-2 text-sm text-neutral-400">
         <Loader2 className="size-4 animate-spin" />
-        Carregando perfil DNA do viajante…
-      </div>
+        Carregando preferências do viajante…
+            </div>
     );
   }
 
@@ -165,7 +169,10 @@ export function TravelerDNASection({ token }: Props) {
     <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
-          <h2 className="text-sm font-semibold text-neutral-700">DNA do Viajante</h2>
+<<<<<<< HEAD
+          <h2 className="text-sm font-semibold text-neutral-700">
+            Preferências do viajante
+          </h2>
           {!hasData && !editing && (
             <p className="text-xs text-neutral-400 mt-0.5">
               Sem DNA preenchido ainda. Clique em editar para responder o onboarding.
@@ -186,10 +193,10 @@ export function TravelerDNASection({ token }: Props) {
       {!editing && hasData && (
         <div className="flex flex-col gap-5">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 text-sm">
-            <ReadOnly icon={<Users className="size-3.5" />} label="Companhia">
+            <ReadOnly icon={<Compass className="size-3.5" />} label="Estilo">
               {labelFor(TRAVEL_STYLE_OPTIONS, profile?.travel_style)}
             </ReadOnly>
-            <ReadOnly icon={<Compass className="size-3.5" />} label="Ritmo">
+            <ReadOnly icon={<Gauge className="size-3.5" />} label="Ritmo">
               {labelFor(PACE_OPTIONS, profile?.pace)}
             </ReadOnly>
             <ReadOnly icon={<Crown className="size-3.5" />} label="Conforto">
@@ -217,13 +224,15 @@ export function TravelerDNASection({ token }: Props) {
       {editing && (
         <div className="flex flex-col gap-5">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <FieldGroup icon={<Users className="size-3.5" />} label="Companhia">
+            <FieldGroup icon={<Compass className="size-3.5" />} label="Estilo">
               <select
                 className={inputClass}
                 value={form.travel_style}
-                onChange={(e) => setForm((f) => ({ ...f, travel_style: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, travel_style: e.target.value }))
+                }
               >
-                <option value="">Selecionar…</option>
+                <option value="">Selecionar...</option>
                 {TRAVEL_STYLE_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
@@ -231,13 +240,15 @@ export function TravelerDNASection({ token }: Props) {
                 ))}
               </select>
             </FieldGroup>
-            <FieldGroup icon={<Compass className="size-3.5" />} label="Ritmo">
+            <FieldGroup icon={<Gauge className="size-3.5" />} label="Ritmo">
               <select
                 className={inputClass}
                 value={form.pace}
-                onChange={(e) => setForm((f) => ({ ...f, pace: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, pace: e.target.value }))
+                }
               >
-                <option value="">Selecionar…</option>
+                <option value="">Selecionar...</option>
                 {PACE_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
@@ -249,9 +260,11 @@ export function TravelerDNASection({ token }: Props) {
               <select
                 className={inputClass}
                 value={form.comfort_level}
-                onChange={(e) => setForm((f) => ({ ...f, comfort_level: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, comfort_level: e.target.value }))
+                }
               >
-                <option value="">Selecionar…</option>
+                <option value="">Selecionar...</option>
                 {COMFORT_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
@@ -263,7 +276,11 @@ export function TravelerDNASection({ token }: Props) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {SLIDERS.map((s) => (
-              <FieldGroup key={s.key} icon={s.icon} label={`${s.label} — ${form[s.key]}`}>
+              <FieldGroup
+                key={s.key}
+                icon={s.icon}
+                label={`${s.label} - ${form[s.key]}`}
+              >
                 <input
                   type="range"
                   min={0}
@@ -295,8 +312,12 @@ export function TravelerDNASection({ token }: Props) {
               disabled={saving}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
             >
-              {saving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-              {saving ? "Salvando…" : "Salvar"}
+              {saving ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Check className="size-4" />
+              )}
+              {saving ? "Salvando..." : "Salvar"}
             </button>
             <button
               onClick={() => setEditing(false)}
@@ -320,7 +341,8 @@ export function TravelerDNASection({ token }: Props) {
       {success && (
         <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
           <Check className="size-4 shrink-0" />
-          DNA do viajante atualizado!
+<<<<<<< HEAD
+          Preferências atualizadas com sucesso!
         </div>
       )}
     </div>
@@ -342,7 +364,9 @@ function ReadOnly({
         {icon}
         {label}
       </span>
-      <p className="text-sm text-neutral-800 font-medium pl-0.5 whitespace-pre-wrap">{children}</p>
+      <p className="text-sm text-neutral-800 font-medium pl-0.5 whitespace-pre-wrap">
+        {children}
+      </p>
     </div>
   );
 }
