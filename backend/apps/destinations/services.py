@@ -4,7 +4,9 @@ from __future__ import annotations
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
+from urllib.parse import quote
 
+import requests
 from django.conf import settings
 from django.db import transaction
 from django.utils.text import slugify
@@ -22,6 +24,39 @@ from .models import Destination
 
 
 logger = logging.getLogger(__name__)
+
+WIKIPEDIA_THUMBNAIL_TIMEOUT = 5
+WIKIPEDIA_THUMBNAIL_LANGS = ("pt", "en")
+WIKIPEDIA_HEADERS = {
+    "User-Agent": "Viajero/1.0 (https://github.com/viajero; contact@viajero.app) python-requests",
+}
+
+
+def fetch_wikipedia_thumbnail(query: str) -> str:
+    """Busca thumbnail publica da Wikipedia REST API. Sem chave.
+
+    Tenta pt-br primeiro, depois en. Retorna URL ou string vazia.
+    """
+    if not query:
+        return ""
+    title = quote(query.strip().replace(" ", "_"))
+    for lang in WIKIPEDIA_THUMBNAIL_LANGS:
+        url = f"https://{lang}.wikipedia.org/api/rest_v1/page/summary/{title}"
+        try:
+            response = requests.get(url, headers=WIKIPEDIA_HEADERS, timeout=WIKIPEDIA_THUMBNAIL_TIMEOUT)
+        except requests.RequestException:
+            continue
+        if response.status_code != 200:
+            continue
+        try:
+            data = response.json()
+        except ValueError:
+            continue
+        for key in ("originalimage", "thumbnail"):
+            src = ((data.get(key) or {}).get("source") or "").strip()
+            if src.startswith(("http://", "https://")):
+                return src[:500]
+    return ""
 
 
 class DestinationDiscoveryService:
@@ -234,6 +269,17 @@ class DestinationDiscoveryService:
             source_urls=merged["source_urls"],
             aggregated=aggregated,
         )
+
+        # Fallback de imagem: se nenhum scrape trouxe hero_image_url, busca thumbnail Wikipedia.
+        destination.refresh_from_db()
+        if not destination.hero_image_url:
+            thumb = fetch_wikipedia_thumbnail(destination.name)
+            if not thumb:
+                thumb = fetch_wikipedia_thumbnail(merged["name"])
+            if thumb:
+                destination.hero_image_url = thumb
+                destination.save(update_fields=["hero_image_url", "updated_at"])
+                logger.info("Hero image fallback wikipedia aplicado: slug=%s url=%s", destination.slug, thumb[:80])
 
         # Pos-processar: campos que vem so do Gemini
         updates: list[str] = []

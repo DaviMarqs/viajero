@@ -9,7 +9,7 @@ class Destination(models.Model):
     country = models.CharField(max_length=100)
     city = models.CharField(max_length=100, blank=True)
     summary = models.TextField(blank=True)
-    hero_image_url = models.URLField(blank=True)
+    hero_image_url = models.URLField(blank=True, max_length=500)
     timezone = models.CharField(max_length=64, blank=True)
     best_season = models.CharField(max_length=120, blank=True)
     average_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0)
