@@ -38,7 +38,7 @@ const FILTER_GROUPS: FilterGroup[] = [
     id: "budget",
     title: "Orçamento",
     options: [
-      { id: "economico", label: "Econômico" },
+      { id: "econômico", label: "Econômico" },
       { id: "intermediario", label: "Intermediário" },
       { id: "premium", label: "Premium" },
     ],

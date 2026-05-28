@@ -24,7 +24,7 @@ const CURRENCY_OPTIONS: DropdownOption[] = [
 const MONTH_OPTIONS: DropdownOption[] = [
   { label: "Janeiro", value: "January" },
   { label: "Fevereiro", value: "February" },
-  { label: "Marco", value: "March" },
+  { label: "Março", value: "March" },
   { label: "Abril", value: "April" },
   { label: "Maio", value: "May" },
   { label: "Junho", value: "June" },
@@ -50,21 +50,21 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
     key: "budget",
     label: "Orçamento",
     title: "Faixa de investimento",
-    sub: "Defina o intervalo de gasto ideal para que as recomendacoes respeitem sua realidade.",
+    sub: "Defina o intervalo de gasto ideal para que as recomendações respeitem sua realidade.",
     fields: [
       {
         type: "currency",
         key: "budget_min",
-        label: "Orçamento minimo",
+        label: "Orçamento mínimo",
         required: true,
-        hint: "Valor apróximado para iniciar a busca.",
+        hint: "Valor aproximado para iniciar a busca.",
       },
       {
         type: "currency",
         key: "budget_max",
-        label: "Orçamento maximo",
+        label: "Orçamento máximo",
         required: true,
-        hint: "Limite confortavel para a viagem.",
+        hint: "Limite confortável para a viagem.",
       },
       {
         type: "dropdown",
@@ -78,8 +78,8 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
   {
     key: "timing",
     label: "Período",
-    title: "Duração e epoca",
-    sub: "Ajuste tempo de viagem, mes de preferencia e flexibilidade de datas.",
+    title: "Duração e época",
+    sub: "Ajuste tempo de viagem, mês de preferência e flexibilidade de datas.",
     fields: [
       {
         type: "dropdown",
@@ -92,7 +92,7 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
       {
         type: "dropdown",
         key: "travel_month",
-        label: "Mes preferido",
+        label: "Mês preferido",
         required: true,
         icon: "calendar",
         options: MONTH_OPTIONS,
@@ -133,7 +133,7 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
           },
           {
             icon: Hotel,
-            title: "Confortavel",
+            title: "Confortável",
             desc: "Boa estrutura e conforto na medida certa.",
             value: "mid",
           },
@@ -158,7 +158,7 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
         cards: [
           {
             icon: Bus,
-            title: "Transporte publico",
+            title: "Transporte público",
             desc: "Metro, ônibus e modais locais com boa autonomia.",
             value: "public",
           },
@@ -181,13 +181,13 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
   {
     key: "needs",
     label: "Cuidados",
-    title: "Restricoes e acessibilidade",
+    title: "Restrições e acessibilidade",
     sub: "Selecione os pontos que precisam ser considerados para sua experiência ficar realmente adequada.",
     fields: [
       {
         type: "tags",
         key: "dietary_preferences",
-        label: "preferências alimentares",
+        label: "Preferências alimentares",
         multi: true,
         options: [
           { label: "Vegetariana", value: "vegetarian" },

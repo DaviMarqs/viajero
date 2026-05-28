@@ -82,7 +82,7 @@ function App() {
           <Route path="/roteiros" element={<Roteiros />} />
           <Route path="/perfil" element={<ProfilePageWrapper />} />
           <Route path="/test" element={<Test />} />
-          <Route path="/recomendacoes" element={<Recommendations />} />
+          <Route path="/recomendações" element={<Recommendations />} />
         </Route>
       </Routes>
     </BrowserRouter>

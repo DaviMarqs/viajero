@@ -33,7 +33,7 @@ export default function DestinationPage() {
         className="mb-4 px-4 py-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-medium transition"
         onClick={() => navigate(-1)}
       >
-        â† Voltar
+        Voltar
       </button>
       <img
         src={
@@ -50,7 +50,7 @@ export default function DestinationPage() {
         <div className="py-4 border-b border-neutral-300">
           <h2 className="text-3xl font-bold">{destination.name}</h2>
           <p className="text-lg text-gray-600">
-            {destination.city}, {destination.country}
+            {destination.city}{destination.country}
           </p>
         </div>
 

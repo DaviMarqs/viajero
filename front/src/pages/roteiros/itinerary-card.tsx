@@ -8,7 +8,7 @@ interface ItineraryCardProps {
 }
 
 function formatDate(value?: string | null) {
-  if (!value) return "Nao informado";
+  if (!value) return "Não informado";
 
   const date = new Date(`${value}T00:00:00`);
   if (Number.isNaN(date.getTime())) return value;
@@ -18,7 +18,7 @@ function formatDate(value?: string | null) {
 
 function formatMoney(value?: string | number | null, currencyCode?: string | null) {
   if (value === null || value === undefined || value === "") {
-    return "Nao informado";
+    return "Não informado";
   }
 
   const amount = Number(value);
@@ -50,7 +50,7 @@ function getDestinationLabel(itinerary: Itinerary) {
 }
 
 function formatGenerationStatus(status?: string | null) {
-  if (!status) return "Nao informado";
+  if (!status) return "Não informado";
 
   const labels: Record<string, string> = {
     draft: "Rascunho",

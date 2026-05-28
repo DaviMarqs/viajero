@@ -1,5 +1,5 @@
 import type { ChangeEvent } from "react";
-import { DollarSign } from "lucide-react";
+import { DollarSign, Info} from "lucide-react";
 
 interface InputCurrencyProps {
   label: string;
@@ -55,7 +55,7 @@ export default function InputCurrency({
 
       {hint && (
         <p className="flex items-start gap-2 text-sm leading-6 text-slate-500">
-          <span className="text-slate-400">i</span> {hint}
+          <span className="text-slate-400"><Info className="size-5" /></span> {hint}
         </p>
       )}
     </div>

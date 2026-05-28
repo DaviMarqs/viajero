@@ -28,7 +28,7 @@ const CURRENCY_OPTIONS = [
 const MONTH_OPTIONS = [
   { label: "Janeiro", value: "January" },
   { label: "Fevereiro", value: "February" },
-  { label: "Marco", value: "March" },
+  { label: "Março", value: "March" },
   { label: "Abril", value: "April" },
   { label: "Maio", value: "May" },
   { label: "Junho", value: "June" },
@@ -246,7 +246,7 @@ export function TripPreferencesSection({ token }: Props) {
           </ReadOnly>
           <ReadOnly
             icon={<CalendarDays className="size-3.5" />}
-            label="Mes preferido"
+            label="Mês preferido"
           >
             {labelFor(MONTH_OPTIONS, preferences?.travel_month)}
           </ReadOnly>
@@ -261,7 +261,7 @@ export function TripPreferencesSection({ token }: Props) {
           </ReadOnly>
           <ReadOnly
             icon={<Salad className="size-3.5" />}
-            label="Restricoes alimentares"
+            label="Restrições alimentares"
           >
             {joinLabels(DIETARY_OPTIONS, preferences?.dietary_preferences)}
           </ReadOnly>
@@ -282,7 +282,7 @@ export function TripPreferencesSection({ token }: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <FieldGroup
               icon={<Wallet className="size-3.5" />}
-              label="Orçamento minimo"
+              label="Orçamento mínimo"
             >
               <input
                 type="number"
@@ -295,7 +295,7 @@ export function TripPreferencesSection({ token }: Props) {
             </FieldGroup>
             <FieldGroup
               icon={<Wallet className="size-3.5" />}
-              label="Orçamento maximo"
+              label="Orçamento máximo"
             >
               <input
                 type="number"
@@ -347,7 +347,7 @@ export function TripPreferencesSection({ token }: Props) {
             </FieldGroup>
             <FieldGroup
               icon={<CalendarDays className="size-3.5" />}
-              label="Mes preferido"
+              label="Mês preferido"
             >
               <select
                 className={inputClass}
@@ -422,7 +422,7 @@ export function TripPreferencesSection({ token }: Props) {
 
           <TagPicker
             icon={<Salad className="size-3.5" />}
-            label="Restricoes alimentares"
+            label="Restrições alimentares"
             options={DIETARY_OPTIONS}
             values={form.dietary_preferences}
             onToggle={(v) =>
