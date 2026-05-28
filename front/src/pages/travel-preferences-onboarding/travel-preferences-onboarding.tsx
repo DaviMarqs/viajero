@@ -218,7 +218,7 @@ export default function TravelPreferencesOnboarding() {
               </h2>
               <p className="text-base leading-7 text-slate-500">
                 Seu perfil de viagem foi atualizado e ja pode ser usado na
-                geracao de roteiros.
+                geração de roteiros.
               </p>
               <Link
                 to="/"

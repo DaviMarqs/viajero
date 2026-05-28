@@ -162,7 +162,7 @@ export default function RoteiroCriacaoPage() {
       }
 
       if (itinerary.generation_status === "failed") {
-        throw new Error("A geracao do roteiro falhou. Tente novamente.");
+        throw new Error("A geração do roteiro falhou. Tente novamente.");
       }
 
       setBuildingStatus("Montando roteiro personalizado. Isso pode levar alguns segundos.");
@@ -203,13 +203,13 @@ export default function RoteiroCriacaoPage() {
         }),
       });
 
-      setBuildingStatus("Destino encontrado. Solicitando a geracao do roteiro...");
+      setBuildingStatus("Destino encontrado. Solicitando a geração do roteiro...");
 
       await apiRequest(`/api/itineraries/${itinerary.id}/generate/`, {
         method: "POST",
       });
 
-      setBuildingStatus("Roteiro em geracao. Estamos organizando dias e eventos.");
+      setBuildingStatus("Roteiro em geração. Estamos organizando dias e eventos.");
 
       const readyItinerary = await pollItineraryUntilReady(itinerary.id);
       navigate(`/roteiros/${readyItinerary.id}`);
@@ -277,7 +277,7 @@ export default function RoteiroCriacaoPage() {
                   {selectedDestination.name}
                 </h1>
                 <p className="text-sm text-slate-500">
-                  {formatDestinationMeta(selectedDestination) || "Destino pronto para geracao"}
+                  {formatDestinationMeta(selectedDestination) || "Destino pronto para geração"}
                 </p>
                 {preferencesId ? (
                   <p className="text-xs text-sky-700">
