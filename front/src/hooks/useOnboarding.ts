@@ -83,11 +83,23 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
   );
 
   const hasSelection = useCallback(() => {
-    if (!currentStep.fields.length) return false;
+    if (!currentStep.fields.length) return true;
 
-    return currentStep.fields.some((field) => {
+    return currentStep.fields.every((field) => {
+
       if (field.type === "cards") {
         return selectedCards.size > 0;
+      }
+
+      if (field.type === "range") {
+        return true;
+      }
+
+
+      const isRequired = "required" in field && field.required === true;
+
+      if (!isRequired) {
+        return true;
       }
 
       if (field.type === "tags") {
@@ -101,7 +113,7 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
         );
       }
 
-      return false;
+      return true; 
     });
   }, [currentStep.fields, fieldValues, selectedCards, tagValues]);
 
@@ -193,7 +205,7 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
     const additionalPreferences = getCardValues("adicionais");
 
     return {
-      travel_style: getCardValues("experiencia")[0] ?? "",
+      travel_style: getCardValues("estilo")[0] ?? "",
       pace: getCardValues("ritmo")[0] ?? "",
       comfort_level: getCardValues("conforto")[0] ?? "",
       social_energy: 5,
@@ -279,7 +291,7 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
     setCurrentStep: setCurrentIndex,
     setStep: setCurrentIndex,
     nextStep: next,
-    prevStep: skip,
+    prevStep: prev,
     updateAnswers: (patch: Partial<FieldValues>) =>
       setFieldValues((current) => ({ ...current, ...patch })),
     submit: async () => {

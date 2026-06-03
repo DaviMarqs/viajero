@@ -169,7 +169,6 @@ export function TravelerDNASection({ token }: Props) {
     <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
-<<<<<<< HEAD
           <h2 className="text-sm font-semibold text-neutral-700">
             Preferências do viajante
           </h2>
@@ -341,7 +340,6 @@ export function TravelerDNASection({ token }: Props) {
       {success && (
         <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
           <Check className="size-4 shrink-0" />
-<<<<<<< HEAD
           Preferências atualizadas com sucesso!
         </div>
       )}

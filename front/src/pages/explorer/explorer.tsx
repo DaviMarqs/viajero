@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import Filter from "@/components/ui/filter.updated";
 import TripRecomendation, {
   type TripRecommendation,
 } from "@/components/ui/trip-recomendation.updated";
@@ -110,8 +109,8 @@ export default function Explorer() {
     [destinations],
   );
 
-  const readyTrips = trips.filter((trip) => trip.generationStatus === "ready");
-  const averageRating =
+ // const readyTrips = trips.filter((trip) => trip.generationStatus === "ready");
+  {/* const averageRating =
     trips.length > 0
       ? (
           trips.reduce(
@@ -120,7 +119,7 @@ export default function Explorer() {
             0,
           ) / trips.length
         ).toFixed(1)
-      : "0.0";
+      : "0.0"; */}
 
   const sortedTrips = useMemo(() => {
     const items = [...trips];
@@ -139,9 +138,7 @@ export default function Explorer() {
   return (
     <main className="min-h-screen bg-neutral-50">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 md:flex-row md:px-6 md:py-12">
-        <aside className="w-full md:w-auto md:flex-shrink-0">
-          <Filter />
-        </aside>
+        {/* <Filter /> */}
 
         <section className="flex min-w-0 flex-1 flex-col gap-6">
           <div className="rounded-3xl border border-neutral-200 bg-white p-6 md:p-8">
