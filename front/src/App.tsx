@@ -23,7 +23,7 @@ import Explorer from "./pages/explorer/explorer";
 import Roteiros from "./pages/roteiros/roteiros";
 import RoteiroCriacaoPage from "./pages/roteiros/roteiro-criacao";
 import RoteiroDetalhePage from "./pages/roteiros/roteiro-detalhe";
-import Sidebar from "./components/ui/sidebar";
+import Sidebar from "./components/ui/Sidebar";
 
 function PrivateRoute() {
   const { token, logout, isGuest, isAuthenticated } = useAuth();

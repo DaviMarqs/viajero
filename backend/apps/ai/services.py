@@ -10,6 +10,7 @@ from apps.destinations.models import Destination, PointOfInterest
 from apps.itineraries.models import Itinerary, ItineraryDailyEvent, ItineraryDay
 from apps.profiles.models import TravelerDNAProfile, UserTripPreference
 
+from .generators.itinerary_helpers import apply_budget_precision, parse_cost
 from .models import LLMJob, LLMJobLog, LLMModel, PromptTemplate
 
 
@@ -117,6 +118,8 @@ class ItineraryGenerationService:
             prompt_template=job.prompt_template,
         )
 
+        result = apply_budget_precision(result, preferences)
+
         itinerary.title = result["title"]
         itinerary.summary = result["summary"]
         itinerary.budget_total = Decimal(result["estimated_cost"])
@@ -131,19 +134,23 @@ class ItineraryGenerationService:
         itinerary.days.all().delete()
 
         for day_index, day_data in enumerate(result["days"], start=1):
+            events = day_data.get("events") or []
             day = ItineraryDay.objects.create(
                 itinerary=itinerary,
                 day_number=day_index,
                 title=day_data["title"],
-                summary=day_data["summary"],
-                estimated_cost=sum(Decimal(event["estimated_cost"]) for event in day_data["events"]),
+                summary=day_data.get("summary", ""),
+                estimated_cost=Decimal(
+                    day_data.get("estimated_cost")
+                    or str(sum((parse_cost(event["estimated_cost"]) for event in events), Decimal("0.00")))
+                ),
             )
-            for event in day_data["events"]:
+            for event in events:
                 ItineraryDailyEvent.objects.create(
                     itinerary_day=day,
                     title=event["title"],
                     description=event["description"],
-                    estimated_cost=Decimal(event["estimated_cost"]),
+                    estimated_cost=parse_cost(event["estimated_cost"]),
                     order_index=event["order_index"],
                     poi_id=event.get("poi_id"),
                 )

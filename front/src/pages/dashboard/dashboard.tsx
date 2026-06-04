@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { FileText, Plus } from "lucide-react";
+import { FileText, Plus, Wand2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/authContext";
@@ -23,6 +23,10 @@ export function Dashboard() {
 
   function handleCreateItinerary() {
     navigate("/onboard/preferências");
+  }
+
+  function handleSuggestItinerary() {
+    navigate("/roteiros/criacao?auto=destino");
   }
 
   if (!user) {
@@ -51,13 +55,24 @@ export function Dashboard() {
           </p>
         </div>
 
-        <Button
-          className="h-12 rounded-2xl bg-sky-600 px-5 text-sm font-semibold text-white hover:bg-sky-700"
-          onClick={handleCreateItinerary}
-        >
-          <Plus className="mr-2 size-4" />
-          Criar novo roteiro
-        </Button>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button
+            variant="outline"
+            className="h-12 rounded-2xl border-sky-200 bg-sky-50 px-5 text-sm font-semibold text-sky-700 hover:bg-sky-100"
+            onClick={handleSuggestItinerary}
+          >
+            <Wand2 className="mr-2 size-4" />
+            Gerar destino pra mim
+          </Button>
+
+          <Button
+            className="h-12 rounded-2xl bg-sky-600 px-5 text-sm font-semibold text-white hover:bg-sky-700"
+            onClick={handleCreateItinerary}
+          >
+            <Plus className="mr-2 size-4" />
+            Criar novo roteiro
+          </Button>
+        </div>
       </div>
 
       {loading ? (

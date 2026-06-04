@@ -1,9 +1,10 @@
 import logging
 
 from django.db.models import Q
-from rest_framework import permissions
+from rest_framework import permissions, status
 from rest_framework.decorators import action
 
+from apps.ai.suggesters.destination_suggester import DestinationSuggestionService
 from apps.audit.services import audit
 from apps.common.mixins import StandardModelViewSet
 from .models import Destination, PointOfInterest
@@ -74,6 +75,75 @@ class DestinationViewSet(StandardModelViewSet):
             else "Resultados da busca carregados com sucesso."
         )
         return self.success_response(data, message=message)
+
+    @action(detail=False, methods=["post"], url_path="suggest", permission_classes=[permissions.IsAuthenticated])
+    def suggest(self, request):
+        """Sugere um destino para o usuario sem que ele digite nada.
+
+        Usa o perfil/preferencias do usuario (via Groq) para escolher um
+        destino e reaproveita a descoberta/local search para materializa-lo.
+        """
+        try:
+            suggestion = DestinationSuggestionService().suggest(request.user)
+        except Exception:
+            logger.exception("Falha ao sugerir destino para user=%s", request.user.pk)
+            suggestion = None
+
+        if suggestion is None:
+            return self.error_response(
+                errors={"suggestion": ["nao foi possivel sugerir um destino"]},
+                message=(
+                    "Nao foi possivel gerar um destino agora. "
+                    "Tente novamente em instantes ou complete suas preferencias."
+                ),
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        results = list(self._local_search(q=suggestion.name, country=suggestion.country, city=suggestion.city))
+        destination = results[0] if results else None
+
+        if destination is None:
+            try:
+                destination = DestinationDiscoveryService().discover(
+                    query=suggestion.name,
+                    country=suggestion.country,
+                    city=suggestion.city,
+                    actor=request.user,
+                )
+            except Exception:
+                logger.exception("Falha na descoberta do destino sugerido=%s", suggestion.name)
+                destination = None
+
+            if destination is not None:
+                destination = self.get_queryset().filter(pk=destination.pk).first() or destination
+
+        if destination is None:
+            return self.error_response(
+                errors={"suggestion": ["destino sugerido nao pode ser carregado"]},
+                message=(
+                    f"Sugerimos {suggestion.name}, mas nao conseguimos carregar os detalhes. "
+                    "Tente novamente."
+                ),
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        audit(
+            "destination.suggested",
+            actor=request.user,
+            target=destination,
+            metadata={
+                "suggested_name": suggestion.name,
+                "country": suggestion.country,
+                "city": suggestion.city,
+                "rationale": suggestion.rationale,
+            },
+        )
+
+        data = self.get_serializer(destination).data
+        return self.success_response(
+            data,
+            message=f"Destino sugerido com base no seu perfil: {destination.name}.",
+        )
 
     def _local_search(self, *, q: str, country: str, city: str):
         queryset = self.get_queryset()

@@ -876,6 +876,20 @@
       "description": "Busca pública de destinos para a home (AllowAny). Filtros opcionais: q (texto), country, city. Cache-aside: se a busca local não retornar nada e q for informado, dispara DestinationDiscoveryService.discover sincronamente, que roda Firecrawl e Gemini em paralelo (ThreadPoolExecutor), funde resultados (Firecrawl factual vence em conflito; Gemini complementa lacunas) e persiste. Audit event: destination.discovered com metadata.sources={firecrawl,gemini}. Resposta inclui metadata.sources indicando quem contribuiu e POIs do Gemini ficam com metadata.source='gemini'."
     },
     {
+      "_id": "req_destinations_suggest",
+      "_type": "request",
+      "parentId": "fld_destinations",
+      "name": "Suggest (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/api/destinations/suggest/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": { "mimeType": "application/json", "text": "{}" },
+      "description": "Sugere um destino para o usuário autenticado SEM ele digitar nada. DestinationSuggestionService (Groq) usa o TravelerDNAProfile + UserTripPreference para escolher um destino real; depois materializa via _local_search e, se não existir, via DestinationDiscoveryService.discover. Retorna o Destination serializado no envelope padrão. Audit event: destination.suggested. Responde 503 se o LLM não sugerir ou a descoberta falhar. Sem corpo de requisição."
+    },
+    {
       "_id": "req_itineraries_templates",
       "_type": "request",
       "parentId": "fld_itineraries",

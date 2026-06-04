@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Loader2, MapPinned, Sparkles, Search, PlaneTakeoff } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { Loader2, Sparkles, Search, PlaneTakeoff, Wand2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { apiRequest } from "@/lib/api";
@@ -96,6 +96,7 @@ export default function RoteiroCriacaoPage() {
   const [recommendationsError, setRecommendationsError] = useState<string | null>(null);
   const [searchValue, setSearchValue] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
+  const [suggestLoading, setSuggestLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
   const [buildingError, setBuildingError] = useState<string | null>(null);
@@ -146,6 +147,18 @@ export default function RoteiroCriacaoPage() {
     };
   }, []);
 
+  const autoSuggestTriggered = useRef(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("auto") !== "destino" || autoSuggestTriggered.current) {
+      return;
+    }
+    autoSuggestTriggered.current = true;
+    void handleSuggestDestination();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+
   async function pollItineraryUntilReady(itineraryId: number | string) {
     const maxAttempts = 30;
 
@@ -183,8 +196,6 @@ export default function RoteiroCriacaoPage() {
         body: JSON.stringify({
           destination: destination.id,
           title: destination.name,
-          // duration_days, currency_code e budget_total omitidos:
-          // backend herda de UserTripPreference do usuario.
         }),
       });
 
@@ -219,6 +230,40 @@ export default function RoteiroCriacaoPage() {
           ? error.message
           : "Nao foi possivel montar o roteiro agora.",
       );
+    }
+  }
+
+  async function handleSuggestDestination() {
+    if (searchLoading || suggestLoading) return;
+
+    setSuggestLoading(true);
+    setSearchError(null);
+    setSelectedDestination(null);
+    setBuildingError(null);
+    setBuildingStatus("Escolhendo um destino com base no seu perfil...");
+
+    try {
+      const response = await apiRequest<DestinationListResponse>(
+        "/api/destinations/suggest/",
+        { method: "POST" },
+      );
+
+      const destination = normalizeDestinationList(response.data)[0];
+
+      if (!destination) {
+        setSearchError("Nao foi possivel gerar um destino agora. Tente novamente em instantes.");
+        return;
+      }
+
+      await startItineraryGeneration(destination);
+    } catch (error) {
+      setSearchError(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel gerar um destino agora.",
+      );
+    } finally {
+      setSuggestLoading(false);
     }
   }
 
@@ -371,7 +416,7 @@ export default function RoteiroCriacaoPage() {
                 />
                 <button
                   type="submit"
-                  disabled={searchLoading}
+                  disabled={searchLoading || suggestLoading}
                   className="inline-flex h-14 items-center justify-center rounded-2xl bg-sky-600 px-6 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-sky-300"
                 >
                   {searchLoading ? (
@@ -386,11 +431,43 @@ export default function RoteiroCriacaoPage() {
               </div>
             </form>
 
-            {searchLoading ? (
+            <div className="my-5 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+              <span className="h-px flex-1 bg-slate-200" />
+              ou
+              <span className="h-px flex-1 bg-slate-200" />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void handleSuggestDestination()}
+              disabled={searchLoading || suggestLoading}
+              className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-6 text-sm font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {suggestLoading ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Gerando destino...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="size-4" />
+                  Gerar destino pra mim
+                </>
+              )}
+            </button>
+            <p className="mt-2 text-xs text-slate-500">
+              Deixe a gente escolher um destino com base no seu perfil e nas suas preferências de viagem.
+            </p>
+
+            {searchLoading || suggestLoading ? (
               <div className="mt-5 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-4 text-sm text-sky-900">
                 <div className="flex items-center gap-3">
                   <Loader2 className="size-4 animate-spin text-sky-600" />
-                  <span>Consultando destinos. Essa etapa pode levar entre 5 e 40 segundos.</span>
+                  <span>
+                    {suggestLoading
+                      ? "Escolhendo um destino para você. Essa etapa pode levar entre 5 e 40 segundos."
+                      : "Consultando destinos. Essa etapa pode levar entre 5 e 40 segundos."}
+                  </span>
                 </div>
               </div>
             ) : null}

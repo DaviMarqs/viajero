@@ -9,3 +9,10 @@ export async function fetchDestinations() {
   const payload = await apiFetch<DestinationsPayload>("/api/destinations/");
   return unwrapListResponse(payload);
 }
+
+export async function suggestDestination() {
+  const payload = await apiFetch<{ data?: Destination }>("/api/destinations/suggest/", {
+    method: "POST",
+  });
+  return payload?.data ?? null;
+}

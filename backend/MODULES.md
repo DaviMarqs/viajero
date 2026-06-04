@@ -63,6 +63,7 @@ Catálogo de destinos turísticos e seus pontos de interesse.
 |---|---|---|---|
 | DestinationViewSet | `/api/destinations/` `[+ /{id}/]` | GET/POST/PUT/PATCH/DELETE | CRUD de destinos; filtro por country/city; busca textual |
 | DestinationViewSet.search | `/api/destinations/search/` | GET | Busca pública por destino (`?q=`, `?country=`, `?city=`) para a home (AllowAny). Em cache miss (`q` informado e zero resultados locais), aciona `DestinationDiscoveryService.discover` que **roda Firecrawl e Gemini em paralelo** via `ThreadPoolExecutor`, funde os resultados (Firecrawl factual vence em conflito; Gemini complementa lacunas) e persiste. Garante que o destino enriquecido sempre apareça no response mesmo se `_local_search` falhar por mismatch de acento. Audit event renomeado para `destination.discovered` com campo `sources` no metadata. |
+| DestinationViewSet.suggest | `/api/destinations/suggest/` | POST | **Sugere um destino sem o usuário digitar nada** (IsAuthenticated). Usa `DestinationSuggestionService` (Groq) com o `TravelerDNAProfile` + `UserTripPreference` do usuário para escolher um destino real (nome/país/cidade). Em seguida materializa via `_local_search`; se inexistente, reaproveita `DestinationDiscoveryService.discover`. Retorna o `Destination` serializado no envelope padrão. Audit event `destination.suggested`. Responde 503 quando o LLM não sugere ou a descoberta falha. |
 | PointOfInterestViewSet | `/api/pois/` `[+ /{id}/]` | GET/POST/PUT/PATCH/DELETE | CRUD de POIs; filtros por destino/tipo/tag; busca textual |
 
 ### `DestinationDiscoveryService` (`apps/destinations/services.py`)
@@ -122,7 +123,7 @@ Núcleo funcional do produto.
 | Controller | Rota | Métodos | Função |
 |---|---|---|---|
 | ItineraryViewSet | `/api/itineraries/` `[+ /{id}/]` | GET/POST/PUT/PATCH/DELETE | CRUD do roteiro; filtros destino/status; busca por título |
-| ItineraryViewSet.generate | `/api/itineraries/{id}/generate/` | POST | Aciona geração via IA; muda status para `generating` e retorna 202 |
+| ItineraryViewSet.generate | `/api/itineraries/{id}/generate/` | POST | Aciona geração via IA; muda status para `generating` e retorna 202. Os valores passam por `apply_budget_precision`: custos são numéricos (`parse_cost`), o total é recomputado como soma dos dias/eventos e clampado à faixa `budget_min`–`budget_max` da `UserTripPreference`. |
 | ItineraryViewSet.days | `/api/itineraries/{id}/days/` | GET | Lista todos os dias do roteiro com seus eventos (programação completa) |
 | ItineraryViewSet.day_detail | `/api/itineraries/{id}/days/{day_number}/` | GET | Programação de um dia específico (eventos com horário, POI, custo) |
 | ItineraryViewSet.templates | `/api/itineraries/templates/` | GET | Lista templates "genéricos" para usuários sem preferências (itinerários com `metadata.is_template=true`, AllowAny) |
@@ -145,7 +146,10 @@ Provê o gerador de roteiro e o enricher de destinos via Gemini (Google).
 - `enrichers/base.py` — `BaseDestinationEnricher` + `EnrichmentResult` dataclass (9 campos + `has_meaningful_data()`).
 - `enrichers/destination_gemini.py` — `GeminiDestinationEnricher` com retry no `LLMResponseError` (1 tentativa extra). Marca POIs gerados com `source="gemini"`. Sem image_url no schema (nível Moderado).
 - `generators/itinerary.py` — `GeminiItineraryGenerator(BaseItineraryGenerator)` consumido por `ItineraryGenerationService.run_job`. Valida `poi_id` retornado contra o DB do mesmo destino; eventos com FK inválida viram freestyle (poi=None).
-- `services.py` — `get_generator()` lê `DEFAULT_LLM_PROVIDER`: `"gemini"` (com `GEMINI_API_KEY`) → `GeminiItineraryGenerator`; caso contrário → `MockItineraryGenerator`. Import do Gemini é lazy pra evitar ciclo.
+- `generators/itinerary_groq.py` — `GroqItineraryGenerator` (espelha o Gemini usando `GroqProvider`).
+- `generators/itinerary_helpers.py` — helpers compartilhados: `build_context`/`build_prompt` (prompt reforça custos numéricos na moeda do usuário e a regra de orçamento), `normalize_payload`, e a precisão de valores: `parse_cost` (limpa símbolos/milhar/vírgula decimal → `Decimal`) e `apply_budget_precision` (recomputa total por soma de eventos/dias e clampa à faixa de orçamento).
+- `suggesters/destination_suggester.py` — `DestinationSuggestionService` (Groq) escolhe um destino para o usuário a partir do `TravelerDNAProfile` + `UserTripPreference`, sem que ele digite nada. Consumido por `DestinationViewSet.suggest`.
+- `services.py` — `get_generator()` lê `DEFAULT_LLM_PROVIDER`: `"gemini"` (com `GEMINI_API_KEY`) → `GeminiItineraryGenerator`; `"groq"` (com `GROQ_API_KEY`) → `GroqItineraryGenerator`; caso contrário → `MockItineraryGenerator`. Imports são lazy pra evitar ciclo. `run_job` aplica `apply_budget_precision` antes de persistir.
 
 ### Modelos (existentes)
 - `LLMProvider`, `LLMModel`, `PromptTemplate`, `LLMJob`, `LLMJobLog` — usados pra audit/observabilidade. `LLMJob` armazena `request_payload`/`response_payload` do Gemini pra debug.

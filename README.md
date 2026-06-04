@@ -37,7 +37,7 @@ O Viajero é um projeto criado do zero (_greenfield_) com um backend em Django p
    cd viajero
    ```
 
-3. **Configure o backend (SQLite)**
+3. **Configure o backend**
 
    ```bash
    cd backend
