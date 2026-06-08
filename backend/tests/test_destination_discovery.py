@@ -182,3 +182,32 @@ def test_discover_skips_gemini_when_key_missing(settings):
     enricher_cls.assert_not_called()
     sources = destination.metadata.get("sources") or {}
     assert sources == {"firecrawl": True, "gemini": False, "groq": False}
+
+
+def test_discover_passes_region_to_wikipedia_thumbnail(settings):
+    """discover(region=...) repassa a regiao para o fallback de imagem,
+    evitando thumbnail ambigua (ex.: Formiga inseto)."""
+    settings.GEMINI_API_KEY = ""
+    settings.FIRECRAWL_API_KEY = "fake"
+
+    fc_pois = [{"name": "Centro", "type": "attraction"}]
+
+    with patch.object(
+        FirecrawlIngestionService, "_search_urls", return_value=["https://x"],
+    ), patch.object(
+        FirecrawlIngestionService,
+        "_aggregate_payloads",
+        return_value=_firecrawl_aggregated("Resumo de Formiga", fc_pois),
+    ), patch(
+        "apps.destinations.services.GeminiDestinationEnricher",
+    ), patch(
+        "apps.destinations.services.fetch_wikipedia_thumbnail",
+        return_value="https://upload.wikimedia.org/formiga.jpg",
+    ) as thumb:
+        destination = DestinationDiscoveryService().discover(
+            query="Formiga", country="Brasil", city="Formiga",
+            region="Minas Gerais", actor=None,
+        )
+
+    assert destination.hero_image_url == "https://upload.wikimedia.org/formiga.jpg"
+    assert thumb.call_args.kwargs.get("region") == "Minas Gerais"

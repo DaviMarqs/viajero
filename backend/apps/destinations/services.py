@@ -32,30 +32,41 @@ WIKIPEDIA_HEADERS = {
 }
 
 
-def fetch_wikipedia_thumbnail(query: str) -> str:
+def fetch_wikipedia_thumbnail(query: str, region: str = "") -> str:
     """Busca thumbnail publica da Wikipedia REST API. Sem chave.
 
-    Tenta pt-br primeiro, depois en. Retorna URL ou string vazia.
+    Quando `region` e informado, tenta primeiro o titulo desambiguado
+    "{query} ({region})" (ex.: 'Formiga (Minas Gerais)') antes do nome cru —
+    evita cair em pagina de desambiguacao/inseto. Tenta pt-br depois en.
+    Retorna URL ou string vazia.
     """
-    if not query:
+    base = (query or "").strip()
+    if not base:
         return ""
-    title = quote(query.strip().replace(" ", "_"))
-    for lang in WIKIPEDIA_THUMBNAIL_LANGS:
-        url = f"https://{lang}.wikipedia.org/api/rest_v1/page/summary/{title}"
-        try:
-            response = requests.get(url, headers=WIKIPEDIA_HEADERS, timeout=WIKIPEDIA_THUMBNAIL_TIMEOUT)
-        except requests.RequestException:
-            continue
-        if response.status_code != 200:
-            continue
-        try:
-            data = response.json()
-        except ValueError:
-            continue
-        for key in ("originalimage", "thumbnail"):
-            src = ((data.get(key) or {}).get("source") or "").strip()
-            if src.startswith(("http://", "https://")):
-                return src[:500]
+
+    candidates = []
+    if region.strip():
+        candidates.append(f"{base} ({region.strip()})")
+    candidates.append(base)
+
+    for candidate in candidates:
+        title = quote(candidate.replace(" ", "_"))
+        for lang in WIKIPEDIA_THUMBNAIL_LANGS:
+            url = f"https://{lang}.wikipedia.org/api/rest_v1/page/summary/{title}"
+            try:
+                response = requests.get(url, headers=WIKIPEDIA_HEADERS, timeout=WIKIPEDIA_THUMBNAIL_TIMEOUT)
+            except requests.RequestException:
+                continue
+            if response.status_code != 200:
+                continue
+            try:
+                data = response.json()
+            except ValueError:
+                continue
+            for key in ("originalimage", "thumbnail"):
+                src = ((data.get(key) or {}).get("source") or "").strip()
+                if src.startswith(("http://", "https://")):
+                    return src[:500]
     return ""
 
 
@@ -69,6 +80,7 @@ class DestinationDiscoveryService:
         query: str,
         country: str = "",
         city: str = "",
+        region: str = "",
         actor=None,
     ) -> Destination | None:
         slug = slugify(query)[:50]
@@ -94,7 +106,7 @@ class DestinationDiscoveryService:
             self._firecrawl._mark_recently_failed(slug)
             return None
 
-        destination = self._persist(slug=slug, merged=merged, actor=actor)
+        destination = self._persist(slug=slug, merged=merged, region=region, actor=actor)
         logger.info(
             "Destino descoberto: slug=%s sources=%s pois=%d",
             slug, merged["sources"], len(merged["pois"]),
@@ -245,7 +257,7 @@ class DestinationDiscoveryService:
         }
 
     @transaction.atomic
-    def _persist(self, *, slug: str, merged: dict[str, Any], actor) -> Destination:
+    def _persist(self, *, slug: str, merged: dict[str, Any], region: str = "", actor=None) -> Destination:
         destination, created = Destination.objects.get_or_create(
             slug=slug,
             defaults={
@@ -273,9 +285,9 @@ class DestinationDiscoveryService:
         # Fallback de imagem: se nenhum scrape trouxe hero_image_url, busca thumbnail Wikipedia.
         destination.refresh_from_db()
         if not destination.hero_image_url:
-            thumb = fetch_wikipedia_thumbnail(destination.name)
+            thumb = fetch_wikipedia_thumbnail(destination.name, region=region)
             if not thumb:
-                thumb = fetch_wikipedia_thumbnail(merged["name"])
+                thumb = fetch_wikipedia_thumbnail(merged["name"], region=region)
             if thumb:
                 destination.hero_image_url = thumb
                 destination.save(update_fields=["hero_image_url", "updated_at"])

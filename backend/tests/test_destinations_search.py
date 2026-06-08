@@ -94,3 +94,71 @@ def test_search_uses_discovery_service():
     assert response.status_code == 200
     slugs = [item["slug"] for item in response.json()["data"]]
     assert "bonito" in slugs
+
+
+def _resolved(**overrides):
+    from apps.ai.resolvers.destination_resolver import ResolvedDestination
+    defaults = {
+        "name": "Tóquio", "country": "Japão", "city": "Tóquio",
+        "region": "Kanto", "is_place": True, "confidence": 0.95,
+    }
+    defaults.update(overrides)
+    return ResolvedDestination(**defaults)
+
+
+def test_search_rejects_non_place_query():
+    with patch(
+        "apps.destinations.views.DestinationResolverService",
+    ) as resolver_cls, patch(
+        "apps.destinations.views.DestinationDiscoveryService",
+    ) as discovery_cls:
+        resolver_cls.return_value.resolve.return_value = _resolved(
+            name="", country="", city="", region="",
+            is_place=False, confidence=0.1,
+        )
+        client = APIClient()
+        response = client.get("/api/destinations/search/?q=asdfgh")
+
+    assert response.status_code == 400
+    body = response.json()
+    assert body["success"] is False
+    discovery_cls.return_value.discover.assert_not_called()
+
+
+def test_search_uses_resolved_params_for_discovery():
+    """Tokyo resolve para Japao; discover recebe pais/regiao corretos, nao Brasil."""
+    with patch(
+        "apps.destinations.views.DestinationResolverService",
+    ) as resolver_cls, patch(
+        "apps.destinations.views.DestinationDiscoveryService",
+    ) as discovery_cls:
+        resolver_cls.return_value.resolve.return_value = _resolved()
+        discovery_cls.return_value.discover.return_value = _make_destination(
+            slug="toquio", name="Tóquio", country="Japão", city="Tóquio",
+        )
+        client = APIClient()
+        response = client.get("/api/destinations/search/?q=Tokyo")
+
+    assert response.status_code == 200
+    kwargs = discovery_cls.return_value.discover.call_args.kwargs
+    assert kwargs["country"] == "Japão"
+    assert kwargs["region"] == "Kanto"
+    assert kwargs["query"] == "Tóquio"
+
+
+def test_search_fails_open_when_resolver_returns_none():
+    """Resolver indisponivel (Groq down) -> busca segue com a query crua."""
+    with patch(
+        "apps.destinations.views.DestinationResolverService",
+    ) as resolver_cls, patch(
+        "apps.destinations.views.DestinationDiscoveryService",
+    ) as discovery_cls:
+        resolver_cls.return_value.resolve.return_value = None
+        discovery_cls.return_value.discover.return_value = None
+        client = APIClient()
+        response = client.get("/api/destinations/search/?q=lugar-novo")
+
+    assert response.status_code == 200
+    kwargs = discovery_cls.return_value.discover.call_args.kwargs
+    assert kwargs["query"] == "lugar-novo"
+    assert kwargs["region"] == ""

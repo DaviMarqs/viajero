@@ -4,6 +4,7 @@ from django.db.models import Q
 from rest_framework import permissions, status
 from rest_framework.decorators import action
 
+from apps.ai.resolvers.destination_resolver import DestinationResolverService
 from apps.ai.suggesters.destination_suggester import DestinationSuggestionService
 from apps.audit.services import audit
 from apps.common.mixins import StandardModelViewSet
@@ -35,6 +36,29 @@ class DestinationViewSet(StandardModelViewSet):
         q = request.query_params.get("q", "").strip()
         country = request.query_params.get("country", "").strip()
         city = request.query_params.get("city", "").strip()
+        region = ""
+
+        if q:
+            resolved = self._resolve_query(q)
+            if resolved is not None:
+                if not resolved.is_valid_place():
+                    audit(
+                        "destination.search_rejected",
+                        actor=request.user if request.user.is_authenticated else None,
+                        metadata={"query": q, "confidence": resolved.confidence},
+                    )
+                    return self.error_response(
+                        errors={"q": ["nao parece um destino de viagem valido"]},
+                        message=(
+                            "Nao reconhecemos esse termo como um destino de viagem. "
+                            "Tente o nome de uma cidade, regiao ou pais."
+                        ),
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+                q = resolved.name or q
+                country = resolved.country or country
+                city = resolved.city or city
+                region = resolved.region
 
         results = self._local_search(q=q, country=country, city=city)
 
@@ -42,7 +66,7 @@ class DestinationViewSet(StandardModelViewSet):
         if q and not results.exists():
             try:
                 destination = DestinationDiscoveryService().discover(
-                    query=q, country=country, city=city, actor=request.user,
+                    query=q, country=country, city=city, region=region, actor=request.user,
                 )
             except Exception:
                 logger.exception("Falha na descoberta de destino para query=%s", q)
@@ -144,6 +168,13 @@ class DestinationViewSet(StandardModelViewSet):
             data,
             message=f"Destino sugerido com base no seu perfil: {destination.name}.",
         )
+
+    def _resolve_query(self, q: str):
+        try:
+            return DestinationResolverService().resolve(q)
+        except Exception:
+            logger.exception("Resolver de destino falhou para query=%s", q)
+            return None
 
     def _local_search(self, *, q: str, country: str, city: str):
         queryset = self.get_queryset()
