@@ -14,66 +14,69 @@ export default function Roteiros() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-sky-100">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 md:px-6 md:py-10">
-        <section className="rounded-[32px] border border-sky-100 bg-white p-8 shadow-[0_18px_60px_rgba(56,189,248,0.08)]">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-3">
-              <span className="inline-flex w-fit rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">
+    <main className="min-h-screen bg-white font-['Inter'] text-neutral-900 selection:bg-blue-100 selection:text-blue-900">
+      <div className="mx-auto max-w-7xl px-6 py-16 lg:px-12 lg:py-24">
+        <header className="mb-12 flex flex-col items-start justify-between gap-8 md:flex-row md:items-end">
+          <div className="max-w-2xl">
+            <span className="mb-6 inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-neutral-900">
                 Meus roteiros
               </span>
-              <h1 className="text-4xl font-semibold tracking-tight text-slate-950">
+            <h1 className="font-['Geist'] text-4xl font-normal tracking-[-0.02em] text-neutral-950 md:text-5xl lg:text-6xl">
                 Todos os roteiros criados por você
               </h1>
-              <p className="max-w-3xl text-sm leading-7 text-slate-600">
+            <p className="mt-6 text-lg text-neutral-500">
                 Acompanhe status de geração, orçamento, período da viagem e abra cada roteiro no detalhe.
               </p>
-            </div>
-
-            <Button
-              className="h-12 rounded-2xl bg-sky-600 px-5 text-sm font-semibold text-white hover:bg-sky-700"
-              onClick={handleCreateItinerary}
-            >
-              <Plus className="mr-2 size-4" />
-              Criar novo roteiro
-            </Button>
           </div>
-        </section>
+
+          <Button
+            className="inline-flex h-12 items-center justify-center rounded-full bg-blue-600 px-6 font-semibold text-white transition-colors hover:bg-blue-700"
+            onClick={handleCreateItinerary}
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            Novo roteiro
+          </Button>
+        </header>
 
         {loading ? (
-          <section className="rounded-[28px] border border-sky-100 bg-white px-6 py-10 text-sm text-slate-500 shadow-[0_18px_60px_rgba(56,189,248,0.08)]">
-            Carregando roteiros...
+          <section className="grid grid-cols-1 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-[280px] w-full animate-pulse rounded-2xl bg-neutral-100"
+              />
+            ))}
           </section>
         ) : error ? (
-          <section className="rounded-[28px] border border-red-200 bg-red-50 px-6 py-5 text-sm text-red-600">
+          <section className="rounded-xl border border-red-200 bg-red-50 px-6 py-5 text-sm text-red-600">
             {error}
           </section>
         ) : itineraries.length === 0 ? (
-          <section className="flex flex-col items-center gap-4 rounded-[28px] border border-sky-100 bg-white px-6 py-12 text-center shadow-[0_18px_60px_rgba(56,189,248,0.08)]">
-            <div className="rounded-2xl bg-sky-50 p-4">
-              <FileText className="size-6 text-sky-500" />
+          <section className="flex flex-col items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-50 py-24 text-center">
+            <div className="mb-4 rounded-full bg-white p-4 shadow-sm">
+              <FileText className="h-8 w-8 text-neutral-400" />
             </div>
 
             <div>
-              <h2 className="text-xl font-semibold text-slate-950">
+              <h2 className="font-['Geist'] text-2xl font-normal text-neutral-900">
                 Nenhum roteiro criado ainda
               </h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-2 text-neutral-500">
                 Gere seu primeiro roteiro para ver os dias e eventos aqui.
               </p>
             </div>
 
             <Button
-              className="mt-2 rounded-2xl bg-sky-600 px-6 py-5 font-semibold text-white hover:bg-sky-700"
+              className="mt-6 rounded-full bg-blue-600 px-8 hover:bg-blue-700"
               onClick={handleCreateItinerary}
             >
-              Criar roteiro
+              Criar meu primeiro roteiro
             </Button>
           </section>
         ) : (
-          <section className="space-y-4">
-            <div className="flex items-center justify-between px-1">
-              <p className="text-sm text-slate-500">
+          <section className="space-y-6">
+            <div className="flex items-center justify-between px-2">
+              <p className="text-sm font-medium text-neutral-500">
                 {itineraries.length} roteiro(s) encontrado(s)
               </p>
             </div>

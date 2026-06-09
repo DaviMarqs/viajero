@@ -1,303 +1,306 @@
-import { useEffect, useState } from "react";
-import { CalendarDays, Coins, Loader2, MapPinned } from "lucide-react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  MapPin,
+  Calendar,
+  Wallet,
+  Share,
+  Heart,
+  Clock,
+  ArrowLeft,
+  CheckCircle,
+  Loader2,
+} from "lucide-react";
 
 import { apiRequest } from "@/lib/api";
-import type { ApiSuccessResponse } from "@/lib/api";
-import type { Itinerary } from "@/types/travel";
-
-type ItineraryResponse = ApiSuccessResponse<Itinerary>;
-
-function formatGenerationStatus(status?: string | null) {
-  if (!status) return "Não informado";
-
-  const labels: Record<string, string> = {
-    draft: "Rascunho",
-    generating: "Gerando",
-    ready: "Pronto",
-    failed: "Falhou",
-  };
-
-  return labels[status] || status;
-}
 
 function formatMoney(value?: string | number | null, currencyCode?: string | null) {
   if (value === null || value === undefined || value === "") {
     return "Não informado";
   }
-
   const amount = Number(value);
   if (!Number.isFinite(amount)) {
-    return `${value} ${currencyCode ?? ""}`.trim();
+    return `${currencyCode ?? "$"} ${value}`;
   }
-
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: currencyCode || "BRL",
   }).format(amount);
 }
 
-function formatDate(value?: string | null) {
-  if (!value) return "Não informado";
-
-  const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return value;
-
-  return new Intl.DateTimeFormat("pt-BR").format(date);
+export interface ItineraryEvent {
+  id?: number;
+  poi_id?: number | null;
+  title: string;
+  description: string;
+  start_time?: string;
+  end_time?: string;
+  estimated_cost?: string;
+  order_index?: number;
 }
 
-export default function RoteiroDetalhePage() {
-  const { id } = useParams();
+export interface ItineraryDay {
+  id?: number;
+  day_number?: number;
+  title: string;
+  summary: string;
+  events?: ItineraryEvent[];
+}
+
+export interface Itinerary {
+  id: number;
+  title: string;
+  summary?: string;
+  destination_name?: string;
+  destination?: any;
+  duration_days: number;
+  budget_total: string;
+  currency_code: string;
+  generation_status: "draft" | "generating" | "ready" | "failed";
+}
+
+export default function ItineraryDetail() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
+  const [days, setDays] = useState<ItineraryDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  if (!id) {
-    return (
-      <section className="px-6 py-8 lg:px-10">
-        <div className="rounded-[28px] border border-red-200 bg-red-50 px-6 py-5 text-sm text-red-600">
-          Roteiro não informado.
-        </div>
-      </section>
-    );
-  }
-
   useEffect(() => {
-    let active = true;
-    let intervalId: number | null = null;
-
-    async function loadItinerary() {
-      try {
-        const response = await apiRequest<ItineraryResponse>(`/api/itineraries/${id}/`);
-        if (!active) return;
-
-        const nextItinerary = response.data ?? null;
-        setItinerary(nextItinerary);
-        setError(null);
-
-        if (
-          nextItinerary?.generation_status &&
-          nextItinerary.generation_status !== "ready" &&
-          nextItinerary.generation_status !== "failed" &&
-          intervalId === null
-        ) {
-          intervalId = window.setInterval(() => {
-            void loadItinerary();
-          }, 4000);
-        }
-
-        if (
-          nextItinerary?.generation_status === "ready" ||
-          nextItinerary?.generation_status === "failed"
-        ) {
-          if (intervalId !== null) {
-            window.clearInterval(intervalId);
-            intervalId = null;
-          }
-        }
-      } catch (nextError) {
-        if (!active) return;
-        setError(
-          nextError instanceof Error
-            ? nextError.message
-            : "Nao foi possivel carregar o roteiro.",
-        );
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
+    const fetchItineraryData = async () => {
+      if (!id) {
+        setError("ID do roteiro inválido.");
+        setLoading(false);
+        return;
       }
-    }
 
-    void loadItinerary();
+      try {
+        const [itJson, daysJson] = await Promise.all([
+          apiRequest<any>(`/api/itineraries/${id}/`),
+          apiRequest<any>(`/api/itineraries/${id}/days/`).catch(() => ({ data: [] })),
+        ]);
 
-    return () => {
-      active = false;
-      if (intervalId !== null) {
-        window.clearInterval(intervalId);
+        setItinerary(itJson.data || itJson);
+        const fetchedDays = Array.isArray(daysJson)
+          ? daysJson
+          : Array.isArray(daysJson.data) ? daysJson.data
+          : daysJson.data?.results || daysJson.results || itJson.data?.days || itJson.days || [];
+        setDays(fetchedDays);
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Ocorreu um erro inesperado ao conectar com a API.";
+            
+        if (errorMessage.includes("401") || errorMessage.toLowerCase().includes("unauthorized")) {
+          navigate("/login");
+          return;
+        }
+        
+        if (errorMessage.includes("404")) {
+          setError("Roteiro não encontrado.");
+        } else {
+          setError(errorMessage);
+        }
+      } finally {
+        setLoading(false);
       }
     };
+
+    fetchItineraryData();
   }, [id]);
 
   if (loading) {
     return (
-      <section className="px-6 py-8 lg:px-10">
-        <div className="flex min-h-[40vh] items-center justify-center rounded-[28px] border border-sky-100 bg-white">
-          <div className="flex flex-col items-center gap-3 text-slate-500">
-            <Loader2 className="size-6 animate-spin text-sky-600" />
-            <span>Carregando roteiro...</span>
-          </div>
-        </div>
-      </section>
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
     );
   }
 
-  if (error) {
+  if (error || !itinerary) {
     return (
-      <section className="px-6 py-8 lg:px-10">
-        <div className="rounded-[28px] border border-red-200 bg-red-50 px-6 py-5 text-sm text-red-600">
-          {error}
-        </div>
-      </section>
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <p className="font-['Inter'] text-neutral-500">
+          {error || "Roteiro não encontrado."}
+        </p>
+      </div>
     );
   }
-
-  if (!itinerary) {
-    return (
-      <section className="px-6 py-8 lg:px-10">
-        <div className="rounded-[28px] border border-slate-200 bg-slate-50 px-6 py-5 text-sm text-slate-500">
-          Nenhum roteiro foi encontrado para esse identificador.
-        </div>
-      </section>
-    );
-  }
-
-  const days = itinerary.days ?? [];
-  const destinationLabel =
-    typeof itinerary.destination === "object" && itinerary.destination
-      ? itinerary.destination.name
-      : itinerary.destination_name;
 
   return (
-    <section className="min-h-screen bg-slate-50 px-6 py-8 lg:px-10">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6">
-        <div className="rounded-[32px] border border-sky-100 bg-white p-8 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-3">
-              <span className="inline-flex w-fit rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">
-                Roteiro #{itinerary.id}
+    <div className="min-h-screen bg-white font-['Inter'] text-neutral-900 selection:bg-blue-100 selection:text-blue-900">
+      <nav className="sticky top-0 z-10 flex h-16 items-center border-b border-neutral-200 bg-white/80 px-6 backdrop-blur-md lg:px-12">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center rounded-full pr-4 transition-colors hover:bg-neutral-100"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-full">
+            <ArrowLeft className="h-5 w-5 text-neutral-900" />
+          </div>
+          <span className="ml-2 font-['Inter'] text-sm font-medium text-neutral-500">
+            Voltar para Roteiros
+          </span>
+        </button>
+      </nav>
+
+      <main className="mx-auto max-w-7xl px-6 py-16 lg:px-12 lg:py-24">
+        {/* Hero Section */}
+        <header className="mb-16 max-w-3xl">
+          <div className="mb-6 flex items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-neutral-900">
+              <MapPin className="h-3.5 w-3.5" />
+              {typeof itinerary.destination === "object"
+                ? itinerary.destination?.name
+                : itinerary.destination_name || "Destino"}
+            </span>
+            {itinerary.generation_status === "ready" && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-green-700">
+                <CheckCircle className="h-3.5 w-3.5" />
+                Gerado por IA
               </span>
-              <h1 className="text-4xl font-semibold tracking-tight text-slate-950">
-                {itinerary.title}
-              </h1>
-              <p className="max-w-3xl text-sm leading-7 text-slate-600">
-                {itinerary.summary || "Resumo ainda nao dispoNível para este roteiro."}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-              Status: <strong>{formatGenerationStatus(itinerary.generation_status)|| "desconhecido"}</strong>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-[24px] border border-sky-100 bg-white p-5">
-            <div className="mb-3 inline-flex rounded-2xl bg-sky-100 p-3 text-sky-700">
-              <CalendarDays className="size-5" />
-            </div>
-            <p className="text-sm text-slate-500">Período</p>
-            <p className="mt-1 font-semibold text-slate-950">
-              {formatDate(itinerary.start_date)} - {formatDate(itinerary.end_date)}
-            </p>
+            )}
           </div>
 
-          <div className="rounded-[24px] border border-sky-100 bg-white p-5">
-            <div className="mb-3 inline-flex rounded-2xl bg-sky-100 p-3 text-sky-700">
-              <MapPinned className="size-5" />
-            </div>
-            <p className="text-sm text-slate-500">Destino</p>
-            <p className="mt-1 font-semibold text-slate-950">
-              {destinationLabel || "Não informado"}
-            </p>
-          </div>
+          <h1 className="mb-6 font-['Geist'] text-5xl font-normal tracking-[-0.03em] text-neutral-950 md:text-6xl lg:text-[64px] lg:leading-[0.95]">
+            {itinerary.title}
+          </h1>
 
-          <div className="rounded-[24px] border border-sky-100 bg-white p-5">
-            <div className="mb-3 inline-flex rounded-2xl bg-sky-100 p-3 text-sky-700">
-              <Coins className="size-5" />
-            </div>
-            <p className="text-sm text-slate-500">Orçamento</p>
-            <p className="mt-1 font-semibold text-slate-950">
-              {formatMoney(itinerary.budget_total, itinerary.currency_code)}
-            </p>
-          </div>
+          <p className="text-lg leading-relaxed text-neutral-600 md:text-xl">
+            {itinerary.summary ||
+              "Roteiro em processo de detalhamento pela inteligência artificial..."}
+          </p>
+        </header>
 
-          <div className="rounded-[24px] border border-sky-100 bg-white p-5">
-            <div className="mb-3 inline-flex rounded-2xl bg-sky-100 p-3 text-sky-700">
-              <CalendarDays className="size-5" />
-            </div>
-            <p className="text-sm text-slate-500">Duração</p>
-            <p className="mt-1 font-semibold text-slate-950">
-              {itinerary.duration_days || 0} dias
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-[28px] border border-sky-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
-          <h2 className="text-2xl font-semibold text-slate-950">Dias do roteiro</h2>
-
-          {days.length === 0 ? (
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
-              Ainda nao existem dias gerados para este roteiro.
-            </div>
-          ) : (
-            <div className="mt-6 space-y-5">
-              {days.map((day) => {
-                const events = day.events ?? [];
-
-                return (
-                  <article
-                    key={day.id}
-                    className="rounded-[24px] border border-sky-100 bg-sky-50/60 p-5"
-                  >
-                    <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
-                          Dia {day.day_number}
-                        </p>
-                        <h3 className="mt-1 text-xl font-semibold text-slate-950">
-                          {day.title}
-                        </h3>
-                        <p className="mt-2 text-sm leading-6 text-slate-600">
-                          {day.summary || "Sem resumo para este dia."}
-                        </p>
-                      </div>
-
-                      <div className="rounded-2xl border border-sky-200 bg-white px-3 py-2 text-sm text-slate-600">
-                        Custo estimado: {formatMoney(day.estimated_cost, itinerary.currency_code)}
-                      </div>
+        <div className="grid grid-cols-1 items-start gap-16 lg:grid-cols-12 lg:gap-24">
+          <div className="lg:col-span-8">
+            <div className="flex flex-col gap-16">
+              {days.length === 0 ? (
+                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-8 text-center">
+                  <p className="text-neutral-500">
+                    Os dias do roteiro ainda não estão disponíveis.
+                  </p>
+                </div>
+              ) : (
+              days.map((day: ItineraryDay, index: number) => (
+                <section key={day.id || day.day_number || index} className="relative">
+                    <div className="mb-8 flex flex-col gap-2">
+                      <h2 className="font-['Geist'] text-3xl font-normal tracking-tight text-neutral-900 md:text-4xl">
+                      Dia {day.day_number || index + 1}
+                      </h2>
+                      <h3 className="mt-2 font-['Geist'] text-xl font-normal text-neutral-500">
+                        {day.title}
+                      </h3>
+                      <p className="mt-4 text-base text-neutral-900">
+                        {day.summary}
+                      </p>
                     </div>
 
-                    <div className="mt-5 space-y-3">
-                      {events.length === 0 ? (
-                        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-500">
-                          Nenhum evento foi adicionado neste dia.
-                        </div>
-                      ) : (
-                        events.map((eventItem) => (
-                          <div
-                            key={eventItem.id}
-                            className="rounded-2xl border border-white bg-white px-4 py-4 shadow-sm"
-                          >
-                            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                              <div>
-                                <h4 className="text-base font-semibold text-slate-950">
-                                  {eventItem.title}
-                                </h4>
-                                <p className="mt-1 text-sm leading-6 text-slate-600">
-                                  {eventItem.description || "Sem descricao para este evento."}
+                    <div className="relative pl-4 md:pl-0">
+                      <div className="absolute bottom-0 left-[23px] top-2 hidden w-px bg-neutral-200 md:block" />
+
+                      <div className="flex flex-col gap-8">
+                        {day.events?.map(
+                          (event: ItineraryEvent, eventIdx: number) => (
+                            <div
+                              key={eventIdx}
+                              className="relative flex flex-col gap-4 md:flex-row md:gap-8"
+                            >
+                              <div className="relative hidden w-24 shrink-0 pt-1 md:block">
+                                <div className="absolute right-[-21px] top-[9px] h-2.5 w-2.5 rounded-full border-2 border-white bg-blue-600" />
+                                <span className="font-mono text-sm font-medium text-neutral-500">
+                                  {event.start_time}
+                                </span>
+                              </div>
+
+                              <div className="group flex-1 rounded-2xl border border-neutral-200 bg-white p-6 transition-shadow hover:shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
+                                <div className="mb-4 flex items-start justify-between gap-4">
+                                  <div>
+                                    <div className="mb-2 flex items-center gap-2 md:hidden">
+                                      <Clock className="h-4 w-4 text-neutral-400" />
+                                      <span className="font-mono text-sm font-medium text-neutral-500">
+                                        {event.start_time}
+                                      </span>
+                                    </div>
+                                    <h4 className="font-['Geist'] text-xl font-normal tracking-tight text-neutral-900">
+                                      {event.title}
+                                    </h4>
+                                  </div>
+                                  <span className="shrink-0 text-base font-semibold [&.group-hover] text-blue-600">
+                                    {event.estimated_cost &&
+                                    event.estimated_cost !== "0.00"
+                                      ? formatMoney(event.estimated_cost, itinerary.currency_code)
+                                      : "Grátis"}
+                                  </span>
+                                </div>
+                                <p className="text-sm leading-relaxed text-neutral-600">
+                                  {event.description}
                                 </p>
                               </div>
-
-                              <div className="text-sm text-slate-500">
-                                {eventItem.start_time || "--:--"} - {eventItem.end_time || "--:--"}
-                              </div>
                             </div>
-
-                            <div className="mt-3 text-sm text-slate-500">
-                              Custo estimado: {formatMoney(eventItem.estimated_cost, itinerary.currency_code)}
-                            </div>
-                          </div>
-                        ))
-                      )}
+                          ),
+                        )}
+                      </div>
                     </div>
-                  </article>
-                );
-              })}
+                  </section>
+                ))
+              )}
             </div>
-          )}
+          </div>
+
+          <div className="lg:col-span-4">
+            <div className="sticky top-24 rounded-[24px] bg-neutral-50 p-8">
+              <h3 className="mb-6 font-['Geist'] text-2xl font-normal tracking-tight text-neutral-900">
+                Resumo da Viagem
+              </h3>
+
+              <div className="mb-8 flex flex-col gap-5 pt-6">
+                <div className="flex items-center justify-between border-b border-neutral-200 pb-5">
+                  <div className="flex items-center gap-3 text-neutral-600">
+                    <Calendar className="h-5 w-5" />
+                    <span className="text-sm">Duração</span>
+                  </div>
+                  <span className="font-medium text-neutral-900">
+                    {itinerary.duration_days} dias
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between border-b border-neutral-200 pb-5">
+                  <div className="flex items-center gap-3 text-neutral-600">
+                    <Wallet className="h-5 w-5" />
+                    <span className="text-sm">Orçamento Estimado</span>
+                  </div>
+                  <span className="font-mono font-medium text-neutral-900">
+                    {formatMoney(itinerary.budget_total, itinerary.currency_code)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <button className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-6 font-['Inter'] text-sm font-semibold text-white transition-colors hover:bg-blue-700">
+                  <Heart className="h-4 w-4" />
+                  Salvar nos Favoritos
+                </button>
+
+                <button className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-neutral-200 bg-transparent px-6 font-['Inter'] text-sm font-semibold text-neutral-900 transition-colors hover:bg-neutral-100">
+                  <Share className="h-4 w-4" />
+                  Compartilhar
+                </button>
+              </div>
+
+              <div className="mt-8 rounded-xl bg-white p-4 text-xs text-neutral-500">
+                <p>
+                  <strong>Nota:</strong> Os custos são estimativas baseadas no
+                  perfil do seu <i>Traveler DNA</i>. Recomendamos verificar os
+                  valores diretamente nos locais, pois podem sofrer alterações.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
+      </main>
+    </div>
   );
 }

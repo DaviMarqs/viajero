@@ -38,20 +38,20 @@ export default function TagSelector({
 
   return (
     <div className="space-y-3">
-      <label className="text-sm font-medium text-slate-700">
+      <label className="text-sm font-medium text-neutral-700">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-2.5">
         {options.map((opt) => (
           <button
             key={opt.value}
             type="button"
             className={
               selected.includes(opt.value)
-                ? "rounded-full border border-sky-500 bg-sky-500 px-4 py-2 text-sm font-medium text-white transition hover:border-sky-600 hover:bg-sky-600"
-                : "rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:text-sky-700"
+                ? "rounded-xl border border-blue-600 bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-all shadow-sm"
+                : "rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-600 transition-all hover:border-neutral-300 hover:bg-neutral-50"
             }
             onClick={() => toggle(opt.value)}
             aria-pressed={selected.includes(opt.value)}
@@ -62,8 +62,8 @@ export default function TagSelector({
       </div>
 
       {hint && (
-        <p className="flex items-start gap-2 text-sm leading-6 text-slate-500">
-          <span className="text-slate-400"><Info className="size-5" /></span> {hint}
+        <p className="flex items-start gap-2 text-sm leading-6 text-neutral-500">
+          <span className="text-neutral-400 mt-0.5"><Info className="size-4" /></span> {hint}
         </p>
       )}
     </div>

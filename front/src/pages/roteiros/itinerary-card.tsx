@@ -1,4 +1,4 @@
-import { CalendarDays, Coins, LoaderCircle, MapPinned } from "lucide-react";
+import { Calendar, Wallet, Clock, MapPin, ArrowRight } from "lucide-react";
 
 import type { Itinerary } from "@/types/travel";
 
@@ -23,7 +23,7 @@ function formatMoney(value?: string | number | null, currencyCode?: string | nul
 
   const amount = Number(value);
   if (!Number.isFinite(amount)) {
-    return `${value} ${currencyCode ?? ""}`.trim();
+    return `${currencyCode ?? "$"} ${value}`;
   }
 
   return new Intl.NumberFormat("pt-BR", {
@@ -63,88 +63,91 @@ function formatGenerationStatus(status?: string | null) {
 }
 
 export default function ItineraryCard({ itinerary, onOpen }: ItineraryCardProps) {
+  const isReady = itinerary.generation_status === "ready";
+  const isGenerating = itinerary.generation_status === "generating";
+
   return (
-    <article className="rounded-[28px] border border-sky-100 bg-white p-6 shadow-[0_18px_60px_rgba(56,189,248,0.08)]">
-      <div className="flex flex-col gap-5">
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
+    <article 
+      onClick={() => onOpen(itinerary.id)}
+      className="group relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200 bg-white p-6 transition-all hover:border-blue-200 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] sm:p-8"
+    >
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-neutral-600">
               Roteiro
             </span>
-            <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-slate-600">
+            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+              isReady ? "bg-green-50 text-green-700" : 
+              isGenerating ? "bg-blue-50 text-blue-700 animate-pulse" : 
+              "bg-neutral-100 text-neutral-600"
+            }`}>
               {formatGenerationStatus(itinerary.generation_status)}
             </span>
           </div>
+        </div>
 
           <div>
-            <h3 className="text-2xl font-semibold tracking-tight text-slate-950">
+          <h3 className="font-['Geist'] text-3xl font-normal tracking-tight text-neutral-900 transition-colors group-hover:text-blue-600">
               {itinerary.title}
             </h3>
-            <p className="mt-1 text-sm text-sky-700">
+          <p className="mt-2 text-base font-medium text-neutral-500">
               {getDestinationLabel(itinerary)}
             </p>
           </div>
 
-          <p className="line-clamp-3 text-sm leading-6 text-slate-600">
-            {itinerary.summary || "Resumo ainda nao dispoNível para este roteiro."}
+        <p className="line-clamp-2 text-base leading-relaxed text-neutral-600">
+          {itinerary.summary || "Resumo ainda não disponível para este roteiro."}
           </p>
-        </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3">
-            <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-sky-700">
-              <CalendarDays className="size-4" />
+        <div className="mt-4 grid grid-cols-2 gap-6 md:grid-cols-4">
+          <div className="flex flex-col gap-1 border-l-2 border-neutral-100 pl-4 transition-colors group-hover:border-blue-200">
+            <div className="flex items-center gap-2 text-neutral-400">
+              <Calendar className="h-4 w-4" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Início</span>
             </div>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Início</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900">
+            <p className="font-['Inter'] text-sm font-semibold text-neutral-900">
               {formatDate(itinerary.start_date)}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3">
-            <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-sky-700">
-              <MapPinned className="size-4" />
+          <div className="flex flex-col gap-1 border-l-2 border-neutral-100 pl-4 transition-colors group-hover:border-blue-200">
+            <div className="flex items-center gap-2 text-neutral-400">
+              <MapPin className="h-4 w-4" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Fim</span>
             </div>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Fim</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900">
+            <p className="font-['Inter'] text-sm font-semibold text-neutral-900">
               {formatDate(itinerary.end_date)}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3">
-            <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-sky-700">
-              <LoaderCircle className="size-4" />
+          <div className="flex flex-col gap-1 border-l-2 border-neutral-100 pl-4 transition-colors group-hover:border-blue-200">
+            <div className="flex items-center gap-2 text-neutral-400">
+              <Clock className="h-4 w-4" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Duração</span>
             </div>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Duração</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900">
+            <p className="font-['Inter'] text-sm font-semibold text-neutral-900">
               {Number(itinerary.duration_days || 0)} dias
             </p>
           </div>
 
-          <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3">
-            <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-sky-700">
-              <Coins className="size-4" />
+          <div className="flex flex-col gap-1 border-l-2 border-neutral-100 pl-4 transition-colors group-hover:border-blue-200">
+            <div className="flex items-center gap-2 text-neutral-400">
+              <Wallet className="h-4 w-4" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Orçamento</span>
             </div>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Orçamento</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900">
+            <p className="font-['Inter'] text-sm font-semibold text-neutral-900">
               {formatMoney(itinerary.budget_total, itinerary.currency_code)}
             </p>
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-slate-500">
-            Moeda: <span className="font-medium text-slate-700">{itinerary.currency_code || "BRL"}</span>
-          </p>
-
-          <button
-            type="button"
-            onClick={() => onOpen(itinerary.id)}
-            className="inline-flex h-12 items-center justify-center rounded-2xl bg-sky-600 px-5 text-sm font-semibold text-white transition hover:bg-sky-700"
-          >
+      <div className="mt-8 flex items-center justify-end border-t border-neutral-100 pt-6">
+        <span className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-900 transition-colors group-hover:text-blue-600">
             Abrir roteiro
-          </button>
-        </div>
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        </span>
       </div>
     </article>
   );

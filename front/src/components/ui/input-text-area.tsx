@@ -21,13 +21,13 @@ export default function InputTextarea({
 }: InputTextareaProps) {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-slate-700">
+      <label className="text-sm font-medium text-neutral-700">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>
 
       <textarea
-        className="min-h-32 w-full rounded-3xl border border-slate-200 bg-white px-4 py-4 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:shadow-[0_0_0_4px_rgba(46,140,255,0.12)]"
+        className="min-h-32 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm leading-relaxed text-neutral-900 outline-none transition-all placeholder:text-neutral-400 focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100 hover:border-neutral-300 hover:bg-white resize-y"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -35,8 +35,8 @@ export default function InputTextarea({
       />
 
       {hint && (
-        <p className="flex items-start gap-2 text-sm leading-6 text-slate-500">
-          <span className="text-slate-400"><Info className="size-5" /></span> {hint}
+        <p className="flex items-start gap-2 text-sm leading-6 text-neutral-500">
+          <span className="text-neutral-400 mt-0.5"><Info className="size-4" /></span> {hint}
         </p>
       )}
     </div>

@@ -1,8 +1,14 @@
 import CardOnboard from "./card-onboard";
 import InputCurrency from "./input-currency";
-import InputDropdown from "./input-dropdown";
 import TagSelector from "./tag-selector";
 import InputTextarea from "./input-text-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { FieldValues, TagValues } from "@/hooks/useOnboarding";
 import type {
   StepField,
@@ -70,12 +76,12 @@ export default function OnboardingStepFields({
       return (
         <div key={field.key} className="space-y-3">
           <div className="flex items-center justify-between gap-4">
-            <label className="text-sm font-medium text-slate-700">
+            <label className="text-sm font-medium text-neutral-700">
               {field.label}
               {field.required && <span className="text-red-500"> *</span>}
             </label>
 
-            <span className="rounded-full bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-700">
+            <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
               {value}
             </span>
           </div>
@@ -87,16 +93,16 @@ export default function OnboardingStepFields({
             step={field.step ?? 1}
             value={value}
             onChange={(event) => onSetField(field.key, event.target.value)}
-            className="w-full accent-sky-500"
+            className="w-full accent-blue-600"
           />
 
-          <div className="flex justify-between text-xs text-slate-400">
+          <div className="flex justify-between text-xs text-neutral-400">
             <span>{field.min}</span>
             <span>{field.max}</span>
           </div>
 
           {field.hint && (
-            <p className="text-sm leading-6 text-slate-500">{field.hint}</p>
+            <p className="text-sm leading-6 text-neutral-500">{field.hint}</p>
           )}
         </div>
       );
@@ -117,16 +123,36 @@ export default function OnboardingStepFields({
 
     if (field.type === "dropdown") {
       return (
-        <InputDropdown
-          key={field.key}
-          label={field.label}
-          hint={field.hint}
-          required={field.required}
-          icon={field.icon as "none" | "calendar" | undefined}
-          options={field.options}
-          value={fieldValues[field.key] ?? ""}
-          onChange={(value: string) => onSetField(field.key, value)}
-        />
+        <div key={field.key} className="space-y-3">
+          {field.label && (
+            <label className="text-sm font-medium text-neutral-700">
+              {field.label}
+              {field.required && <span className="text-red-500"> *</span>}
+            </label>
+          )}
+          <Select
+            value={fieldValues[field.key] ?? ""}
+            onValueChange={(value: string) => onSetField(field.key, value)}
+          >
+            <SelectTrigger className="h-14 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 transition hover:bg-neutral-50 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 data-[state=open]:border-blue-500">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border border-neutral-100 bg-white shadow-lg">
+              {field.options?.map((option) => (
+                <SelectItem
+                  key={option.value}
+                  value={String(option.value)}
+                  className="cursor-pointer rounded-lg px-4 py-3 text-sm text-neutral-700 transition focus:bg-blue-50 focus:text-blue-900"
+                >
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {field.hint && (
+            <p className="text-sm leading-6 text-neutral-500">{field.hint}</p>
+          )}
+        </div>
       );
     }
 

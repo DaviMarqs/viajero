@@ -21,38 +21,38 @@ export default function CardOnboard({
     <button
       type="button"
       className={cn(
-        "flex w-full items-center gap-4 rounded-3xl border px-5 py-4 text-left transition",
+        "group flex w-full items-center gap-4 rounded-2xl border px-5 py-4 text-left transition-all duration-200",
         selected
-          ? "border-sky-500 bg-sky-50 shadow-[0_12px_30px_rgba(46,140,255,0.12)]"
-          : "border-slate-200 bg-white hover:border-sky-300 hover:bg-slate-50",
+          ? "border-blue-500 bg-blue-50/50 shadow-[0_4px_20px_rgba(37,99,235,0.08)] ring-1 ring-blue-500"
+          : "border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50",
       )}
       onClick={onClick}
       aria-pressed={selected}
     >
       <div
         className={cn(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition",
-          selected ? "bg-sky-100 text-sky-700" : "bg-slate-100 text-slate-600",
+          "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors duration-200",
+          selected ? "bg-blue-100 text-blue-600" : "bg-neutral-100 text-neutral-500 group-hover:bg-white",
         )}
       >
-        <Icon size={22} aria-hidden />
+        <Icon size={24} aria-hidden strokeWidth={selected ? 2.5 : 2} />
       </div>
 
       <div className="flex-1">
-        <h3 className="mb-1 text-base font-semibold text-slate-950">{cardTitle}</h3>
-        <p className="text-sm leading-6 text-slate-500">{cardDescription}</p>
+        <h3 className="mb-1 font-['Geist'] text-lg font-medium text-neutral-900">{cardTitle}</h3>
+        <p className="text-sm leading-relaxed text-neutral-500">{cardDescription}</p>
       </div>
 
       <div
         className={cn(
-          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition",
+          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all duration-200",
           selected
-            ? "border-sky-500 bg-sky-500 text-white"
-            : "border-slate-300 bg-white text-transparent",
+            ? "border-blue-600 bg-blue-600 text-white"
+            : "border-neutral-300 bg-transparent text-transparent",
         )}
         aria-hidden
       >
-        {selected && <Check size={13} strokeWidth={3} />}
+        {selected && <Check size={14} strokeWidth={3} />}
       </div>
     </button>
   );

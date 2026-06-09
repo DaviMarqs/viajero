@@ -34,19 +34,19 @@ export default function InputCurrency({
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-slate-700">
+      <label className="text-sm font-medium text-neutral-700">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>
 
-      <div className="flex h-14 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 transition focus-within:border-sky-500 focus-within:shadow-[0_0_0_4px_rgba(46,140,255,0.12)]">
-        <span className="text-slate-400">
+      <div className="relative flex h-14 items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 transition-all focus-within:border-blue-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100 hover:border-neutral-300 hover:bg-white">
+        <span className="text-neutral-400">
           <DollarSign size={18} />
         </span>
         <input
           type="text"
           inputMode="numeric"
-          className="h-full w-full border-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+          className="peer h-full w-full border-0 bg-transparent text-sm font-medium text-neutral-900 outline-none placeholder:text-neutral-400 placeholder:font-normal"
           placeholder="R$ 0,00"
           value={value ? formatBRL(value) : ""}
           onChange={handleChange}
@@ -54,8 +54,8 @@ export default function InputCurrency({
       </div>
 
       {hint && (
-        <p className="flex items-start gap-2 text-sm leading-6 text-slate-500">
-          <span className="text-slate-400"><Info className="size-5" /></span> {hint}
+        <p className="flex items-start gap-2 text-sm leading-6 text-neutral-500">
+          <span className="text-neutral-400 mt-0.5"><Info className="size-4" /></span> {hint}
         </p>
       )}
     </div>
