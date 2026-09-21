@@ -1,0 +1,876 @@
+classDiagram
+direction LR
+
+%% Arquivo Mermaid para importar no Lucidchart:
+%% Lucidchart -> Diagram as Code -> Mermaid -> colar o conteudo deste arquivo.
+
+namespace Application {
+  class AppModule {
+    <<Module>>
+  }
+}
+
+namespace CommonPatterns {
+  class ApiResponseBuilder {
+    <<Builder>>
+    -message string
+    +withMessage(message) ApiResponseBuilder
+    +build(data) ApiSuccessResponse
+  }
+
+  class ApiExceptionFilter {
+    <<ExceptionFilter>>
+    +catch(exception, host) void
+    -extractMessage(raw) string
+  }
+
+  class DjangoPasswordAdapter {
+    <<Adapter>>
+    +encode(password) string
+    +verify(password, encoded) boolean
+  }
+
+  class AuditableOperation {
+    <<interface>>
+    +execute(args) Promise
+  }
+
+  class AuditedServiceDecorator {
+    <<Decorator>>
+    -wrapped AuditableOperation
+    -auditService AuditService
+    -eventType string
+    +execute(args) Promise
+  }
+
+  class ItineraryGeneratorFactory {
+    <<Factory>>
+    -config ConfigService
+    +create() BaseItineraryGenerator
+  }
+
+  class ItineraryGenerationFacade {
+    <<Facade>>
+    -aiService AiService
+    +generate(itinerary, userId) Promise~LlmJob~
+  }
+
+  class ApiSuccessResponse {
+    <<interface>>
+    +success boolean
+    +message string
+    +data T
+  }
+
+  class ApiErrorResponse {
+    <<interface>>
+    +success boolean
+    +message string
+    +errors unknown
+  }
+}
+
+namespace Auth {
+  class AuthModule {
+    <<Module>>
+  }
+
+  class AuthController {
+    <<Controller>>
+    -auth AuthService
+    -response ApiResponseBuilder
+    +register(dto)
+    +login(dto)
+    +logout(user)
+  }
+
+  class AuthService {
+    <<Service>>
+    -users UsersService
+    -jwt JwtService
+    -passwords DjangoPasswordAdapter
+    -audit AuditService
+    +register(dto)
+    +login(dto)
+    +logout(userId)
+    -buildPayload(user)
+  }
+
+  class JwtStrategy {
+    <<PassportStrategy>>
+    +validate(payload) AuthenticatedUser
+  }
+
+  class JwtAuthGuard {
+    <<Guard>>
+  }
+
+  class CurrentUser {
+    <<ParamDecorator>>
+  }
+
+  class RegisterDto {
+    <<DTO>>
+    +email string
+    +password string
+    +username string
+    +display_name string
+    +first_name string
+    +last_name string
+  }
+
+  class LoginDto {
+    <<DTO>>
+    +email string
+    +password string
+  }
+
+  class AuthenticatedUser {
+    <<interface>>
+    +id number
+    +email string
+    +username string
+    +is_staff boolean
+    +is_superuser boolean
+  }
+}
+
+namespace Users {
+  class UsersModule {
+    <<Module>>
+  }
+
+  class UsersController {
+    <<Controller>>
+    -users UsersService
+    -response ApiResponseBuilder
+    +me(authUser)
+    +updateMe(authUser, dto)
+  }
+
+  class UsersService {
+    <<Service>>
+    -users Repository~User~
+    -passwords DjangoPasswordAdapter
+    +findByEmail(email) Promise~User~
+    +findById(id) Promise~User~
+    +create(input) Promise~User~
+    +update(id, dto) Promise~User~
+    -generateUsername(email) Promise~string~
+  }
+
+  class UpdateUserDto {
+    <<DTO>>
+    +email string
+    +username string
+    +display_name string
+    +first_name string
+    +last_name string
+    +avatar_url string
+    +home_airport string
+    +preferred_currency string
+    +is_profile_complete boolean
+  }
+
+  class User {
+    <<Entity users_user>>
+    +id number
+    +password string
+    +last_login Date
+    +is_superuser boolean
+    +username string
+    +first_name string
+    +last_name string
+    +email string
+    +is_staff boolean
+    +is_active boolean
+    +date_joined Date
+    +display_name string
+    +avatar_url string
+    +home_airport string
+    +preferred_currency string
+    +is_profile_complete boolean
+    +created_at Date
+    +updated_at Date
+  }
+
+  class RefreshToken {
+    <<Entity users_refreshtoken>>
+    +id number
+    +token string
+    +expires_at Date
+    +revoked_at Date
+    +created_at Date
+  }
+}
+
+namespace Destinations {
+  class DestinationsModule {
+    <<Module>>
+  }
+
+  class DestinationsController {
+    <<Controller>>
+    -destinations DestinationsService
+    -discovery DestinationDiscoveryFacade
+    -response ApiResponseBuilder
+    +list()
+    +search(q, country, city, request)
+    +create(dto)
+    +retrieve(id)
+  }
+
+  class PoisController {
+    <<Controller>>
+    -destinations DestinationsService
+    -response ApiResponseBuilder
+    +list(destination, poiType)
+  }
+
+  class DestinationsService {
+    <<Service>>
+    -destinations Repository~Destination~
+    -pois Repository~PointOfInterest~
+    +list() Promise~Destination[]~
+    +findOne(id) Promise~Destination~
+    +search(input) Promise~Destination[]~
+    +create(dto, userId) Promise~Destination~
+    +listPois(filters) Promise~PointOfInterest[]~
+  }
+
+  class DestinationDiscoveryFacade {
+    <<Facade>>
+    -destinations DestinationsService
+    -audit AuditService
+    +searchOrDiscover(input) Promise
+  }
+
+  class CreateDestinationDto {
+    <<DTO>>
+    +slug string
+    +name string
+    +country string
+    +city string
+    +summary string
+    +hero_image_url string
+  }
+
+  class Destination {
+    <<Entity destinations_destination>>
+    +id number
+    +slug string
+    +name string
+    +country string
+    +city string
+    +summary string
+    +hero_image_url string
+    +timezone string
+    +best_season string
+    +average_rating string
+    +metadata json
+    +created_at Date
+    +updated_at Date
+  }
+
+  class DestinationCostProfile {
+    <<Entity destinations_destinationcostprofile>>
+    +id number
+    +currency_code string
+    +daily_budget_low string
+    +daily_budget_mid string
+    +daily_budget_high string
+    +source_url string
+    +notes string
+  }
+
+  class PoiTag {
+    <<Entity destinations_poitag>>
+    +id number
+    +name string
+    +slug string
+  }
+
+  class PointOfInterest {
+    <<Entity destinations_pointofinterest>>
+    +id number
+    +name string
+    +slug string
+    +poi_type string
+    +summary string
+    +address string
+    +opening_hours string
+    +source_url string
+    +price_level number
+    +rating string
+    +estimated_visit_minutes number
+    +metadata json
+  }
+}
+
+namespace Profiles {
+  class ProfilesModule {
+    <<Module>>
+  }
+
+  class TravelerDnaController {
+    <<Controller>>
+    -profiles ProfilesService
+    -response ApiResponseBuilder
+    +getRoot(user)
+    +getMe(user)
+    +patchRoot(user, dto)
+    +patchMe(user, dto)
+    +putMe(user, dto)
+  }
+
+  class TripPreferencesController {
+    <<Controller>>
+    -profiles ProfilesService
+    -response ApiResponseBuilder
+    +getRoot(user)
+    +getMe(user)
+    +patchRoot(user, dto)
+    +patchMe(user, dto)
+    +putMe(user, dto)
+  }
+
+  class ProfilesService {
+    <<Service>>
+    -dnaProfiles Repository~TravelerDnaProfile~
+    -tripPreferences Repository~UserTripPreference~
+    -audit AuditService
+    +getDna(userId) Promise~TravelerDnaProfile~
+    +upsertDna(userId, dto) Promise~TravelerDnaProfile~
+    +getTripPreference(userId) Promise~UserTripPreference~
+    +upsertTripPreference(userId, dto) Promise~UserTripPreference~
+  }
+
+  class TravelerDnaDto {
+    <<DTO>>
+    +travel_style string
+    +pace string
+    +comfort_level string
+    +social_energy number
+    +adventure_level number
+    +food_focus number
+    +cultural_interest number
+    +nature_interest number
+    +nightlife_interest number
+    +notes string
+  }
+
+  class TripPreferenceDto {
+    <<DTO>>
+    +budget_min number
+    +budget_max number
+    +currency_code string
+    +companionship string
+    +preferred_trip_length_days number
+    +travel_month string
+    +hotel_level string
+    +transportation_style string
+    +dietary_preferences string[]
+    +accessibility_needs string[]
+    +interests string[]
+    +metadata json
+  }
+
+  class TravelerDnaProfile {
+    <<Entity profiles_travelerdnaprofile>>
+    +id number
+    +travel_style string
+    +pace string
+    +comfort_level string
+    +social_energy number
+    +adventure_level number
+    +food_focus number
+    +cultural_interest number
+    +nature_interest number
+    +nightlife_interest number
+    +notes string
+    +created_at Date
+    +updated_at Date
+  }
+
+  class UserTripPreference {
+    <<Entity profiles_usertrippreference>>
+    +id number
+    +budget_min string
+    +budget_max string
+    +currency_code string
+    +companionship string
+    +preferred_trip_length_days number
+    +travel_month string
+    +hotel_level string
+    +transportation_style string
+    +dietary_preferences json
+    +accessibility_needs json
+    +interests json
+    +metadata json
+    +created_at Date
+    +updated_at Date
+  }
+}
+
+namespace Itineraries {
+  class ItinerariesModule {
+    <<Module>>
+  }
+
+  class ItinerariesController {
+    <<Controller>>
+    -itineraries ItinerariesService
+    -generation ItineraryGenerationFacade
+    -response ApiResponseBuilder
+    +templates()
+    +topRated()
+    +list(user)
+    +create(user, dto)
+    +retrieve(user, id)
+    +generate(user, id)
+    +days(user, id)
+    +dayDetail(user, id, dayNumber)
+  }
+
+  class FavoritesController {
+    <<Controller>>
+    -itineraries ItinerariesService
+    -response ApiResponseBuilder
+    +list(user)
+    +create(user, dto)
+  }
+
+  class ReviewsController {
+    <<Controller>>
+    -itineraries ItinerariesService
+    -response ApiResponseBuilder
+    +list(itinerary)
+    +create(user, dto)
+  }
+
+  class SharedLinksController {
+    <<Controller>>
+    -itineraries ItinerariesService
+    -response ApiResponseBuilder
+    +list(user)
+    +create(user, dto)
+  }
+
+  class ItinerariesService {
+    <<Service>>
+    -itineraries Repository~Itinerary~
+    -days Repository~ItineraryDay~
+    -favorites Repository~FavoriteItinerary~
+    -reviews Repository~Review~
+    -reviewStats Repository~ReviewStat~
+    -sharedLinks Repository~SharedItineraryLink~
+    -audit AuditService
+    +listForUser(userId) Promise~Itinerary[]~
+    +findForUser(id, userId) Promise~Itinerary~
+    +create(userId, dto) Promise~Itinerary~
+    +markGenerating(id, userId) Promise~Itinerary~
+    +templates() Promise~Itinerary[]~
+    +topRated() Promise~Itinerary[]~
+    +daysForItinerary(id, userId) Promise~ItineraryDay[]~
+    +dayDetail(id, dayNumber, userId) Promise~ItineraryDay~
+    +listFavorites(userId) Promise~FavoriteItinerary[]~
+    +createFavorite(userId, dto) Promise~FavoriteItinerary~
+    +listReviews(itinerary) Promise~Review[]~
+    +createReview(userId, dto) Promise~Review~
+    +listSharedLinks(userId) Promise~SharedItineraryLink[]~
+    +createSharedLink(userId, dto) Promise~SharedItineraryLink~
+  }
+
+  class CreateItineraryDto {
+    <<DTO>>
+    +destination number
+    +title string
+    +summary string
+    +start_date string
+    +end_date string
+    +duration_days number
+    +budget_total number
+    +currency_code string
+  }
+
+  class CreateReviewDto {
+    <<DTO>>
+    +itinerary number
+    +rating number
+    +title string
+    +body string
+  }
+
+  class CreateFavoriteDto {
+    <<DTO>>
+    +itinerary number
+  }
+
+  class CreateSharedLinkDto {
+    <<DTO>>
+    +itinerary number
+    +expires_at string
+  }
+
+  class Itinerary {
+    <<Entity itineraries_itinerary>>
+    +id number
+    +title string
+    +summary string
+    +start_date string
+    +end_date string
+    +duration_days number
+    +budget_total string
+    +currency_code string
+    +generation_status string
+    +generation_context json
+    +metadata json
+    +created_at Date
+    +updated_at Date
+  }
+
+  class ItineraryDay {
+    <<Entity itineraries_itineraryday>>
+    +id number
+    +day_number number
+    +title string
+    +summary string
+    +estimated_cost string
+  }
+
+  class ItineraryDailyEvent {
+    <<Entity itineraries_itinerarydailyevent>>
+    +id number
+    +start_time string
+    +end_time string
+    +title string
+    +description string
+    +estimated_cost string
+    +order_index number
+  }
+
+  class FavoriteItinerary {
+    <<Entity itineraries_favoriteitinerary>>
+    +id number
+    +created_at Date
+  }
+
+  class Review {
+    <<Entity itineraries_review>>
+    +id number
+    +rating number
+    +title string
+    +body string
+    +created_at Date
+    +updated_at Date
+  }
+
+  class ReviewStat {
+    <<Entity itineraries_reviewstat>>
+    +id number
+    +review_count number
+    +average_rating string
+  }
+
+  class SharedItineraryLink {
+    <<Entity itineraries_shareditinerarylink>>
+    +id number
+    +token string
+    +expires_at Date
+    +is_active boolean
+    +created_at Date
+  }
+
+  class ItineraryComponent {
+    <<interface>>
+    +getTitle() string
+    +getEstimatedCost() number
+    +toPlainObject() object
+  }
+
+  class ItineraryEventLeaf {
+    <<Composite Leaf>>
+    -event object
+    +getTitle() string
+    +getEstimatedCost() number
+    +toPlainObject() object
+  }
+
+  class ItineraryDayComposite {
+    <<Composite>>
+    -children ItineraryComponent[]
+    -day object
+    +add(component) ItineraryDayComposite
+    +getTitle() string
+    +getEstimatedCost() number
+    +toPlainObject() object
+  }
+
+  class ItineraryComposite {
+    <<Composite Root>>
+    -days ItineraryDayComposite[]
+    -title string
+    +add(day) ItineraryComposite
+    +getTitle() string
+    +getEstimatedCost() number
+    +toPlainObject() object
+  }
+}
+
+namespace AI {
+  class AiModule {
+    <<Module>>
+  }
+
+  class AiController {
+    <<Controller>>
+    -ai AiService
+    -response ApiResponseBuilder
+    +models()
+    +jobs(user)
+  }
+
+  class AiService {
+    <<Service>>
+    -jobs Repository~LlmJob~
+    -logs Repository~LlmJobLog~
+    -models Repository~LlmModel~
+    -templates Repository~PromptTemplate~
+    -itineraries Repository~Itinerary~
+    -days Repository~ItineraryDay~
+    -events Repository~ItineraryDailyEvent~
+    -profiles Repository~TravelerDnaProfile~
+    -preferences Repository~UserTripPreference~
+    -pois Repository~PointOfInterest~
+    -generatorFactory ItineraryGeneratorFactory
+    +listModels() Promise~LlmModel[]~
+    +listJobs(userId) Promise~LlmJob[]~
+    +createJob(itinerary, userId) Promise~LlmJob~
+    +runJob(jobId) Promise~LlmJob~
+  }
+
+  class GeneratedItinerary {
+    <<interface>>
+    +title string
+    +summary string
+    +currency_code string
+    +estimated_cost string
+    +days array
+    +metadata json
+  }
+
+  class BaseItineraryGenerator {
+    <<abstract>>
+    +generate(input) GeneratedItinerary
+  }
+
+  class MockItineraryGenerator {
+    <<Generator>>
+    +generate(input) GeneratedItinerary
+  }
+
+  class LlmProvider {
+    <<Entity ai_llmprovider>>
+    +id number
+    +key string
+    +name string
+    +config json
+    +is_active boolean
+  }
+
+  class LlmModel {
+    <<Entity ai_llmmodel>>
+    +id number
+    +key string
+    +name string
+    +context_window number
+    +is_default boolean
+    +is_active boolean
+  }
+
+  class PromptTemplate {
+    <<Entity ai_prompttemplate>>
+    +id number
+    +key string
+    +name string
+    +template string
+    +version number
+    +is_active boolean
+    +metadata json
+  }
+
+  class LlmJob {
+    <<Entity ai_llmjob>>
+    +id number
+    +job_type string
+    +status string
+    +request_payload json
+    +response_payload json
+    +error_message string
+    +created_at Date
+    +updated_at Date
+  }
+
+  class LlmJobLog {
+    <<Entity ai_llmjoblog>>
+    +id number
+    +level string
+    +message string
+    +payload json
+    +created_at Date
+  }
+}
+
+namespace Audit {
+  class AuditModule {
+    <<Module>>
+  }
+
+  class AuditController {
+    <<Controller>>
+    -audit AuditService
+    -response ApiResponseBuilder
+    +list(user)
+  }
+
+  class AuditService {
+    <<Service Singleton>>
+    -logs Repository~AuditLog~
+    +log(input) Promise~AuditLog~
+    +list() Promise~AuditLog[]~
+  }
+
+  class AuditInput {
+    <<interface>>
+    +event_type string
+    +actor_id number
+    +content_type string
+    +object_id string
+    +metadata json
+  }
+
+  class AuditLog {
+    <<Entity audit_auditlog>>
+    +id number
+    +event_type string
+    +content_type string
+    +object_id string
+    +metadata json
+    +created_at Date
+  }
+}
+
+%% Module imports and composition
+AppModule --> AuthModule
+AppModule --> UsersModule
+AppModule --> DestinationsModule
+AppModule --> ProfilesModule
+AppModule --> ItinerariesModule
+AppModule --> AiModule
+AppModule --> AuditModule
+
+AuthModule --> UsersModule
+AuthModule --> AuditModule
+ItinerariesModule --> AiModule
+ItinerariesModule --> AuditModule
+DestinationsModule --> AuditModule
+ProfilesModule --> AuditModule
+
+%% Controller dependencies
+AuthController --> AuthService
+AuthController --> ApiResponseBuilder
+UsersController --> UsersService
+UsersController --> ApiResponseBuilder
+DestinationsController --> DestinationsService
+DestinationsController --> DestinationDiscoveryFacade
+DestinationsController --> ApiResponseBuilder
+PoisController --> DestinationsService
+PoisController --> ApiResponseBuilder
+TravelerDnaController --> ProfilesService
+TravelerDnaController --> ApiResponseBuilder
+TripPreferencesController --> ProfilesService
+TripPreferencesController --> ApiResponseBuilder
+ItinerariesController --> ItinerariesService
+ItinerariesController --> ItineraryGenerationFacade
+ItinerariesController --> ApiResponseBuilder
+FavoritesController --> ItinerariesService
+FavoritesController --> ApiResponseBuilder
+ReviewsController --> ItinerariesService
+ReviewsController --> ApiResponseBuilder
+SharedLinksController --> ItinerariesService
+SharedLinksController --> ApiResponseBuilder
+AiController --> AiService
+AiController --> ApiResponseBuilder
+AuditController --> AuditService
+AuditController --> ApiResponseBuilder
+
+%% Service dependencies and design patterns
+AuthService --> UsersService
+AuthService --> DjangoPasswordAdapter
+AuthService --> AuditService
+UsersService --> DjangoPasswordAdapter
+DestinationDiscoveryFacade --> DestinationsService
+DestinationDiscoveryFacade --> AuditService
+ProfilesService --> AuditService
+ItinerariesService --> AuditService
+ItinerariesService --> AuditedServiceDecorator
+AuditedServiceDecorator ..|> AuditableOperation
+AuditedServiceDecorator --> AuditService
+ItineraryGenerationFacade --> AiService
+AiService --> ItineraryGeneratorFactory
+ItineraryGeneratorFactory --> BaseItineraryGenerator
+BaseItineraryGenerator <|-- MockItineraryGenerator
+MockItineraryGenerator --> ItineraryComposite
+ApiResponseBuilder ..> ApiSuccessResponse
+ApiExceptionFilter ..> ApiErrorResponse
+
+%% Entity relationships
+User "1" --> "0..*" RefreshToken : refresh_tokens
+User "1" --> "0..1" TravelerDnaProfile : traveler_dna_profile
+User "1" --> "0..1" UserTripPreference : trip_preference
+User "1" --> "0..*" Itinerary : itineraries
+User "1" --> "0..*" FavoriteItinerary : favorite_itineraries
+User "1" --> "0..*" Review : reviews
+User "1" --> "0..*" SharedItineraryLink : shared_itineraries
+User "0..1" --> "0..*" AuditLog : audit_events
+User "1" --> "0..*" LlmJob : llm_jobs
+
+Destination "1" --> "0..1" DestinationCostProfile : cost_profile
+Destination "1" --> "0..*" PointOfInterest : pois
+Destination "1" --> "0..*" Itinerary : itineraries
+Destination "1" --> "0..*" LlmJob : llm_jobs
+User "0..1" --> "0..*" Destination : created_by
+PointOfInterest "0..*" --> "0..*" PoiTag : tags
+
+Itinerary "1" --> "0..*" ItineraryDay : days
+ItineraryDay "1" --> "0..*" ItineraryDailyEvent : events
+PointOfInterest "0..1" --> "0..*" ItineraryDailyEvent : daily_events
+Itinerary "1" --> "0..*" FavoriteItinerary : favorites
+Itinerary "1" --> "0..*" Review : reviews
+Itinerary "1" --> "0..1" ReviewStat : review_stats
+Itinerary "1" --> "0..*" SharedItineraryLink : shared_links
+Itinerary "0..1" --> "0..*" LlmJob : llm_jobs
+
+LlmProvider "1" --> "0..*" LlmModel : models
+LlmModel "0..1" --> "0..*" LlmJob : llm_model
+PromptTemplate "0..1" --> "0..*" LlmJob : prompt_template
+LlmJob "1" --> "0..*" LlmJobLog : logs
+
+%% DTO usage
+AuthController ..> RegisterDto
+AuthController ..> LoginDto
+UsersController ..> UpdateUserDto
+DestinationsController ..> CreateDestinationDto
+TravelerDnaController ..> TravelerDnaDto
+TripPreferencesController ..> TripPreferenceDto
+ItinerariesController ..> CreateItineraryDto
+FavoritesController ..> CreateFavoriteDto
+ReviewsController ..> CreateReviewDto
+SharedLinksController ..> CreateSharedLinkDto
+
+%% Composite pattern
+ItineraryComponent <|.. ItineraryEventLeaf
+ItineraryComponent <|.. ItineraryDayComposite
+ItineraryComponent <|.. ItineraryComposite
+ItineraryDayComposite o-- "0..*" ItineraryComponent : children
+ItineraryComposite o-- "0..*" ItineraryDayComposite : days
