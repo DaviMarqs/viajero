@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE_URL = "http://localhost:8000";
+const DEFAULT_API_BASE_URL = "http://localhost:8001";
 const ACCESS_TOKEN_KEY = "viajero.access_token";
 
 export class ApiError extends Error {
@@ -11,7 +11,7 @@ export class ApiError extends Error {
     this.name = "ApiError";
     this.status = status;
     this.payload = payload;
-    this.errors = (payload as { errors?: unknown })?.errors;
+    this.errors = (payload as { errors?: unknown; })?.errors;
   }
 }
 
@@ -60,7 +60,7 @@ export async function apiFetch<T>(
     headers.set("Accept", "application/json");
   }
 
-  if (init.body && !headers.has("Content-Type")) {
+  if (init.body && !(init.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -68,18 +68,23 @@ export async function apiFetch<T>(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(buildUrl(path, params), {
-    headers,
-    ...init,
-  });
+  let response: Response;
+  try {
+    response = await fetch(buildUrl(path, params), { ...init, headers });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") throw error;
+    throw new ApiError("Não foi possível conectar ao serviço. Verifique sua conexão e tente novamente.", 0, error);
+  }
 
   if (!response.ok) {
-    let message = `Request failed with status ${response.status}`;
+    let message = response.status === 401
+      ? "Sua sessão expirou. Entre novamente para continuar."
+      : `Não foi possível concluir a solicitação (erro ${response.status}). Tente novamente.`;
     let payload: unknown;
 
     try {
       payload = await response.json();
-      const errorPayload = payload as { detail?: string; message?: string };
+      const errorPayload = payload as { detail?: string; message?: string; };
       message = errorPayload.detail || errorPayload.message || message;
     } catch {
       // Keep fallback message when the server does not return JSON.
@@ -95,18 +100,18 @@ export async function apiFetch<T>(
   return (await response.json()) as T;
 }
 
-export async function apiRequest<T>(
+export async function apiRequest<T = unknown>(
   path: string,
   init?: RequestInit,
   params?: Record<string, string | number | boolean | null | undefined>,
-): Promise<any> {
+): Promise<T> {
   return apiFetch<T>(path, init, params);
 }
 
 export function unwrapListResponse<T>(
   payload:
     | T[]
-    | { results?: T[]; data?: T[] | { results?: T[]; items?: T[] }; items?: T[] }
+    | { results?: T[]; data?: T[] | { results?: T[]; items?: T[]; }; items?: T[]; }
     | null
     | undefined,
 ) {

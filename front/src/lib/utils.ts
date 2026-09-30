@@ -10,6 +10,7 @@ export function formatCurrency(
   locale = "pt-BR",
   currency = "BRL",
 ) {
+  if (value === null || value === undefined || value === "") return "Sob consulta";
   const numeric = Number(value);
 
   if (!Number.isFinite(numeric)) {
@@ -18,7 +19,7 @@ export function formatCurrency(
 
   return new Intl.NumberFormat(locale, {
     style: "currency",
-    currency,
+    currency: /^[A-Z]{3}$/.test(currency) ? currency : "BRL",
     maximumFractionDigits: 0,
   }).format(numeric);
 }

@@ -1,229 +1,82 @@
-import { useMemo, useState } from "react";
-import TripRecomendation, {
-  type TripRecommendation,
-} from "@/components/ui/trip-recomendation.updated";
+import { Link, useSearchParams } from "react-router-dom";
+import { Search, Sparkles } from "lucide-react";
 import { useDestinations } from "@/hooks/useDestinations";
-import type { Destination } from "@/types/travel";
+import { DestinationCard } from "@/features/destinations/destination-card";
+import { destinationCardData } from "@/features/destinations/destination-adapter";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { CardSkeletons, Feedback } from "@/components/ui/feedback";
 
-function getDestinationImage(destination: Destination) {
-  return (
-    destination.hero_image_url ||
-    destination.image_url ||
-    destination.image ||
-    destination.cover_image ||
-    ""
-  );
-}
-
-function getDestinationBudget(destination: Destination) {
-  const costProfile = destination.cost_profile;
-
-  if (costProfile && typeof costProfile === "object") {
-    const profile = costProfile as { daily_budget_mid?: unknown };
-    const dailyBudgetMid = Number(profile.daily_budget_mid);
-    if (Number.isFinite(dailyBudgetMid)) {
-      return dailyBudgetMid;
-    }
-  }
-
-  return Number(destination.cost_from || destination.cost || 0);
-}
-
-function getDestinationCurrency(destination: Destination) {
-  const costProfile = destination.cost_profile;
-
-  if (costProfile && typeof costProfile === "object") {
-    const profile = costProfile as { currency_code?: unknown };
-    if (typeof profile.currency_code === "string") {
-      return profile.currency_code;
-    }
-  }
-
-  return "BRL";
-}
-
-function getDestinationTags(destination: Destination) {
-  if (Array.isArray(destination.metadata?.tags)) {
-    return destination.metadata.tags.filter(
-      (tag): tag is string => typeof tag === "string",
-    );
-  }
-
-  if (Array.isArray(destination.tags)) {
-    return destination.tags.filter(
-      (tag): tag is string => typeof tag === "string",
-    );
-  }
-
-  return [];
-}
-
-function getDestinationHighlights(destination: Destination) {
-  if (Array.isArray(destination.metadata?.highlights)) {
-    return destination.metadata.highlights.filter(
-      (highlight): highlight is string => typeof highlight === "string",
-    );
-  }
-
-  if (Array.isArray(destination.pois)) {
-    return destination.pois
-      .map((poi) => poi?.name)
-      .filter((poi): poi is string => typeof poi === "string")
-      .slice(0, 3);
-  }
-
-  return [];
-}
-
-function mapDestinationToTripRecommendation(
-  destination: Destination,
-): TripRecommendation {
-  return {
-    id: Number(destination.id),
-    title: destination.name,
-    destinationName: destination.name,
-    destinationSlug: destination.slug || String(destination.id),
-    country: destination.country || "",
-    summary: destination.summary || "",
-    imageUrl: getDestinationImage(destination),
-    durationDays: Number(
-      destination.duration_days || destination.duration || 3,
-    ),
-    budgetTotal: getDestinationBudget(destination),
-    currencyCode: getDestinationCurrency(destination),
-    rating: Number(destination.average_rating || destination.rating || 0),
-    bestSeason: destination.best_season || "Ano todo",
-    travelStyle: "Destino",
-    generationStatus: "ready",
-    tags: getDestinationTags(destination),
-    highlights: getDestinationHighlights(destination),
-  };
-}
-
-export default function Explorer() {
-  const { destinations, loading, error } = useDestinations();
-  const [sortBy, setSortBy] = useState("recommended");
-
-  const trips = useMemo(
-    () => destinations.map(mapDestinationToTripRecommendation),
-    [destinations],
-  );
-
- // const readyTrips = trips.filter((trip) => trip.generationStatus === "ready");
-  {/* const averageRating =
-    trips.length > 0
-      ? (
-          trips.reduce(
-            (total, trip) =>
-              total + (Number.isFinite(trip.rating) ? trip.rating : 0),
-            0,
-          ) / trips.length
-        ).toFixed(1)
-      : "0.0"; */}
-
-  const sortedTrips = useMemo(() => {
-    const items = [...trips];
-
-    if (sortBy === "budget") {
-      items.sort((a, b) => a.budgetTotal - b.budgetTotal);
-    } else if (sortBy === "duration") {
-      items.sort((a, b) => a.durationDays - b.durationDays);
-    } else if (sortBy === "rating") {
-      items.sort((a, b) => b.rating - a.rating);
-    }
-
-    return items;
-  }, [sortBy, trips]);
-
-  return (
-    <main className="min-h-screen bg-neutral-50">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 md:flex-row md:px-6 md:py-12">
-        {/* <Filter /> */}
-
-        <section className="flex min-w-0 flex-1 flex-col gap-6">
-          <div className="rounded-3xl border border-neutral-200 bg-white p-6 md:p-8">
-            <p className="mb-3 text-xs font-medium uppercase tracking-widest text-blue-600">
-              Explorar roteiros
-            </p>
-
-            <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
-              <div className="max-w-3xl">
-                <h1 className="text-3xl font-medium leading-tight text-neutral-950 md:text-5xl">
-                  Encontre roteiros prontos para sua próxima viagem.
-                </h1>
-
-                <p className="mt-4 text-sm leading-6 text-neutral-600 md:text-base">
-                  Veja exemplos de roteiros criados com base em destinos,
-                  orçamento, duração e preferências de viagem. Use os filtros
-                  para encontrar o roteiro ideal ou para se inspirar a criar o
-                  seu próprio roteiro personalizado.
-                </p>
-              </div>
-            </div>
-            {/* <div className="grid grid-cols-3 gap-2 rounded-2xl bg-neutral-50 p-2 text-center">
-               <div className="rounded-xl bg-white px-4 py-3">
-                 <p className="text-xl font-medium text-neutral-950">
-                   {trips.length}
-                 </p>
-                 <p className="text-xs text-neutral-500">roteiros</p>
-               </div>
-
-               <div className="rounded-xl bg-white px-4 py-3">
-                 <p className="text-xl font-medium text-neutral-950">
-                   {readyTrips.length}
-                 </p>
-                 <p className="text-xs text-neutral-500">prontos</p>
-               </div>
-
-               <div className="rounded-xl bg-white px-4 py-3">
-                 <p className="text-xl font-medium text-neutral-950">
-                   {averageRating}
-                 </p>
-                 <p className="text-xs text-neutral-500">mÃ©dia</p>
-               </div>
-             </div> */}
-          </div>
-
-          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <div>
-              <h2 className="text-xl font-medium text-neutral-950">
-                Roteiros em destaque
-              </h2>
-            </div>
-
-            <select
-              className="h-11 rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-              value={sortBy}
-              onChange={(event) => setSortBy(event.target.value)}
-            >
-              <option value="recommended">Mais recomendados</option>
-              <option value="budget">Menor orçamento</option>
-              <option value="duration">Menor duração</option>
-              <option value="rating">Melhor avaliação</option>
-            </select>
-          </div>
-
-          {loading ? (
-            <div className="rounded-3xl border border-neutral-200 bg-white p-6 text-sm text-neutral-600">
-              Carregando roteiros...
-            </div>
-          ) : error ? (
-            <div className="rounded-3xl border border-neutral-200 bg-white p-6 text-sm text-neutral-600">
-              {error}
-            </div>
-          ) : sortedTrips.length === 0 ? (
-            <div className="rounded-3xl border border-neutral-200 bg-white p-6 text-sm text-neutral-600">
-              Nenhum roteiro encontrado.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-              {sortedTrips.map((trip) => (
-                <TripRecomendation key={trip.id} trip={trip} />
-              ))}
-            </div>
-          )}
-        </section>
+export default function Explorer({ recommendations = false }: { recommendations?: boolean; }) {
+  const { destinations, loading, error, refetch } = useDestinations();
+  const [params, setParams] = useSearchParams();
+  const query = params.get("q") ?? "";
+  const category = params.get("categoria") ?? "";
+  const sort = params.get("ordem") ?? "default";
+  function update(key: string, value: string) { setParams(current => { const next = new URLSearchParams(current); if (value) next.set(key, value); else next.delete(key); return next; }, { replace: true }); }
+  const categories = [...new Set(destinations.flatMap(destination => destinationCardData(destination).tags))];
+  const visible = destinations.filter(destination => {
+    const card = destinationCardData(destination);
+    return [card.name, card.country].filter(Boolean).join(" ").toLocaleLowerCase("pt-BR").includes(query.toLocaleLowerCase("pt-BR")) && (!category || card.tags.includes(category));
+  }).sort((a, b) => {
+    const left = destinationCardData(a); const right = destinationCardData(b);
+    if (sort === "budget") return (left.budget ?? Infinity) - (right.budget ?? Infinity);
+    if (sort === "duration") return (left.duration ?? Infinity) - (right.duration ?? Infinity);
+    if (sort === "rating") return (right.rating ?? -1) - (left.rating ?? -1);
+    return 0;
+  });
+  return <section className="page-content">
+    <Breadcrumbs current={recommendations ? "Recomendações" : "Explorar"} />
+    <section className="surface space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="page-title">{recommendations ? "Inspiração para sua próxima viagem" : "Explore seu próximo destino"}
+          </h1>
+          <p className="text-sm text-muted-foreground">Descubra destinos e encontre opções para o seu jeito de viajar.</p>
+        </div>
+        <Button asChild variant="outline">
+          <Link to="/roteiros/criacao?auto=destino">
+            <Sparkles aria-hidden="true" />Sugerir um destino</Link>
+        </Button>
       </div>
-    </main>
-  );
+      <div className="grid items-end gap-4 sm:grid-cols-[1fr_auto]">
+        <div className="space-y-2">
+          <label htmlFor="explore-search" className="text-sm font-medium">Buscar destinos</label>
+          <div className="relative">
+            <Search aria-hidden="true" className="absolute left-3 top-3 size-5 text-muted-foreground" />
+            <Input id="explore-search" type="search" placeholder="Cidade ou país" value={query} onChange={e => update("q", e.target.value)} className="pl-10" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="explore-sort" className="block text-sm font-medium">Ordenar por</label>
+          <select id="explore-sort" className="h-11 w-full rounded-control border border-input bg-surface px-3" value={sort} onChange={e => update("ordem", e.target.value)}>
+            <option value="default">Ordem original</option>
+            <option value="budget">Menor orçamento</option>
+            <option value="duration">Menor duração</option>
+            <option value="rating">Melhor avaliação</option>
+          </select>
+        </div>
+      </div>
+      {categories.length > 0 && <div className="space-y-3">
+        <h2 className="text-lg">Explorar por categorias</h2>
+        <div className="flex flex-wrap gap-2">
+          <Button variant={!category ? "default" : "outline"} aria-pressed={!category} onClick={() => update("categoria", "")}>Todas</Button>{categories.map(tag => <Button key={tag} variant={category === tag ? "default" : "outline"} aria-pressed={category === tag} onClick={() => update("categoria", tag)}>{tag}
+          </Button>)}
+        </div>
+      </div>}
+    </section>
+    <section className="surface space-y-6" aria-label="Destinos disponíveis">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="section-title">Destinos para descobrir</h2>
+        <p className="text-sm text-muted-foreground" role="status">{!loading && !error && visible.length + " destino(s) encontrado(s)"}
+        </p>
+      </div>
+      {loading ? <CardSkeletons /> : error ? <Feedback kind="error" title="Não conseguimos carregar os destinos" description={error} onRetry={refetch} /> : visible.length === 0 ? <Feedback title={destinations.length ? "Nenhum destino corresponde ? busca" : "Ainda não há destinos disponíveis"} description={destinations.length ? "Tente outro nome ou remova os filtros." : "Você pode pesquisar um destino para começar seu roteiro."}>{destinations.length ? <Button variant="outline" onClick={() => setParams({})}>Limpar filtros</Button> : <Button asChild>
+        <Link to="/roteiros/criacao">Pesquisar destino</Link>
+      </Button>}
+      </Feedback> : <div className="grid gap-4 sm:grid-cols-2">{visible.map(destination => <DestinationCard key={destination.id} destination={destination} />)}
+      </div>}
+    </section>
+  </section>;
 }

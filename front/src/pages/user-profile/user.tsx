@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useId, cloneElement, isValidElement } from "react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/contexts/authContext";
-import { TripPreferencesSection } from "./trip-preferences-section";
+
 import { TravelerDNASection } from "./traveler-dna-section";
 import {
   User,
@@ -38,17 +38,19 @@ interface FieldProps {
 }
 
 function Field({ label, value, icon, editing, inputNode }: FieldProps) {
+  const id = useId();
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="flex items-center gap-2 text-xs font-medium text-neutral-400 uppercase tracking-wider">
-        <span className="text-neutral-400">{icon}</span>
+      <label htmlFor={id} className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <span className="text-muted-foreground">{icon}
+        </span>
         {label}
       </label>
       {editing ? (
-        inputNode
+        isValidElement<{ id?: string; }>(inputNode) ? cloneElement(inputNode, { id }) : inputNode
       ) : (
-        <p className="text-sm text-neutral-800 font-medium pl-0.5">
-          {value || <span className="text-neutral-400 font-normal">—</span>}
+        <p className="text-sm text-foreground font-medium pl-0.5">
+          {value || <span className="text-muted-foreground font-normal">—</span>}
         </p>
       )}
     </div>
@@ -156,21 +158,21 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
       });
       refetch();
     } catch {
-      alert("Erro ao enviar avatar. Tente novamente.");
+      setSaveError("Não foi possível enviar o avatar. Tente novamente.");
     } finally {
       setAvatarUploading(false);
     }
   }
 
   const inputClass =
-    "w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition";
+    "w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring transition";
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="size-6 animate-spin text-neutral-400" />
-          <p className="text-sm text-neutral-400">Carregando perfil…</p>
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Carregando perfil…</p>
         </div>
       </div>
     );
@@ -181,7 +183,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-3 text-center max-w-xs">
           <AlertCircle className="size-6 text-red-400" />
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-muted-foreground">
             {error ?? "Usuário não encontrado."}
           </p>
         </div>
@@ -198,13 +200,13 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
     "?";
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <div className="bg-white border-b border-neutral-100 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-base font-semibold text-neutral-900">Meu perfil</h1>
+    <div className="min-h-screen bg-background">
+      <div className="bg-white border-b border-border px-6 py-4 flex items-center justify-between">
+        <h1 className="text-base font-semibold text-foreground">Meu perfil</h1>
         <button
           onClick={onLogout}
           disabled={isGuest}
-          className="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-red-500 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-red-500 transition-colors"
         >
           <LogOut className="size-4" />
           Sair
@@ -212,11 +214,11 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-8 flex flex-col gap-6">
-        <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex items-center gap-5">
+        <div className="bg-white rounded-2xl border border-border p-6 flex items-center gap-5">
           <div className="relative shrink-0">
-            <div className="size-20 rounded-full bg-blue-50 border border-blue-100 overflow-hidden flex items-center justify-center">
+            <div className="size-20 rounded-full bg-secondary border border-border overflow-hidden flex items-center justify-center">
               {avatarUploading ? (
-                <Loader2 className="size-5 animate-spin text-blue-400" />
+                <Loader2 className="size-5 animate-spin text-primary" />
               ) : user.avatar_url ? (
                 <img
                   src={user.avatar_url}
@@ -224,7 +226,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
                   className="size-full object-cover"
                 />
               ) : (
-                <span className="text-xl font-semibold text-blue-500">
+                <span className="text-xl font-semibold text-primary">
                   {initials}
                 </span>
               )}
@@ -232,10 +234,10 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
             <button
               onClick={() => fileRef.current?.click()}
               disabled={isGuest}
-              className="absolute -bottom-1 -right-1 size-7 rounded-full bg-white border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-colors shadow-sm"
+              className="absolute -bottom-1 -right-1 size-7 rounded-full bg-white border border-border flex items-center justify-center hover:bg-background transition-colors shadow-sm"
               title="Alterar foto"
             >
-              <Camera className="size-3.5 text-neutral-500" />
+              <Camera className="size-3.5 text-muted-foreground" />
             </button>
             <input
               ref={fileRef}
@@ -247,12 +249,13 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
           </div>
 
           <div className="flex flex-col gap-0.5 min-w-0">
-            <p className="text-lg font-semibold text-neutral-900 truncate">
+            <p className="text-lg font-semibold text-foreground truncate">
               {user.display_name ||
                 `${user.first_name} ${user.last_name}`.trim() ||
                 "—"}
             </p>
-            <p className="text-sm text-neutral-400 truncate">{user.email}</p>
+            <p className="text-sm text-muted-foreground truncate">{user.email}
+            </p>
             {!user.is_profile_complete && (
               <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-full px-2.5 py-0.5 w-fit">
                 <AlertCircle className="size-3" />
@@ -264,7 +267,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
           {!editing && (
             <button
               onClick={startEditing}
-              className="ml-auto shrink-0 flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition-colors"
+              className="ml-auto shrink-0 flex items-center gap-1.5 text-sm text-primary hover:text-primary bg-secondary hover:bg-secondary px-3 py-1.5 rounded-xl transition-colors"
             >
               <Pencil className="size-3.5" />
               Editar
@@ -272,8 +275,8 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex flex-col gap-5">
-          <h2 className="text-sm font-semibold text-neutral-700">
+        <div className="bg-white rounded-2xl border border-border p-6 flex flex-col gap-5">
+          <h2 className="text-sm font-semibold text-strong">
             Informações pessoais
           </h2>
 
@@ -335,8 +338,8 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
             />
           </div>
 
-          <div className="border-t border-neutral-100 pt-5 flex flex-col gap-5">
-            <h2 className="text-sm font-semibold text-neutral-700">
+          <div className="border-t border-border pt-5 flex flex-col gap-5">
+            <h2 className="text-sm font-semibold text-strong">
               Preferências de viagem
             </h2>
 
@@ -400,7 +403,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+                className="flex items-center gap-2 bg-primary hover:bg-primary-hover disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
               >
                 {saving ? (
                   <Loader2 className="size-4 animate-spin" />
@@ -412,7 +415,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
               <button
                 onClick={cancelEditing}
                 disabled={saving}
-                className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-700 border border-neutral-200 hover:bg-neutral-50 px-4 py-2 rounded-xl transition-colors"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-strong border border-border hover:bg-background px-4 py-2 rounded-xl transition-colors"
               >
                 <X className="size-4" />
                 Cancelar
@@ -445,15 +448,15 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
         {/* {token && <TripPreferencesSection token={token} />} */}
         {token && <TravelerDNASection token={token} />}
 
-        <div className="bg-white rounded-2xl border border-neutral-100 px-6 py-4 flex flex-col gap-1">
-          <h2 className="text-sm font-semibold text-neutral-700 mb-2">Conta</h2>
-          <div className="grid grid-cols-2 gap-y-2 text-xs text-neutral-400">
+        <div className="bg-white rounded-2xl border border-border px-6 py-4 flex flex-col gap-1">
+          <h2 className="text-sm font-semibold text-strong mb-2">Conta</h2>
+          <div className="grid grid-cols-2 gap-y-2 text-xs text-muted-foreground">
             <span>ID do usuário</span>
-            <span className="text-right font-mono text-neutral-500">
+            <span className="text-right font-mono text-muted-foreground">
               #{user.id}
             </span>
             <span>Membro desde</span>
-            <span className="text-right text-neutral-500">
+            <span className="text-right text-muted-foreground">
               {new Date(user.created_at).toLocaleDateString("pt-BR", {
                 day: "2-digit",
                 month: "long",
@@ -461,7 +464,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
               })}
             </span>
             <span>Última atualização</span>
-            <span className="text-right text-neutral-500">
+            <span className="text-right text-muted-foreground">
               {new Date(user.updated_at).toLocaleDateString("pt-BR", {
                 day: "2-digit",
                 month: "short",

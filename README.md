@@ -1,5 +1,7 @@
 # Viajero
 
+> Para rodar localmente com **React + NestJS + PostgreSQL**, siga [RODAR_LOCALMENTE.md](./RODAR_LOCALMENTE.md). O frontend usa a API Nest na porta 8001; o Django mantém as migrations do banco. As instruções Django abaixo são históricas.
+
 O Viajero é um projeto criado do zero (_greenfield_) com um backend em Django para a geração de itinerários de viagem assistida por IA.
 
 ## O que foi implementado

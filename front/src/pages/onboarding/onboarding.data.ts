@@ -2,19 +2,9 @@ import {
   Building2,
   Footprints,
   Leaf,
-  UtensilsCrossed,
-  Mountain,
-  Music,
   Backpack,
   Home,
   Crown,
-  User,
-  Heart,
-  Users,
-  Baby,
-  Sprout,
-  Accessibility,
-  Languages,
   type LucideIcon,
 } from "lucide-react";
 
@@ -39,52 +29,52 @@ export interface DropdownOption {
 
 // Discriminated union — cada field sabe exatamente o que renderizar
 export type StepField =
-  | { type: "cards"; key?: string; cards: CardOption[]; multi?: boolean }
+  | { type: "cards"; key?: string; cards: CardOption[]; multi?: boolean; }
   | {
-      type: "currency";
-      key: string;
-      label: string;
-      hint?: string;
-      required?: boolean;
-    }
+    type: "currency";
+    key: string;
+    label: string;
+    hint?: string;
+    required?: boolean;
+  }
   | {
-      type: "dropdown";
-      key: string;
-      label: string;
-      hint?: string;
-      required?: boolean;
-      icon?: string;
-      options: DropdownOption[];
-    }
+    type: "dropdown";
+    key: string;
+    label: string;
+    hint?: string;
+    required?: boolean;
+    icon?: string;
+    options: DropdownOption[];
+  }
   | {
-      type: "tags";
-      key: string;
-      label: string;
-      hint?: string;
-      required?: boolean;
-      multi?: boolean;
-      options: DropdownOption[];
-    }
+    type: "tags";
+    key: string;
+    label: string;
+    hint?: string;
+    required?: boolean;
+    multi?: boolean;
+    options: DropdownOption[];
+  }
   | {
-      type: "range";
-      key: string;
-      label: string;
-      span: string;
-      min: number;
-      max: number;
-      step?: number;
-      hint?: string;
-      required?: boolean;
-    }
+    type: "range";
+    key: string;
+    label: string;
+    span: string;
+    min: number;
+    max: number;
+    step?: number;
+    hint?: string;
+    required?: boolean;
+  }
   | {
-      type: "textarea";
-      key: string;
-      label: string;
-      placeholder?: string;
-      hint?: string;
-      required?: boolean;
-    }
-  | { type: "empty" };
+    type: "textarea";
+    key: string;
+    label: string;
+    placeholder?: string;
+    hint?: string;
+    required?: boolean;
+  }
+  | { type: "empty"; };
 
 export interface OnboardingStep {
   key: string;

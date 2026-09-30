@@ -93,7 +93,7 @@ export function isAuthenticated() {
 }
 
 export async function login(input: LoginInput) {
-  const response = await apiRequest<AuthPayload>("/api/auth/login/", {
+  const response = await apiRequest<{ data: AuthPayload; }>("/api/auth/login/", {
     method: "POST",
     body: JSON.stringify(input),
   });
@@ -103,7 +103,7 @@ export async function login(input: LoginInput) {
 }
 
 export async function register(input: RegisterInput) {
-  const response = await apiRequest<AuthPayload>("/api/auth/register/", {
+  const response = await apiRequest<{ data: AuthPayload; }>("/api/auth/register/", {
     method: "POST",
     body: JSON.stringify(input),
   });

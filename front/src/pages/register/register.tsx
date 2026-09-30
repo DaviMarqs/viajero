@@ -110,6 +110,9 @@ export default function Register() {
                   <UserRound className="h-5 w-5 text-slate-400" />
                   <input
                     id="nome"
+                    aria-invalid={!!errors.nome}
+                    aria-describedby={errors.nome ? "nome-error" : undefined}
+                    autoComplete="name"
                     type="text"
                     placeholder="Seu nome completo"
                     className="h-full w-full border-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
@@ -117,7 +120,8 @@ export default function Register() {
                   />
                 </div>
                 {errors.nome && (
-                  <p className="text-sm text-red-500">{errors.nome.message}</p>
+                  <p id="nome-error" role="alert" className="text-sm text-destructive">{errors.nome.message}
+                  </p>
                 )}
               </div>
 
@@ -132,6 +136,9 @@ export default function Register() {
                   <Mail className="h-5 w-5 text-slate-400" />
                   <input
                     id="email"
+                    aria-invalid={!!errors.email}
+                    aria-describedby={errors.email ? "email-error" : undefined}
+                    autoComplete="email"
                     type="email"
                     placeholder="você@exemplo.com"
                     className="h-full w-full border-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
@@ -139,7 +146,8 @@ export default function Register() {
                   />
                 </div>
                 {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email.message}</p>
+                  <p id="email-error" role="alert" className="text-sm text-destructive">{errors.email.message}
+                  </p>
                 )}
               </div>
 
@@ -154,6 +162,9 @@ export default function Register() {
                   <Lock className="h-5 w-5 text-slate-400" />
                   <input
                     id="senha"
+                    aria-invalid={!!errors.senha}
+                    aria-describedby={errors.senha ? "senha-error" : undefined}
+                    autoComplete="new-password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Crie uma senha"
                     className="h-full w-full border-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
@@ -175,7 +186,8 @@ export default function Register() {
                   </button>
                 </div>
                 {errors.senha && (
-                  <p className="text-sm text-red-500">{errors.senha.message}</p>
+                  <p id="senha-error" role="alert" className="text-sm text-destructive">{errors.senha.message}
+                  </p>
                 )}
               </div>
 
@@ -190,6 +202,9 @@ export default function Register() {
                   <Lock className="h-5 w-5 text-slate-400" />
                   <input
                     id="confirmar"
+                    aria-invalid={!!errors.confirmar}
+                    aria-describedby={errors.confirmar ? "confirmar-error" : undefined}
+                    autoComplete="new-password"
                     type={showConfirm ? "text" : "password"}
                     placeholder="Repita a senha"
                     className="h-full w-full border-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
@@ -235,11 +250,12 @@ export default function Register() {
                 </span>
               </label>
               {errors.termos && (
-                <p className="text-sm text-red-500">{errors.termos.message}</p>
+                <p className="text-sm text-red-500">{errors.termos.message}
+                </p>
               )}
 
               {submitError && (
-                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
                   {submitError}
                 </div>
               )}

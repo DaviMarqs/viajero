@@ -17,10 +17,12 @@ export default function OnboardingSidebar({
   description = "Suas preferências permitem que a IA recomende destinos e monte roteiros feitos para você.",
 }: OnboardingSidebarProps) {
   return (
-    <aside className="flex w-full flex-col gap-6 overflow-hidden bg-[linear-gradient(160deg,#2e8cff_0%,#1553c6_45%,#0c2f73_100%)] p-6 text-white lg:m-4 lg:w-[22rem] lg:rounded-[28px] lg:p-8">
+    <aside className="flex w-full flex-col gap-6 overflow-hidden bg-[linear-gradient(160deg,#2e8cff_0%,#1553c6_45%,#0c2f73_100%)] p-6 text-white lg:m-4 lg:w-[22rem] lg:rounded-card lg:p-8">
       <div className="hidden flex-col gap-3 lg:flex">
-        <h1 className="text-3xl font-semibold leading-tight">{title}</h1>
-        <p className="text-sm leading-6 text-white/68">{description}</p>
+        <h1 className="text-3xl font-semibold leading-tight">{title}
+        </h1>
+        <p className="text-sm leading-6 text-white/68">{description}
+        </p>
       </div>
 
       <nav
@@ -41,7 +43,7 @@ export default function OnboardingSidebar({
                 className={cn(
                   "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition",
                   isDone || isActive
-                    ? "border-white bg-white text-sky-700"
+                    ? "border-white bg-white text-primary"
                     : "border-white/15 bg-white/10 text-transparent",
                 )}
               >

@@ -1,45 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
-import { apiRequest } from "../lib/api";
-
-export interface Poi {
-  [key: string]: any;
-  id: number | string;
-  name?: string;
-  title?: string;
-  description?: string;
-}
-
-type PoisResponse = {
-  data?: Poi[];
-  results?: Poi[];
-  items?: Poi[];
-};
-
+import { useCallback } from "react";
+import { apiRequest, unwrapListResponse } from "../lib/api";
+import type { Poi } from "../lib/pois";
+import { useAsyncResource } from "./useAsyncResource";
+export type { Poi } from "../lib/pois";
 export function usePois(token?: string) {
-  const [pois, setPois] = useState<Poi[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadPois = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = (await apiRequest<PoisResponse>("/api/pois/", {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      })) as PoisResponse;
-
-      setPois(response.data ?? response.results ?? response.items ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível carregar os POIs.");
-    } finally {
-      setLoading(false);
-    }
+  const load = useCallback(async (signal: AbortSignal) => {
+    const response = await apiRequest<{ data?: Poi[] | { results?: Poi[]; }; results?: Poi[]; }>("/api/pois/", { signal, headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+    return unwrapListResponse(response);
   }, [token]);
-
-  useEffect(() => {
-    void loadPois();
-  }, [loadPois]);
-
-  return { pois, loading, error, refetch: loadPois };
+  const { data: pois, loading, error, refetch } = useAsyncResource<Poi[]>(load, []);
+  return { pois, loading, error, refetch };
 }

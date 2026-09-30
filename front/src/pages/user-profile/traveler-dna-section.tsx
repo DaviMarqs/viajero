@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useId, isValidElement, cloneElement } from "react";
 import { useTravelerDNAProfile } from "@/hooks/useTravelerDNAProfile";
 import {
   Compass,
@@ -38,7 +38,7 @@ const COMFORT_OPTIONS = [
   { label: "Premium", value: "premium" },
 ];
 
-const SLIDERS: { key: SliderKey; label: string; icon: React.ReactNode }[] = [
+const SLIDERS: { key: SliderKey; label: string; icon: React.ReactNode; }[] = [
   { key: "social_energy", label: "Energia social", icon: <Users className="size-3.5" /> },
   { key: "adventure_level", label: "Nível de aventura", icon: <Mountain className="size-3.5" /> },
   { key: "food_focus", label: "Foco em gastronomia", icon: <UtensilsCrossed className="size-3.5" /> },
@@ -82,10 +82,10 @@ const initial: FormState = {
 };
 
 const inputClass =
-  "w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition";
+  "w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring transition";
 
 function labelFor(
-  options: { label: string; value: string }[],
+  options: { label: string; value: string; }[],
   value: string | undefined | null,
 ) {
   return options.find((o) => o.value === value)?.label ?? "-";
@@ -97,7 +97,7 @@ interface Props {
 
 function getSafeNotesText(rawNotes: string | null | undefined): string {
   if (!rawNotes) return "";
-  
+
   try {
     const parsed = JSON.parse(rawNotes);
     if (parsed && typeof parsed === "object" && typeof parsed.text === "string") {
@@ -117,7 +117,8 @@ export function TravelerDNASection({ token }: Props) {
   const [success, setSuccess] = useState(false);
   const [form, setForm] = useState<FormState>(initial);
 
-  useEffect(() => {
+  function startEditing() {
+    setEditing(true);
     if (!profile) return;
     setForm({
       travel_style: profile.travel_style ?? "",
@@ -129,9 +130,9 @@ export function TravelerDNASection({ token }: Props) {
       cultural_interest: profile.cultural_interest ?? 5,
       nature_interest: profile.nature_interest ?? 5,
       nightlife_interest: profile.nightlife_interest ?? 5,
-      notes: getSafeNotesText(profile.notes),   
-     });
-  }, [profile]);
+      notes: getSafeNotesText(profile.notes),
+    });
+  }
 
   async function handleSave() {
     setSuccess(false);
@@ -147,16 +148,16 @@ export function TravelerDNASection({ token }: Props) {
 
   if (loading) {
     return (
-            <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex items-center gap-2 text-sm text-neutral-400">
+      <div className="bg-white rounded-2xl border border-border p-6 flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="size-4 animate-spin" />
         Carregando preferências do viajante…
-            </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex items-center gap-2 text-sm text-red-500">
+      <div className="bg-white rounded-2xl border border-border p-6 flex items-center gap-2 text-sm text-red-500">
         <AlertCircle className="size-4" />
         {error}
       </div>
@@ -166,22 +167,22 @@ export function TravelerDNASection({ token }: Props) {
   const hasData = !!profile;
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex flex-col gap-5">
+    <div className="bg-white rounded-2xl border border-border p-6 flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
-          <h2 className="text-sm font-semibold text-neutral-700">
+          <h2 className="text-sm font-semibold text-strong">
             Preferências do viajante
           </h2>
           {!hasData && !editing && (
-            <p className="text-xs text-neutral-400 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Sem DNA preenchido ainda. Clique em editar para responder o onboarding.
             </p>
           )}
         </div>
         {!editing && (
           <button
-            onClick={() => setEditing(true)}
-            className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition-colors"
+            onClick={startEditing}
+            className="flex items-center gap-1.5 text-sm text-primary hover:text-primary bg-secondary hover:bg-secondary px-3 py-1.5 rounded-xl transition-colors"
           >
             <Pencil className="size-3.5" />
             Editar
@@ -309,7 +310,7 @@ export function TravelerDNASection({ token }: Props) {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+              className="flex items-center gap-2 bg-primary hover:bg-primary-hover disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
             >
               {saving ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -321,7 +322,7 @@ export function TravelerDNASection({ token }: Props) {
             <button
               onClick={() => setEditing(false)}
               disabled={saving}
-              className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-700 border border-neutral-200 hover:bg-neutral-50 px-4 py-2 rounded-xl transition-colors"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-strong border border-border hover:bg-background px-4 py-2 rounded-xl transition-colors"
             >
               <X className="size-4" />
               Cancelar
@@ -358,11 +359,11 @@ function ReadOnly({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="flex items-center gap-2 text-xs font-medium text-neutral-400 uppercase tracking-wider">
+      <span className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
         {icon}
         {label}
       </span>
-      <p className="text-sm text-neutral-800 font-medium pl-0.5 whitespace-pre-wrap">
+      <p className="text-sm text-foreground font-medium pl-0.5 whitespace-pre-wrap">
         {children}
       </p>
     </div>
@@ -382,14 +383,14 @@ function ReadOnlySlider({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <span className="flex items-center gap-2 text-xs font-medium text-neutral-400 uppercase tracking-wider">
+        <span className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
           {icon}
           {label}
         </span>
-        <span className="text-xs font-mono text-neutral-500">{value}/10</span>
+        <span className="text-xs font-mono text-muted-foreground">{value}/10</span>
       </div>
-      <div className="h-1.5 w-full rounded-full bg-neutral-100 overflow-hidden">
-        <div className="h-full bg-blue-500 rounded-full" style={{ width: `${pct}%` }} />
+      <div className="h-1.5 w-full rounded-full bg-background overflow-hidden">
+        <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -404,13 +405,14 @@ function FieldGroup({
   label: string;
   children: React.ReactNode;
 }) {
+  const id = useId();
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="flex items-center gap-2 text-xs font-medium text-neutral-400 uppercase tracking-wider">
+      <label htmlFor={id} className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
         {icon}
         {label}
       </label>
-      {children}
+      {isValidElement<{ id?: string; }>(children) ? cloneElement(children, { id }) : children}
     </div>
   );
 }

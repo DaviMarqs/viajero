@@ -64,83 +64,84 @@ function formatGenerationStatus(status?: string | null) {
 
 export default function ItineraryCard({ itinerary, onOpen }: ItineraryCardProps) {
   return (
-    <article className="rounded-[28px] border border-sky-100 bg-white p-6 shadow-[0_18px_60px_rgba(56,189,248,0.08)]">
+    <article className="rounded-card border border-border bg-white p-6 shadow-card">
       <div className="flex flex-col gap-5">
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
+            <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
               Roteiro
             </span>
-            <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-slate-600">
+            <span className="rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-strong">
               {formatGenerationStatus(itinerary.generation_status)}
             </span>
           </div>
 
           <div>
-            <h3 className="text-2xl font-semibold tracking-tight text-slate-950">
+            <h3 className="text-2xl font-semibold tracking-tight text-foreground">
               {itinerary.title}
             </h3>
-            <p className="mt-1 text-sm text-sky-700">
+            <p className="mt-1 text-sm text-primary">
               {getDestinationLabel(itinerary)}
             </p>
           </div>
 
-          <p className="line-clamp-3 text-sm leading-6 text-slate-600">
-            {itinerary.summary || "Resumo ainda nao dispoNível para este roteiro."}
+          <p className="line-clamp-3 text-sm leading-6 text-strong">
+            {itinerary.summary || "Resumo ainda não dispoNível para este roteiro."}
           </p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3">
-            <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-sky-700">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl border border-border bg-secondary px-4 py-3">
+            <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-primary">
               <CalendarDays className="size-4" />
             </div>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Início</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Início</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">
               {formatDate(itinerary.start_date)}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3">
-            <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-sky-700">
+          <div className="rounded-2xl border border-border bg-secondary px-4 py-3">
+            <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-primary">
               <MapPinned className="size-4" />
             </div>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Fim</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Fim</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">
               {formatDate(itinerary.end_date)}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3">
-            <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-sky-700">
+          <div className="rounded-2xl border border-border bg-secondary px-4 py-3">
+            <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-primary">
               <LoaderCircle className="size-4" />
             </div>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Duração</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Duração</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">
               {Number(itinerary.duration_days || 0)} dias
             </p>
           </div>
 
-          <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3">
-            <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-sky-700">
+          <div className="rounded-2xl border border-border bg-secondary px-4 py-3">
+            <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-primary">
               <Coins className="size-4" />
             </div>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Orçamento</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Orçamento</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">
               {formatMoney(itinerary.budget_total, itinerary.currency_code)}
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-slate-500">
-            Moeda: <span className="font-medium text-slate-700">{itinerary.currency_code || "BRL"}</span>
+          <p className="text-sm text-muted-foreground">
+            Moeda: <span className="font-medium text-strong">{itinerary.currency_code || "BRL"}
+            </span>
           </p>
 
           <button
             type="button"
             onClick={() => onOpen(itinerary.id)}
-            className="inline-flex h-12 items-center justify-center rounded-2xl bg-sky-600 px-5 text-sm font-semibold text-white transition hover:bg-sky-700"
+            className="inline-flex h-12 items-center justify-center rounded-2xl bg-primary px-5 text-sm font-semibold text-white transition hover:bg-primary-hover"
           >
             Abrir roteiro
           </button>

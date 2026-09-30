@@ -1,3 +1,4 @@
+import type { Poi } from "@/lib/pois";
 export type TravelTag = string;
 
 export interface LocationSummary {
@@ -6,7 +7,7 @@ export interface LocationSummary {
 }
 
 export interface Destination {
-  [key: string]: any;
+  [key: string]: unknown;
   id: number | string;
   name: string;
   slug?: string;
@@ -17,7 +18,7 @@ export interface Destination {
   timezone?: string | null;
   best_season?: string | null;
   average_rating?: number | string | null;
-  cost_profile?: string | null;
+  cost_profile?: string | { daily_budget_mid?: string | number | null; currency_code?: string;[key: string]: unknown; } | null;
   metadata?: Record<string, unknown> | null;
   description?: string | null;
   image?: string | null;
@@ -29,12 +30,12 @@ export interface Destination {
   duration_days?: number | string | null;
   duration?: number | string | null;
   tags?: TravelTag[] | string | null;
-  pois?: Array<Record<string, any>> | null;
-  points_of_interest?: Array<Record<string, any>> | null;
+  pois?: Poi[] | null;
+  points_of_interest?: Poi[] | null;
 }
 
 export interface ItineraryEvent {
-  [key: string]: any;
+  [key: string]: unknown;
   id: number | string;
   start_time?: string | null;
   end_time?: string | null;
@@ -43,11 +44,11 @@ export interface ItineraryEvent {
   estimated_cost?: number | string | null;
   order_index?: number | null;
   itinerary_day?: number | string | null;
-  poi?: Destination | Record<string, any> | null;
+  poi?: Destination | Record<string, unknown> | null;
 }
 
 export interface ItineraryDay {
-  [key: string]: any;
+  [key: string]: unknown;
   id: number | string;
   day_number: number;
   title: string;
@@ -58,13 +59,13 @@ export interface ItineraryDay {
 }
 
 export interface Itinerary {
-  [key: string]: any;
+  [key: string]: unknown;
   id: number | string;
   title: string;
   name?: string;
   slug?: string;
   destination_name?: string | null;
-  destination?: any;
+  destination?: Destination | number | string | null;
   city?: string | null;
   country?: string | null;
   summary?: string | null;
@@ -73,10 +74,10 @@ export interface Itinerary {
   budget_total?: number | string | null;
   currency_code?: string | null;
   generation_status?: "draft" | "generating" | "ready" | "failed" | string | null;
-  review_stats?: Record<string, any> | null;
+  review_stats?: Record<string, unknown> | null;
   days?: ItineraryDay[] | null;
-  generation_context?: Record<string, any> | null;
-  metadata?: Record<string, any> | null;
+  generation_context?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
   description?: string | null;
   image?: string | null;
   image_url?: string | null;

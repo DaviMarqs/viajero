@@ -9,6 +9,7 @@ export function useItineraries(mode: ItineraryMode = "mine") {
   const [itineraries, setItineraries] = useState<Itinerary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -41,7 +42,7 @@ export function useItineraries(mode: ItineraryMode = "mine") {
     return () => {
       active = false;
     };
-  }, [mode]);
+  }, [mode, revision]);
 
-  return { itineraries, loading, error };
+  return { itineraries, loading, error, refetch: () => setRevision(value => value + 1) };
 }

@@ -122,7 +122,7 @@ export default function TravelPreferencesOnboarding() {
     }
 
     if (budgetMin > budgetMax) {
-      setSubmitError("O Orçamento mínimo nao pode ser maior que o máximo.");
+      setSubmitError("O Orçamento mínimo não pode ser maior que o máximo.");
       return;
     }
 
@@ -180,10 +180,10 @@ export default function TravelPreferencesOnboarding() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="size-6 animate-spin text-slate-400" />
-          <p className="text-sm text-slate-500">Carregando preferências...</p>
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Carregando preferências...</p>
         </div>
       </div>
     );
@@ -191,10 +191,11 @@ export default function TravelPreferencesOnboarding() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
+      <div className="flex min-h-screen items-center justify-center bg-background px-6">
         <div className="flex max-w-md flex-col items-center gap-3 rounded-3xl border border-red-100 bg-white px-6 py-8 text-center">
           <AlertCircle className="size-6 text-red-500" />
-          <p className="text-sm leading-6 text-slate-500">{error}</p>
+          <p className="text-sm leading-6 text-muted-foreground">{error}
+          </p>
         </div>
       </div>
     );
@@ -202,7 +203,7 @@ export default function TravelPreferencesOnboarding() {
 
   if (finished) {
     return (
-      <div className="min-h-screen bg-slate-50 lg:flex">
+      <div className="min-h-screen bg-background lg:flex">
         <OnboardingSidebar
           currentIndex={currentIndex}
           steps={TRAVEL_PREFERENCES_STEPS}
@@ -210,17 +211,17 @@ export default function TravelPreferencesOnboarding() {
           description={TRAVEL_PREFERENCES_SIDEBAR.description}
         />
         <main className="flex flex-1 px-6 py-8 sm:px-8 lg:p-10">
-          <div className="flex flex-1 items-center justify-center rounded-[32px] bg-white px-6 py-10 shadow-[0_18px_60px_rgba(15,23,42,0.08)]">
+          <div className="flex flex-1 items-center justify-center rounded-card bg-white px-6 py-10 shadow-card">
             <div className="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
               <PartyPopper
                 size={52}
                 strokeWidth={1.5}
-                className="text-sky-500"
+                className="text-primary"
               />
-              <h2 className="text-4xl font-semibold text-slate-950">
+              <h2 className="text-4xl font-semibold text-foreground">
                 preferências salvas!
               </h2>
-              <p className="text-base leading-7 text-slate-500">
+              <p className="text-base leading-7 text-muted-foreground">
                 Seu perfil de viagem foi atualizado e ja pode ser usado na
                 geração de roteiros.
               </p>
@@ -240,7 +241,7 @@ export default function TravelPreferencesOnboarding() {
   const hasCards = currentStep.fields.some((field) => field.type === "cards");
 
   return (
-    <div className="min-h-screen bg-slate-50 lg:flex">
+    <div className="min-h-screen bg-background lg:flex">
       <OnboardingSidebar
         currentIndex={currentIndex}
         steps={TRAVEL_PREFERENCES_STEPS}
@@ -249,30 +250,30 @@ export default function TravelPreferencesOnboarding() {
       />
 
       <main className="flex flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:p-10">
-        <div className="flex w-full flex-col rounded-[32px] bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.08)] sm:p-8 lg:p-10">
-         <header className="flex flex-col gap-3">
+        <div className="flex w-full flex-col rounded-card bg-white p-6 shadow-card sm:p-8 lg:p-10">
+          <header className="flex flex-col gap-3">
             {/* NOVO BOTÃO DE VOLTAR AQUI */}
             {currentIndex > 0 && (
               <button
                 type="button"
                 onClick={prev}
                 disabled={saving}
-                className="mb-2 flex w-fit items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-slate-900 disabled:opacity-50"
+                className="mb-2 flex w-fit items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground disabled:opacity-50"
               >
                 <ArrowLeft className="size-4" />
                 Voltar
               </button>
             )}
 
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground">
               {currentStep.title}
             </h2>
-            <p className="max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
+            <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
               {currentStep.sub}
             </p>
             {hasCards &&
               currentStep.fields.some((field) => field.type === "cards") && (
-                <span className="inline-flex w-fit rounded-full bg-sky-50 px-3 py-1 text-sm font-medium text-sky-700">
+                <span className="inline-flex w-fit rounded-full bg-secondary px-3 py-1 text-sm font-medium text-primary">
                   Escolha a opção que melhor descreve sua preferência
                 </span>
               )}
@@ -293,14 +294,15 @@ export default function TravelPreferencesOnboarding() {
           {(submitError || saveError) && (
             <div className="mt-6 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               <AlertCircle className="mt-0.5 size-4 shrink-0" />
-              <span>{submitError || saveError}</span>
+              <span>{submitError || saveError}
+              </span>
             </div>
           )}
 
           <footer className="mt-8 flex flex-col gap-3">
             <button
               type="button"
-              className="flex h-14 w-full items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+              className="flex h-14 w-full items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-muted-foreground"
               onClick={isLast ? handleFinish : next}
               disabled={!canAdvance || saving}
             >
@@ -314,7 +316,7 @@ export default function TravelPreferencesOnboarding() {
             {!isLast && (
               <button
                 type="button"
-                className="text-sm font-medium text-slate-500 transition hover:text-slate-900"
+                className="text-sm font-medium text-muted-foreground transition hover:text-foreground"
                 onClick={skip}
                 disabled={saving}
               >

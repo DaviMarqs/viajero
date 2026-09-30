@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type { OnboardingStep } from "@/pages/onboarding/onboarding.data";
 
-export type FieldValues = Record<string, any>;
+export type FieldValues = Record<string, string | undefined>;
 export type TagValues = Record<string, string[]>;
 type CardSelections = Record<string, number[]>;
 
@@ -25,16 +25,6 @@ function toNumber(value: unknown) {
   const digits = String(value ?? "").replace(/[^\d]/g, "");
   if (!digits) return 0;
   return Number.parseInt(digits, 10) / 100;
-}
-
-function toScaleValue(value: unknown, fallback = 5) {
-  const parsed = Number.parseInt(String(value ?? fallback), 10);
-
-  if (!Number.isFinite(parsed)) return fallback;
-  if (parsed < 1) return 1;
-  if (parsed > 10) return 10;
-
-  return parsed;
 }
 
 export function useOnboarding(steps: OnboardingStep[] = []) {
@@ -113,7 +103,7 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
         );
       }
 
-      return true; 
+      return true;
     });
   }, [currentStep.fields, fieldValues, selectedCards, tagValues]);
 
@@ -148,7 +138,7 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
     [currentStep.fields, currentStep.key],
   );
 
-  const setField = useCallback((key: string, value: any) => {
+  const setField = useCallback((key: string, value: string) => {
     setFieldValues((current) => ({ ...current, [key]: value }));
   }, []);
 
@@ -206,7 +196,7 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
 
     const userTypedNotes = fieldValues.notes ? String(fieldValues.notes) : "";
 
-    const notesPayload: Record<string, any> = {};
+    const notesPayload: Record<string, unknown> = {};
 
     if (userTypedNotes) {
       notesPayload.text = userTypedNotes;
@@ -218,21 +208,21 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
       notesPayload.additional_preferences = additionalPreferences;
     }
 
-    const finalNotes = Object.keys(notesPayload).length > 0 
-      ? JSON.stringify(notesPayload) 
+    const finalNotes = Object.keys(notesPayload).length > 0
+      ? JSON.stringify(notesPayload)
       : "";
 
-     return {
+    return {
       travel_style: getCardValues("estilo")[0] ?? "",
       pace: getCardValues("ritmo")[0] ?? "",
       comfort_level: getCardValues("conforto")[0] ?? "",
-            social_energy: Number(fieldValues.social_energy) || 5,
+      social_energy: Number(fieldValues.social_energy) || 5,
       adventure_level: Number(fieldValues.adventure_level) || 5,
       food_focus: Number(fieldValues.food_focus) || 5,
       cultural_interest: Number(fieldValues.cultural_interest) || 5,
       nature_interest: Number(fieldValues.nature_interest) || 5,
       nightlife_interest: Number(fieldValues.nightlife_interest) || 5,
-      
+
       notes: finalNotes,
 
 

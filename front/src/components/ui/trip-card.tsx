@@ -5,11 +5,11 @@ type TripCardProps = {
   trip?: ItineraryWithDestination;
   itinerary?: ItineraryWithDestination;
   className?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 function getTripData(props: TripCardProps) {
-  return props.trip || props.itinerary || (props as { data?: ItineraryWithDestination }).data;
+  return props.trip || props.itinerary || (props as { data?: ItineraryWithDestination; }).data;
 }
 
 export function TripCard(props: TripCardProps) {
@@ -37,7 +37,8 @@ export function TripCard(props: TripCardProps) {
             <div className="flex h-full min-h-52 items-end bg-gradient-to-br from-cyan-500/30 via-slate-900 to-emerald-500/20 p-5">
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-cyan-200/80">Roteiro</p>
-                <p className="mt-2 text-2xl font-semibold text-white">{title}</p>
+                <p className="mt-2 text-2xl font-semibold text-white">{title}
+                </p>
               </div>
             </div>
           )}
@@ -47,12 +48,15 @@ export function TripCard(props: TripCardProps) {
           <div className="space-y-2">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-xl font-semibold">{title}</h3>
-                <p className="text-sm text-slate-300">{location || "Destino não informado"}</p>
+                <h3 className="text-xl font-semibold">{title}
+                </h3>
+                <p className="text-sm text-slate-300">{location || "Destino não informado"}
+                </p>
               </div>
               <div className="text-right">
                 <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Orçamento</p>
-                <p className="text-sm font-semibold text-cyan-300">{budget}</p>
+                <p className="text-sm font-semibold text-cyan-300">{budget}
+                </p>
               </div>
             </div>
             <p className="text-sm leading-6 text-slate-300">
@@ -63,15 +67,18 @@ export function TripCard(props: TripCardProps) {
           <div className="grid grid-cols-3 gap-3 border-t border-white/10 pt-4 text-sm text-slate-300">
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Duração</p>
-              <p className="mt-1 font-medium text-white">{duration}</p>
+              <p className="mt-1 font-medium text-white">{duration}
+              </p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Status</p>
-              <p className="mt-1 font-medium text-white">{trip.generation_status || "Pronto"}</p>
+              <p className="mt-1 font-medium text-white">{trip.generation_status || "Pronto"}
+              </p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-slate-400">POIs</p>
-              <p className="mt-1 font-medium text-white">{trip.pois?.length || trip.points_of_interest?.length || 0}</p>
+              <p className="mt-1 font-medium text-white">{trip.pois?.length || trip.points_of_interest?.length || 0}
+              </p>
             </div>
           </div>
         </div>

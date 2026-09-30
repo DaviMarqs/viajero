@@ -70,17 +70,18 @@ export default function OnboardingStepFields({
       return (
         <div key={field.key} className="space-y-3">
           <div className="flex items-center justify-between gap-4">
-            <label className="text-sm font-medium text-slate-700">
+            <label htmlFor={field.key} className="text-sm font-medium text-strong">
               {field.label}
               {field.required && <span className="text-red-500"> *</span>}
             </label>
 
-            <span className="rounded-full bg-sky-50 px-3 py-1 text-sm font-semibold text-sky-700">
+            <span className="rounded-full bg-secondary px-3 py-1 text-sm font-semibold text-primary">
               {value}
             </span>
           </div>
 
           <input
+            id={field.key}
             type="range"
             min={field.min}
             max={field.max}
@@ -90,13 +91,16 @@ export default function OnboardingStepFields({
             className="w-full accent-sky-500"
           />
 
-          <div className="flex justify-between text-xs text-slate-400">
-            <span>{field.min}</span>
-            <span>{field.max}</span>
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>{field.min}
+            </span>
+            <span>{field.max}
+            </span>
           </div>
 
           {field.hint && (
-            <p className="text-sm leading-6 text-slate-500">{field.hint}</p>
+            <p className="text-sm leading-6 text-muted-foreground">{field.hint}
+            </p>
           )}
         </div>
       );
