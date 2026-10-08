@@ -18,10 +18,10 @@ export function Feedback({ title, description, kind = "empty", onRetry, children
   </div>;
 }
 
-export function CardSkeletons() {
-  return <div role="status" aria-label="Carregando destinos" className="grid gap-4 sm:grid-cols-2">
+export function CardSkeletons({ label = 'Carregando destinos' }: { label?: string }) {
+  return <div role="status" aria-label={label} aria-busy="true" className="travel-grid">
     {[0, 1].map(id => <div key={id} aria-hidden="true" className="overflow-hidden rounded-card border border-border motion-safe:animate-pulse">
-      <div className="h-56 bg-muted" />
+      <div className="travel-card-media bg-muted" />
       <div className="space-y-4 p-6">
         <div className="h-5 w-2/3 rounded bg-muted" />
         <div className="h-4 rounded bg-muted" />

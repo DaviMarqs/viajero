@@ -41,7 +41,7 @@ export default function InputCurrency({
         {required && <span className="text-red-500"> *</span>}
       </label>
 
-      <div className="flex h-14 items-center gap-3 rounded-2xl border border-border bg-white px-4 transition focus-within:border-ring focus-within:shadow-card">
+      <div className="form-control-shell">
         <span className="text-muted-foreground">
           <DollarSign size={18} />
         </span>

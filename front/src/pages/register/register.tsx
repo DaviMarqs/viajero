@@ -1,3 +1,5 @@
+import { AuthLayout } from '@/components/ui/auth-layout';
+import { Button } from '@/components/ui/button';
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -11,8 +13,8 @@ import { useAuth } from "@/contexts/authContext";
 
 const registerSchema = z
   .object({
-    nome: z.string().min(1, "Nome e obrigatorio"),
-    email: z.string().email("Email invalido"),
+    nome: z.string().min(1, "Nome é obrigatório"),
+    email: z.string().email("Email inválido"),
     senha: z.string().min(8, "A senha deve ter pelo menos 8 caracteres"),
     confirmar: z.string().min(1, "Confirme sua senha"),
     termos: z.boolean().refine((value) => value === true, {
@@ -79,223 +81,201 @@ export default function Register() {
         return;
       }
 
-      setSubmitError("Nao foi possivel criar a conta agora. Tente novamente.");
+      setSubmitError("Não foi possível criar a conta agora. Tente novamente.");
     }
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,_rgba(46,140,255,0.18),_transparent_36%),linear-gradient(180deg,#f7f9fc_0%,#eef4fb_100%)] px-4 py-4 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-2rem)] w-full max-w-7xl overflow-hidden rounded-[32px] bg-white shadow-[0_24px_120px_rgba(15,23,42,0.12)] lg:grid-cols-[minmax(420px,560px)_minmax(0,1fr)]">
-        <section className="flex items-center px-6 py-10 sm:px-10 lg:px-14">
-          <div className="mx-auto w-full max-w-md">
-            <div className="mb-10 space-y-3">
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl pt-10">
-                Crie sua conta
-              </h1>
-              <p className="text-sm leading-6 text-slate-500 sm:text-base">
-                Configure seu acesso para salvar preferências e montar roteiros
-                personalizados.
+    <AuthLayout title="Seu próximo destino começa aqui." description="Crie a conta, configure seu perfil de viagem e deixe o Viajero usar esse contexto para recomendar experiências com mais precisão." storySide="right">
+
+      <div className="mx-auto w-full max-w-md">
+        <div className="mb-10 space-y-3">
+          <h1 className="page-title">
+            Crie sua conta
+          </h1>
+          <p className="text-sm leading-6 text-muted-foreground sm:text-base">
+            Configure seu acesso para salvar preferências e montar roteiros
+            personalizados.
+          </p>
+        </div>
+
+        <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+          <div className="space-y-2">
+            <label
+              className="text-sm font-medium text-strong"
+              htmlFor="nome"
+            >
+              Nome completo
+            </label>
+            <div className="form-control-shell">
+              <UserRound className="h-5 w-5 text-muted-foreground" />
+              <input
+                id="nome"
+                aria-invalid={!!errors.nome}
+                aria-describedby={errors.nome ? "nome-error" : undefined}
+                autoComplete="name"
+                type="text"
+                placeholder="Seu nome completo"
+                className="h-full w-full border-0 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                {...register("nome")}
+              />
+            </div>
+            {errors.nome && (
+              <p id="nome-error" role="alert" className="text-sm text-destructive">{errors.nome.message}
               </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label
+              className="text-sm font-medium text-strong"
+              htmlFor="email"
+            >
+              Email
+            </label>
+            <div className="form-control-shell">
+              <Mail className="h-5 w-5 text-muted-foreground" />
+              <input
+                id="email"
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? "email-error" : undefined}
+                autoComplete="email"
+                type="email"
+                placeholder="você@exemplo.com"
+                className="h-full w-full border-0 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                {...register("email")}
+              />
             </div>
+            {errors.email && (
+              <p id="email-error" role="alert" className="text-sm text-destructive">{errors.email.message}
+              </p>
+            )}
+          </div>
 
-            <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-medium text-slate-700"
-                  htmlFor="nome"
-                >
-                  Nome completo
-                </label>
-                <div className="flex h-14 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 transition focus-within:border-sky-500 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(46,140,255,0.12)]">
-                  <UserRound className="h-5 w-5 text-slate-400" />
-                  <input
-                    id="nome"
-                    aria-invalid={!!errors.nome}
-                    aria-describedby={errors.nome ? "nome-error" : undefined}
-                    autoComplete="name"
-                    type="text"
-                    placeholder="Seu nome completo"
-                    className="h-full w-full border-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-                    {...register("nome")}
-                  />
-                </div>
-                {errors.nome && (
-                  <p id="nome-error" role="alert" className="text-sm text-destructive">{errors.nome.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-medium text-slate-700"
-                  htmlFor="email"
-                >
-                  Email
-                </label>
-                <div className="flex h-14 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 transition focus-within:border-sky-500 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(46,140,255,0.12)]">
-                  <Mail className="h-5 w-5 text-slate-400" />
-                  <input
-                    id="email"
-                    aria-invalid={!!errors.email}
-                    aria-describedby={errors.email ? "email-error" : undefined}
-                    autoComplete="email"
-                    type="email"
-                    placeholder="você@exemplo.com"
-                    className="h-full w-full border-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-                    {...register("email")}
-                  />
-                </div>
-                {errors.email && (
-                  <p id="email-error" role="alert" className="text-sm text-destructive">{errors.email.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-medium text-slate-700"
-                  htmlFor="senha"
-                >
-                  Senha
-                </label>
-                <div className="flex h-14 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 transition focus-within:border-sky-500 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(46,140,255,0.12)]">
-                  <Lock className="h-5 w-5 text-slate-400" />
-                  <input
-                    id="senha"
-                    aria-invalid={!!errors.senha}
-                    aria-describedby={errors.senha ? "senha-error" : undefined}
-                    autoComplete="new-password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Crie uma senha"
-                    className="h-full w-full border-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-                    {...register("senha")}
-                  />
-                  <button
-                    type="button"
-                    className="text-slate-400 transition hover:text-slate-700"
-                    onClick={() => setShowPassword((current) => !current)}
-                    aria-label={
-                      showPassword ? "Ocultar senha" : "Mostrar senha"
-                    }
-                  >
-                    {showPassword ? (
-                      <Eye className="h-5 w-5" />
-                    ) : (
-                      <EyeOff className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
-                {errors.senha && (
-                  <p id="senha-error" role="alert" className="text-sm text-destructive">{errors.senha.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-medium text-slate-700"
-                  htmlFor="confirmar"
-                >
-                  Confirmar senha
-                </label>
-                <div className="flex h-14 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 transition focus-within:border-sky-500 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(46,140,255,0.12)]">
-                  <Lock className="h-5 w-5 text-slate-400" />
-                  <input
-                    id="confirmar"
-                    aria-invalid={!!errors.confirmar}
-                    aria-describedby={errors.confirmar ? "confirmar-error" : undefined}
-                    autoComplete="new-password"
-                    type={showConfirm ? "text" : "password"}
-                    placeholder="Repita a senha"
-                    className="h-full w-full border-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-                    {...register("confirmar")}
-                  />
-                  <button
-                    type="button"
-                    className="text-slate-400 transition hover:text-slate-700"
-                    onClick={() => setShowConfirm((current) => !current)}
-                    aria-label={
-                      showConfirm
-                        ? "Ocultar confirmacao"
-                        : "Mostrar confirmacao"
-                    }
-                  >
-                    {showConfirm ? (
-                      <Eye className="h-5 w-5" />
-                    ) : (
-                      <EyeOff className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
-                {errors.confirmar && (
-                  <p className="text-sm text-red-500">
-                    {errors.confirmar.message}
-                  </p>
-                )}
-              </div>
-
-              <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                <input
-                  id="termos"
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-950 focus:ring-slate-400"
-                  {...register("termos")}
-                />
-                <span>
-                  Concordo com os{" "}
-                  <span className="font-medium text-slate-900">
-                    termos de privacidade
-                  </span>
-                  .
-                </span>
-              </label>
-              {errors.termos && (
-                <p className="text-sm text-red-500">{errors.termos.message}
-                </p>
-              )}
-
-              {submitError && (
-                <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                  {submitError}
-                </div>
-              )}
-
+          <div className="space-y-2">
+            <label
+              className="text-sm font-medium text-strong"
+              htmlFor="senha"
+            >
+              Senha
+            </label>
+            <div className="form-control-shell">
+              <Lock className="h-5 w-5 text-muted-foreground" />
+              <input
+                id="senha"
+                aria-invalid={!!errors.senha}
+                aria-describedby={errors.senha ? "senha-error" : undefined}
+                autoComplete="new-password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Crie uma senha"
+                className="h-full w-full border-0 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                {...register("senha")}
+              />
               <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex h-14 w-full items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                type="button"
+                className="flex size-11 shrink-0 items-center justify-center rounded-control text-muted-foreground transition-colors hover:bg-muted hover:text-strong"
+                onClick={() => setShowPassword((current) => !current)}
+                aria-label={
+                  showPassword ? "Ocultar senha" : "Mostrar senha"
+                }
               >
-                {isSubmitting ? "Criando conta..." : "Criar conta"}
+                {showPassword ? (
+                  <Eye className="h-5 w-5" />
+                ) : (
+                  <EyeOff className="h-5 w-5" />
+                )}
               </button>
-            </form>
-
-            <div className="mt-6 flex items-center justify-center">
-              <Link
-                to="/"
-                className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
-              >
-                Fazer login
-              </Link>
             </div>
+            {errors.senha && (
+              <p id="senha-error" role="alert" className="text-sm text-destructive">{errors.senha.message}
+              </p>
+            )}
           </div>
-        </section>
 
-        <section className="relative flex min-h-[280px] flex-col justify-end overflow-hidden bg-[linear-gradient(160deg,#2e8cff_0%,#1553c6_45%,#0c2f73_100%)] p-8 text-white sm:p-10 lg:min-h-full lg:p-14">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.14),_transparent_32%),radial-gradient(circle_at_bottom_right,_rgba(255,255,255,0.18),_transparent_26%)]" />
-          <div className="absolute -right-12 top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute bottom-0 left-0 h-56 w-56 -translate-x-1/4 translate-y-1/4 rounded-full bg-cyan-300/20 blur-3xl" />
+          <div className="space-y-2">
+            <label
+              className="text-sm font-medium text-strong"
+              htmlFor="confirmar"
+            >
+              Confirmar senha
+            </label>
+            <div className="form-control-shell">
+              <Lock className="h-5 w-5 text-muted-foreground" />
+              <input
+                id="confirmar"
+                aria-invalid={!!errors.confirmar}
+                aria-describedby={errors.confirmar ? "confirmar-error" : undefined}
+                autoComplete="new-password"
+                type={showConfirm ? "text" : "password"}
+                placeholder="Repita a senha"
+                className="h-full w-full border-0 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                {...register("confirmar")}
+              />
+              <button
+                type="button"
+                className="flex size-11 shrink-0 items-center justify-center rounded-control text-muted-foreground transition-colors hover:bg-muted hover:text-strong"
+                onClick={() => setShowConfirm((current) => !current)}
+                aria-label={
+                  showConfirm
+                    ? "Ocultar confirmacao"
+                    : "Mostrar confirmacao"
+                }
+              >
+                {showConfirm ? (
+                  <Eye className="h-5 w-5" />
+                ) : (
+                  <EyeOff className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+            {errors.confirmar && (
+              <p className="text-sm text-red-500">
+                {errors.confirmar.message}
+              </p>
+            )}
+          </div>
 
-          <div className="relative z-10 max-w-xl space-y-4">
-            <h2 className="max-w-lg text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
-              Seu próximo destino comeca aqui.
-            </h2>
-            <p className="max-w-xl text-base leading-7 text-white/72 sm:text-lg">
-              Crie a conta, configure seu perfil de viagem e deixe o Viajero
-              usar esse contexto para recomendar experiências com mais precisão.
+          <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-strong">
+            <input
+              id="termos"
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-foreground focus:ring-slate-400"
+              {...register("termos")}
+            />
+            <span>
+              Concordo com os{" "}
+              <span className="font-medium text-foreground">
+                termos de privacidade
+              </span>
+              .
+            </span>
+          </label>
+          {errors.termos && (
+            <p className="text-sm text-red-500">{errors.termos.message}
             </p>
-          </div>
-        </section>
+          )}
+
+          {submitError && (
+            <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {submitError}
+            </div>
+          )}
+
+          <Button type="submit" disabled={isSubmitting} size="lg" className="w-full">
+            {isSubmitting ? "Criando conta..." : "Criar conta"}
+          </Button>
+        </form>
+
+        <div className="mt-6 flex items-center justify-center">
+          <Link
+            to="/login"
+            className="text-sm font-medium text-strong transition hover:text-foreground"
+          >
+            Fazer login
+          </Link>
+        </div>
       </div>
-    </div>
+
+    </AuthLayout>
   );
 }

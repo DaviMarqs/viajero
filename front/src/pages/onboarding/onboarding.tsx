@@ -133,7 +133,7 @@ export default function Onboarding() {
         return;
       }
 
-      setSubmitError("Nao foi possivel salvar suas respostas agora.");
+      setSubmitError("Não foi possível salvar suas respostas agora.");
     }
   }
 
@@ -164,8 +164,8 @@ export default function Onboarding() {
     return (
       <div className="min-h-screen bg-background lg:flex">
         <OnboardingSidebar currentIndex={currentIndex} />
-        <main className="flex flex-1 px-6 py-8 sm:px-8 lg:p-10">
-          <div className="flex flex-1 items-center justify-center rounded-card bg-white px-6 py-10 shadow-card">
+        <main className="flex min-w-0 flex-1 px-6 py-8 sm:px-8 lg:p-10">
+          <div className="flex flex-1 items-center justify-center rounded-card border border-border bg-white px-6 py-10">
             <div className="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
               <PartyPopper
                 size={52}
@@ -182,13 +182,13 @@ export default function Onboarding() {
               <div className="mt-2 flex flex-col gap-3 sm:flex-row">
                 <Link
                   to="/"
-                  className="inline-flex h-14 items-center justify-center rounded-2xl bg-slate-950 px-6 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  className="inline-flex h-12 items-center justify-center rounded-control bg-primary px-6 text-sm font-semibold text-white transition hover:bg-primary-hover"
                 >
                   Ir para a home
                 </Link>
                 <Link
                   to="/onboard/preferências"
-                  className="inline-flex h-14 items-center justify-center rounded-2xl border border-border px-6 text-sm font-semibold text-strong transition hover:border-border hover:bg-background"
+                  className="inline-flex h-12 items-center justify-center rounded-control border border-border px-6 text-sm font-semibold text-strong transition hover:border-border hover:bg-background"
                 >
                   Refinar preferências
                 </Link>
@@ -206,8 +206,8 @@ export default function Onboarding() {
     <div className="min-h-screen bg-background lg:flex">
       <OnboardingSidebar currentIndex={currentIndex} />
 
-      <main className="flex flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:p-10">
-        <div className="flex w-full flex-col rounded-card bg-white p-6 shadow-card sm:p-8 lg:p-10">
+      <main className="flex min-w-0 flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:p-10">
+        <div className="flex w-full flex-col rounded-card border border-border bg-white p-6 sm:p-8 lg:p-10">
           <header className="flex flex-col gap-3">
             {currentIndex > 0 && (
               <button
@@ -260,7 +260,7 @@ export default function Onboarding() {
           <footer className="mt-8 flex flex-col gap-3">
             <button
               type="button"
-              className="flex h-14 w-full items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-muted-foreground"
+              className="flex h-12 w-full items-center justify-center rounded-control bg-primary text-sm font-semibold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-muted-foreground"
               onClick={isLast ? handleFinish : next}
               disabled={!canAdvance || saving}
             >

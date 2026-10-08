@@ -1,4 +1,5 @@
 "use client";
+import { Button } from '@/components/ui/button';
 
 import { useState, useId, isValidElement, cloneElement } from "react";
 import { useTripPreferences } from "@/hooks/useTripPreferences";
@@ -107,7 +108,7 @@ interface FormState {
 }
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring transition";
+  "w-full min-h-11 rounded-control border border-input bg-white px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring transition";
 
 function toggleInArray(arr: string[], value: string) {
   return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
@@ -222,7 +223,7 @@ export function TripPreferencesSection({ token }: Props) {
     <div className="bg-white rounded-2xl border border-border p-6 flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
-          <h2 className="text-sm font-semibold text-strong">
+          <h2 className="text-lg font-semibold text-foreground">
             Preferências da viagem
           </h2>
           {!hasData && !editing && (
@@ -232,13 +233,12 @@ export function TripPreferencesSection({ token }: Props) {
           )}
         </div>
         {!editing && (
-          <button
+          <Button variant="travel"
             onClick={startEditing}
-            className="flex items-center gap-1.5 text-sm text-primary hover:text-primary bg-secondary hover:bg-secondary px-3 py-1.5 rounded-xl transition-colors"
           >
             <Pencil className="size-3.5" />
             Editar
-          </button>
+          </Button>
         )}
       </div>
 
@@ -477,10 +477,9 @@ export function TripPreferencesSection({ token }: Props) {
           />
 
           <div className="flex items-center gap-3 pt-2">
-            <button
+            <Button variant="default"
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-2 bg-primary hover:bg-primary-hover disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
             >
               {saving ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -488,15 +487,15 @@ export function TripPreferencesSection({ token }: Props) {
                 <Check className="size-4" />
               )}
               {saving ? "Salvando..." : "Salvar"}
-            </button>
-            <button
+            </Button>
+            <Button variant="outline"
               onClick={() => setEditing(false)}
               disabled={saving}
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-strong border border-border hover:bg-background px-4 py-2 rounded-xl transition-colors"
             >
               <X className="size-4" />
               Cancelar
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -529,7 +528,7 @@ function ReadOnly({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+      <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground ">
         {icon}
         {label}
       </span>
@@ -551,7 +550,7 @@ function FieldGroup({
   const id = useId();
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+      <label htmlFor={id} className="flex items-center gap-2 text-sm font-medium text-muted-foreground ">
         {icon}
         {label}
       </label>
@@ -575,7 +574,7 @@ function TagPicker({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <span className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+      <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground ">
         {icon}
         {label}
       </span>
@@ -583,7 +582,7 @@ function TagPicker({
         {options.map((o) => {
           const active = values.includes(o.value);
           return (
-            <button
+            <Button variant="default"
               key={o.value}
               type="button"
               onClick={() => onToggle(o.value)}
@@ -594,7 +593,7 @@ function TagPicker({
               }
             >
               {o.label}
-            </button>
+            </Button>
           );
         })}
       </div>

@@ -28,8 +28,8 @@ export default function Explorer({ recommendations = false }: { recommendations?
   });
   return <section className="page-content">
     <Breadcrumbs current={recommendations ? "Recomendações" : "Explorar"} />
-    <section className="surface space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <section className="space-y-7">
+      <div className="page-header">
         <div className="space-y-2">
           <h1 className="page-title">{recommendations ? "Inspiração para sua próxima viagem" : "Explore seu próximo destino"}
           </h1>
@@ -40,7 +40,7 @@ export default function Explorer({ recommendations = false }: { recommendations?
             <Sparkles aria-hidden="true" />Sugerir um destino</Link>
         </Button>
       </div>
-      <div className="grid items-end gap-4 sm:grid-cols-[1fr_auto]">
+      <div className="grid items-end gap-4 rounded-card border border-border bg-muted/40 p-5 sm:grid-cols-[1fr_auto]">
         <div className="space-y-2">
           <label htmlFor="explore-search" className="text-sm font-medium">Buscar destinos</label>
           <div className="relative">
@@ -59,23 +59,23 @@ export default function Explorer({ recommendations = false }: { recommendations?
         </div>
       </div>
       {categories.length > 0 && <div className="space-y-3">
-        <h2 className="text-lg">Explorar por categorias</h2>
+        <h2 className="text-sm font-medium text-strong">Explorar por categorias</h2>
         <div className="flex flex-wrap gap-2">
-          <Button variant={!category ? "default" : "outline"} aria-pressed={!category} onClick={() => update("categoria", "")}>Todas</Button>{categories.map(tag => <Button key={tag} variant={category === tag ? "default" : "outline"} aria-pressed={category === tag} onClick={() => update("categoria", tag)}>{tag}
+          <Button variant={!category ? "secondary" : "ghost"} aria-pressed={!category} onClick={() => update("categoria", "")}>Todas</Button>{categories.map(tag => <Button key={tag} variant={category === tag ? "secondary" : "ghost"} aria-pressed={category === tag} onClick={() => update("categoria", tag)}>{tag}
           </Button>)}
         </div>
       </div>}
     </section>
-    <section className="surface space-y-6" aria-label="Destinos disponíveis">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <section className="space-y-6" aria-label="Destinos disponíveis">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
         <h2 className="section-title">Destinos para descobrir</h2>
-        <p className="text-sm text-muted-foreground" role="status">{!loading && !error && visible.length + " destino(s) encontrado(s)"}
+        <p className="text-sm text-muted-foreground" role="status">{!loading && !error && `${visible.length} ${visible.length === 1 ? 'destino encontrado' : 'destinos encontrados'}`}
         </p>
       </div>
-      {loading ? <CardSkeletons /> : error ? <Feedback kind="error" title="Não conseguimos carregar os destinos" description={error} onRetry={refetch} /> : visible.length === 0 ? <Feedback title={destinations.length ? "Nenhum destino corresponde ? busca" : "Ainda não há destinos disponíveis"} description={destinations.length ? "Tente outro nome ou remova os filtros." : "Você pode pesquisar um destino para começar seu roteiro."}>{destinations.length ? <Button variant="outline" onClick={() => setParams({})}>Limpar filtros</Button> : <Button asChild>
+      {loading ? <CardSkeletons /> : error ? <Feedback kind="error" title="Não conseguimos carregar os destinos" description={error} onRetry={refetch} /> : visible.length === 0 ? <Feedback title={destinations.length ? "Nenhum destino corresponde à busca" : "Ainda não há destinos disponíveis"} description={destinations.length ? "Tente outro nome ou remova os filtros." : "Você pode pesquisar um destino para começar seu roteiro."}>{destinations.length ? <Button variant="outline" onClick={() => setParams({})}>Limpar filtros</Button> : <Button asChild>
         <Link to="/roteiros/criacao">Pesquisar destino</Link>
       </Button>}
-      </Feedback> : <div className="grid gap-4 sm:grid-cols-2">{visible.map(destination => <DestinationCard key={destination.id} destination={destination} />)}
+      </Feedback> : <div className="travel-grid">{visible.map(destination => <DestinationCard key={destination.id} destination={destination} />)}
       </div>}
     </section>
   </section>;

@@ -21,17 +21,17 @@ export default function CardOnboard({
     <button
       type="button"
       className={cn(
-        "flex w-full items-center gap-4 rounded-3xl border px-5 py-4 text-left transition",
+        "flex w-full items-center gap-4 rounded-card border px-5 py-4 text-left transition-colors",
         selected
-          ? "border-ring bg-secondary shadow-card"
-          : "border-border bg-white hover:border-border hover:bg-background",
+          ? "border-ring bg-secondary"
+          : "border-border bg-white hover:border-input hover:bg-muted",
       )}
       onClick={onClick}
       aria-pressed={selected}
     >
       <div
         className={cn(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition",
+          "flex h-11 w-11 shrink-0 items-center justify-center rounded-control transition-colors",
           selected ? "bg-secondary text-primary" : "bg-background text-strong",
         )}
       >

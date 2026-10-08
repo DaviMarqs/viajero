@@ -174,7 +174,7 @@ export default function TravelPreferencesOnboarding() {
         setSubmitError(error.message);
         return;
       }
-      setSubmitError("Nao foi possivel salvar suas preferências agora.");
+      setSubmitError("Não foi possível salvar suas preferências agora.");
     }
   }
 
@@ -210,8 +210,8 @@ export default function TravelPreferencesOnboarding() {
           title={TRAVEL_PREFERENCES_SIDEBAR.title}
           description={TRAVEL_PREFERENCES_SIDEBAR.description}
         />
-        <main className="flex flex-1 px-6 py-8 sm:px-8 lg:p-10">
-          <div className="flex flex-1 items-center justify-center rounded-card bg-white px-6 py-10 shadow-card">
+        <main className="flex min-w-0 flex-1 px-6 py-8 sm:px-8 lg:p-10">
+          <div className="flex flex-1 items-center justify-center rounded-card border border-border bg-white px-6 py-10">
             <div className="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
               <PartyPopper
                 size={52}
@@ -222,12 +222,12 @@ export default function TravelPreferencesOnboarding() {
                 preferências salvas!
               </h2>
               <p className="text-base leading-7 text-muted-foreground">
-                Seu perfil de viagem foi atualizado e ja pode ser usado na
+                Seu perfil de viagem foi atualizado e já pode ser usado na
                 geração de roteiros.
               </p>
               <Link
                 to="/"
-                className="mt-2 inline-flex h-14 items-center justify-center rounded-2xl bg-slate-950 px-6 text-sm font-semibold text-white transition hover:bg-slate-800"
+                className="mt-2 inline-flex h-12 items-center justify-center rounded-control bg-primary px-6 text-sm font-semibold text-white transition hover:bg-primary-hover"
               >
                 Voltar para a home
               </Link>
@@ -249,8 +249,8 @@ export default function TravelPreferencesOnboarding() {
         description={TRAVEL_PREFERENCES_SIDEBAR.description}
       />
 
-      <main className="flex flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:p-10">
-        <div className="flex w-full flex-col rounded-card bg-white p-6 shadow-card sm:p-8 lg:p-10">
+      <main className="flex min-w-0 flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:p-10">
+        <div className="flex w-full flex-col rounded-card border border-border bg-white p-6 sm:p-8 lg:p-10">
           <header className="flex flex-col gap-3">
             {/* NOVO BOTÃO DE VOLTAR AQUI */}
             {currentIndex > 0 && (
@@ -302,7 +302,7 @@ export default function TravelPreferencesOnboarding() {
           <footer className="mt-8 flex flex-col gap-3">
             <button
               type="button"
-              className="flex h-14 w-full items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-muted-foreground"
+              className="flex h-12 w-full items-center justify-center rounded-control bg-primary text-sm font-semibold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-muted-foreground"
               onClick={isLast ? handleFinish : next}
               disabled={!canAdvance || saving}
             >

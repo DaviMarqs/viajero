@@ -15,12 +15,12 @@ export default function DestinationPage() {
   const card = destination && destinationCardData(destination);
   return <section className="page-content">
     <Breadcrumbs current={destination?.name || "Detalhes do destino"} />
-    {loading ? <Feedback kind="loading" title="Carregando destino…" /> : error ? <Feedback kind="error" title="Não conseguimos carregar este destino" description={error} onRetry={refetch} /> : !destination || !card ? <Feedback title="Destino não encontrado" description="Volte ? exploração para escolher outro destino.">
+    {loading ? <Feedback kind="loading" title="Carregando destino…" /> : error ? <Feedback kind="error" title="Não conseguimos carregar este destino" description={error} onRetry={refetch} /> : !destination || !card ? <Feedback title="Destino não encontrado" description="Volte à exploração para escolher outro destino.">
       <Button asChild variant="outline">
         <Link to="/explorar">Explorar destinos</Link>
       </Button>
-    </Feedback> : <article className="surface space-y-8">
-      <DestinationImage src={card.image} name={card.name} className="h-64 rounded-card sm:h-96 lg:h-[480px]" />
+    </Feedback> : <article className="space-y-8">
+      <DestinationImage src={card.image} name={card.name} className="h-48 rounded-card sm:h-60" />
       <header className="space-y-3">
         <h1 className="page-title">{destination.name}
         </h1>

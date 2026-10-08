@@ -33,12 +33,14 @@ export default function CarouselRow({
         <h2 className="text-lg font-semibold">{title}</h2>
         <div className="flex items-center gap-3">
           <button
+            aria-label="Roteiros anteriores"
             onClick={() => scroll('left')}
             className="p-1.5 rounded-full border border-neutral-200 hover:bg-neutral-100 transition-colors"
           >
             <ChevronRight className="size-4 rotate-180 text-neutral-500" />
           </button>
           <button
+            aria-label="Próximos roteiros"
             onClick={() => scroll('right')}
             className="p-1.5 rounded-full border border-neutral-200 hover:bg-neutral-100 transition-colors"
           >
@@ -62,7 +64,7 @@ export default function CarouselRow({
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {itineraries.map((itinerary) => (
-            <div key={itinerary.id} className="shrink-0">
+            <div key={itinerary.id} className="w-80 shrink-0 sm:w-96">
               <TripCard
                 itinerary={itinerary}
                 onView={onView}

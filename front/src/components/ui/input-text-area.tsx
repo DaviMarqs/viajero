@@ -29,7 +29,7 @@ export default function InputTextarea({
       </label>
 
       <textarea id={id} required={required} aria-describedby={hint ? id + "-hint" : undefined}
-        className="min-h-32 w-full rounded-3xl border border-border bg-white px-4 py-4 text-sm leading-6 text-foreground outline-none transition placeholder:text-muted-foreground focus:border-ring focus:shadow-card"
+        className="min-h-32 w-full rounded-control border border-input bg-white px-4 py-4 text-sm leading-6 text-foreground outline-none transition placeholder:text-muted-foreground focus:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}

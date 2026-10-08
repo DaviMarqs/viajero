@@ -1,152 +1,54 @@
-import { CalendarDays, Coins, LoaderCircle, MapPinned } from "lucide-react";
-
-import type { Itinerary } from "@/types/travel";
-
-interface ItineraryCardProps {
-  itinerary: Itinerary;
-  onOpen: (id: number | string) => void;
-}
+import { CalendarDays, Clock3 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { DestinationImage } from '@/features/destinations/destination-card';
+import { itineraryPresentation, itineraryStatus } from '@/features/itineraries/itinerary-presentation';
+import type { Destination, Itinerary } from '@/types/travel';
 
 function formatDate(value?: string | null) {
-  if (!value) return "Não informado";
-
+  if (!value) return 'Data a definir';
   const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return value;
-
-  return new Intl.DateTimeFormat("pt-BR").format(date);
+  return Number.isNaN(date.getTime()) ? 'Data a definir' : new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
 }
 
-function formatMoney(value?: string | number | null, currencyCode?: string | null) {
-  if (value === null || value === undefined || value === "") {
-    return "Não informado";
-  }
-
-  const amount = Number(value);
-  if (!Number.isFinite(amount)) {
-    return `${value} ${currencyCode ?? ""}`.trim();
-  }
-
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: currencyCode || "BRL",
-  }).format(amount);
+function formatMoney(value: Itinerary['budget_total'], currency = 'BRL') {
+  if (value == null || value === '' || !Number.isFinite(Number(value))) return 'A definir';
+  try { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(value)); }
+  catch { return `${value} ${currency}`; }
 }
 
-function getDestinationLabel(itinerary: Itinerary) {
-  if (typeof itinerary.destination === "string") {
-    return itinerary.destination;
-  }
-
-  if (
-    itinerary.destination &&
-    typeof itinerary.destination === "object" &&
-    "name" in itinerary.destination &&
-    typeof itinerary.destination.name === "string"
-  ) {
-    return itinerary.destination.name;
-  }
-
-  return itinerary.destination_name || itinerary.city || itinerary.country || "Destino";
-}
-
-function formatGenerationStatus(status?: string | null) {
-  if (!status) return "Não informado";
-
-  const labels: Record<string, string> = {
-    draft: "Rascunho",
-    generating: "Gerando",
-    ready: "Pronto",
-    failed: "Falhou",
-  };
-
-  return labels[status] || status;
-}
-
-export default function ItineraryCard({ itinerary, onOpen }: ItineraryCardProps) {
-  return (
-    <article className="rounded-card border border-border bg-white p-6 shadow-card">
-      <div className="flex flex-col gap-5">
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-              Roteiro
-            </span>
-            <span className="rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-strong">
-              {formatGenerationStatus(itinerary.generation_status)}
-            </span>
-          </div>
-
-          <div>
-            <h3 className="text-2xl font-semibold tracking-tight text-foreground">
-              {itinerary.title}
-            </h3>
-            <p className="mt-1 text-sm text-primary">
-              {getDestinationLabel(itinerary)}
-            </p>
-          </div>
-
-          <p className="line-clamp-3 text-sm leading-6 text-strong">
-            {itinerary.summary || "Resumo ainda não dispoNível para este roteiro."}
-          </p>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border border-border bg-secondary px-4 py-3">
-            <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-primary">
-              <CalendarDays className="size-4" />
-            </div>
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Início</p>
-            <p className="mt-1 text-sm font-semibold text-foreground">
-              {formatDate(itinerary.start_date)}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-secondary px-4 py-3">
-            <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-primary">
-              <MapPinned className="size-4" />
-            </div>
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Fim</p>
-            <p className="mt-1 text-sm font-semibold text-foreground">
-              {formatDate(itinerary.end_date)}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-secondary px-4 py-3">
-            <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-primary">
-              <LoaderCircle className="size-4" />
-            </div>
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Duração</p>
-            <p className="mt-1 text-sm font-semibold text-foreground">
-              {Number(itinerary.duration_days || 0)} dias
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-secondary px-4 py-3">
-            <div className="mb-2 inline-flex rounded-xl bg-white p-2 text-primary">
-              <Coins className="size-4" />
-            </div>
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Orçamento</p>
-            <p className="mt-1 text-sm font-semibold text-foreground">
-              {formatMoney(itinerary.budget_total, itinerary.currency_code)}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">
-            Moeda: <span className="font-medium text-strong">{itinerary.currency_code || "BRL"}
-            </span>
-          </p>
-
-          <button
-            type="button"
-            onClick={() => onOpen(itinerary.id)}
-            className="inline-flex h-12 items-center justify-center rounded-2xl bg-primary px-5 text-sm font-semibold text-white transition hover:bg-primary-hover"
-          >
-            Abrir roteiro
-          </button>
-        </div>
+export default function ItineraryCard({ itinerary, destinations = [] }: { itinerary: Itinerary; destinations?: Destination[] }) {
+  const visual = itineraryPresentation(itinerary, destinations);
+  const duration = Number(itinerary.duration_days ?? itinerary.duration);
+  const title = itinerary.title || itinerary.name || 'Roteiro';
+  const href = `/roteiros/${itinerary.id}`;
+  return <article className="travel-card">
+    <div className="relative">
+      <Link to={href} aria-label={`Abrir roteiro: ${title}`} className="block focus-visible:outline-offset-[-4px]">
+        <DestinationImage src={visual.image} name={visual.location} className="travel-card-media" />
+      </Link>
+      <span className="status-badge pointer-events-none absolute left-4 top-4" data-status={itinerary.generation_status}>
+        {itineraryStatus(itinerary.generation_status)}
+      </span>
+    </div>
+    <div className="travel-card-body">
+      <div className="space-y-1.5">
+        <p className="text-sm text-muted-foreground">{[visual.location, visual.country].filter(Boolean).join(', ')}</p>
+        <h3 className="travel-card-title"><Link to={href} className="transition-colors hover:text-primary">{title}</Link></h3>
       </div>
-    </article>
-  );
+      <p className="line-clamp-2 text-sm leading-6 text-strong">{itinerary.summary || 'Os detalhes estarão disponíveis quando seu roteiro estiver pronto.'}</p>
+      <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-strong">
+        <p className="inline-flex items-center gap-2"><CalendarDays aria-hidden="true" className="size-4 text-muted-foreground" />
+          <span>{formatDate(itinerary.start_date)}{itinerary.end_date && <span className="sr-only"> at? {formatDate(itinerary.end_date)}</span>}</span>
+        </p>
+        <p className="inline-flex items-center gap-2"><Clock3 aria-hidden="true" className="size-4 text-muted-foreground" />{Number.isFinite(duration) && duration > 0 ? `${duration} dias` : 'Duração a definir'}</p>
+      </div>
+      <div className="travel-card-footer">
+        <div className="space-y-1"><p className="text-xs text-muted-foreground">Orçamento da viagem</p>
+          <p className="font-display text-lg font-semibold tabular-nums">{formatMoney(itinerary.budget_total, itinerary.currency_code || 'BRL')}</p>
+        </div>
+        <Button asChild variant="travel" size="lg"><Link to={href} aria-label={`Abrir roteiro: ${title}`}>Abrir roteiro</Link></Button>
+      </div>
+    </div>
+  </article>;
 }

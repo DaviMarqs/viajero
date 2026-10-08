@@ -18,18 +18,22 @@ export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   function navigation() {
     return <nav aria-label="Navegação principal">
-      <ul className="flex flex-col gap-3">{links.map(({ to, label, icon: Icon }) => <li key={to}>
-        <NavLink to={to} end={to === "/"} onClick={() => setMobileOpen(false)} className={({ isActive }) => cn("flex min-h-11 items-center gap-2 rounded-control px-2 py-2 text-base transition-colors hover:bg-surface", isActive && "bg-surface font-medium shadow-control")}>
-          <Icon aria-hidden="true" className="size-4.5" />{label}
+      <ul className="flex flex-col gap-1.5">{links.map(({ to, label, icon: Icon }) => <li key={to}>
+        <NavLink to={to} end={to === "/"} onClick={() => setMobileOpen(false)} className={({ isActive }) => cn("flex min-h-12 items-center gap-3 rounded-control px-3 py-3 text-sm font-medium transition-colors", isActive ? "bg-secondary text-primary" : "text-strong hover:bg-surface hover:text-foreground")}>
+          <Icon aria-hidden="true" className="size-5" />{label}
         </NavLink>
       </li>)}
       </ul>
     </nav>;
   }
   function footer() {
-    return <div className="space-y-3 border-t border-border pt-4">
-      <p className="truncate text-sm text-muted-foreground">{user?.display_name}
-      </p>
+    return <div className="space-y-3 border-t border-border pt-5">
+      <Link to="/perfil" className="flex min-w-0 items-center gap-3 rounded-control px-2 py-2 hover:bg-surface">
+        <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface text-sm font-semibold text-primary">
+          {user?.avatar_url ? <img src={user.avatar_url} alt="" className="size-full object-cover" /> : (user?.display_name || 'V').slice(0, 1).toUpperCase()}
+        </span>
+        <span className="min-w-0"><span className="block truncate text-sm font-medium">{user?.display_name}</span><span className="text-xs text-muted-foreground">Meu perfil</span></span>
+      </Link>
       <Dialog>
         <DialogTrigger asChild>
           <Button variant="ghost" className="w-full justify-start">
@@ -49,13 +53,13 @@ export default function Sidebar() {
     </div>;
   }
   return <>
-    <aside className="hidden h-dvh w-sidebar shrink-0 flex-col justify-between gap-8 overflow-y-auto border-r border-border bg-background p-6 lg:sticky lg:top-0 lg:flex">
+    <aside className="hidden h-dvh w-sidebar shrink-0 flex-col justify-between gap-8 overflow-y-auto border-r border-border bg-muted/60 p-5 lg:sticky lg:top-0 lg:flex">
       <div className="space-y-8">
-        <Link to="/" className="block font-display text-[32px] font-semibold">Viajero</Link>{navigation()}
+        <Link to="/" className="block px-3 py-2 font-display text-[28px] font-semibold tracking-tight text-primary">Viajero</Link>{navigation()}
       </div>{footer()}
     </aside>
     <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background px-4 lg:hidden">
-      <Link to="/" className="font-display text-2xl font-semibold">Viajero</Link>
+      <Link to="/" className="font-display text-2xl font-semibold tracking-tight text-primary">Viajero</Link>
       <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
         <DialogTrigger asChild>
           <Button variant="ghost" size="icon" aria-label="Abrir navegação">
