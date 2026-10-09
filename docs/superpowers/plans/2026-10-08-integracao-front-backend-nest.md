@@ -301,6 +301,8 @@ Expected: PASS (5 testes)
 
 - [ ] **Step 5: Registrar subscriber e `parseInt8`**
 
+> **Revisado na execução:** `parseInt8` foi removido depois (conflita com o bugfix #720 do TypeORM e quebrou a regeneração). Ids `bigint` ficam string e os DTOs usam `@ToId()` (`common/validation.ts`). Ver spec 1.2.
+
 `backend-nest/src/database/typeorm.config.ts`:
 
 ```ts

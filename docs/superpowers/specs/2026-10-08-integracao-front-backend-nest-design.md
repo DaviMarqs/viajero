@@ -32,7 +32,7 @@ Baseline: `front` build + lint OK; `backend-nest` build OK, 2 testes Jest OK, `n
 |---|---|
 | Onde corrigir o contrato | **Backend-nest honra o contrato do front/Django.** Front muda só onde está errado (erros, 401, sync de usuário, mock) |
 | Defaults do banco | **Subscriber global do TypeORM** (`beforeInsert`) reproduz defaults das entities, como o Django faz em Python. Schema do Django intocado |
-| IDs | `parseInt8: true` no TypeORM (ids `number`, como no DRF) |
+| IDs | `bigint` continua string (padrão do TypeORM); DTOs convertem ids recebidos como string (`ToId`). *Revisado na implementação: `parseInt8` conflita com o bugfix #720 do TypeORM, ver 1.2* |
 | Avatar | **Upload no Nest** (multipart, disco em `backend-nest/uploads`, servido em `/uploads`) |
 | Sugestão de destino | **Heurística determinística no Nest** (sem LLM) |
 | Mock do front | **Remover** `mock-backend.ts` e o bootstrap `VITE_MOCK_API` |
@@ -137,9 +137,9 @@ insomnia-viajero.json                            [MOD] avatar (multipart)
 
 Coluna obrigatória sem default (ex.: `duration_days`) continua falhando — validação é do domínio. Mudanças feitas em `beforeInsert` são recomputadas pelo TypeORM antes do INSERT (mesmo mecanismo de `@BeforeInsert`). Todo o código Nest persiste via `repository.save()`, que dispara o subscriber. Registro em `typeorm.config.ts` (`subscribers: [DjangoDefaultsSubscriber]`).
 
-### 1.2 IDs numéricos
+### 1.2 IDs
 
-`parseInt8: true` em `databaseConfig()`. IDs e `COUNT()` passam a `number`. `decimal` continua string (`"4.70"`), igual ao DRF.
+**Revisado na implementação.** O plano original ligava `parseInt8: true`. O smoke mostrou que o TypeORM converte ids `bigint` gerados em string após o INSERT (bugfix #720, em `ColumnMetadata.createValueMap`). Com `parseInt8`, ids lidos viram `number` e os gerados continuam `string`; ao salvar uma entity com relação one-to-many carregada, o TypeORM compara `5` com `"5"`, conclui que os filhos saíram e tenta anular a FK (500 na regeneração). Decisão: manter o padrão do TypeORM (`bigint` como string, internamente consistente) e converter ids numéricos recebidos como string nos DTOs (`ToId` em `common/validation.ts`). O front já compara ids via `String(...)`; `presentUser`/`presentReview` devolvem `number`. `decimal` continua string (`"4.70"`), igual ao DRF.
 
 ### 1.3 `ApiExceptionFilter`
 

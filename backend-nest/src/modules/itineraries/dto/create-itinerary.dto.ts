@@ -1,6 +1,8 @@
 import { IsDateString, IsInt, IsNumber, IsOptional, IsString, Length, Max, MaxLength, Min } from 'class-validator';
+import { ToId } from '../../../common/validation';
 
 export class CreateItineraryDto {
+  @ToId()
   @IsInt()
   destination!: number;
 

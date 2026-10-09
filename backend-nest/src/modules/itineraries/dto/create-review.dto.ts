@@ -1,6 +1,8 @@
 import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { ToId } from '../../../common/validation';
 
 export class CreateReviewDto {
+  @ToId()
   @IsInt()
   itinerary!: number;
 
