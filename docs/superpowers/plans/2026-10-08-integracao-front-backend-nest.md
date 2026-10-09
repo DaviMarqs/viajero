@@ -4486,3 +4486,10 @@ Parar o Vite e o Nest em background; `docker rm -f viajero-nest-it`; `rm -rf bac
 - [ ] **Step 6: Revisão final**
 
 Usar `superpowers:requesting-code-review` no diff da branch e só então reportar ao usuário.
+
+---
+
+## Revisões feitas durante a execução
+
+1. **IDs (Task 2):** `parseInt8` removido. O TypeORM devolve ids `bigint` gerados como string (bugfix #720) e, com ids lidos como `number`, a comparação de relações ao salvar falhava (regeneração anulava `itinerary_id`). Ids ficam string; os DTOs usam `@ToId()` (`common/validation.ts`) para aceitar ids numéricos enviados como string. Smoke ajustado para não exigir `typeof id === 'number'`.
+2. **Avaliações no front (Tasks 17 e 19):** `useReviews` aplica o resultado de cada mutação na lista local (`setData`) em vez de `refetch()`, que trocava a seção pelo estado de carregamento. O resumo (média/total) é calculado da própria lista quando carregada. O foco vai para o título do card após publicar/salvar/excluir e volta ao botão "Excluir" ao cancelar o diálogo (`onCloseAutoFocus`, já que o diálogo é aberto por estado, sem `DialogTrigger`).
