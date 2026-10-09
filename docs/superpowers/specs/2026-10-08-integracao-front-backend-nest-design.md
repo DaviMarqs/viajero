@@ -59,6 +59,7 @@ backend-nest/
     │   ├── django-defaults.subscriber.ts        [NOVO]
     │   └── __tests__/django-defaults.subscriber.spec.ts [NOVO]
     ├── common/
+    │   ├── uploads.ts                           [NOVO] pasta/URL de uploads
     │   ├── api-exception.filter.ts              [MOD] mensagens PT, log 5xx, sem vazar SQL
     │   ├── facades/itinerary-generation.facade.ts [MOD] falha → roteiro failed + erro PT
     │   └── __tests__/api-exception.filter.spec.ts [NOVO]
@@ -69,6 +70,10 @@ backend-nest/
         │   ├── users.service.ts                 [MOD] setAvatar; mensagens PT
         │   └── avatar-upload.ts                 [NOVO] opções do multer (tipos, limite, nome)
         ├── profiles/
+        │   ├── dto/update-traveler-dna.dto.ts   [NOVO] PATCH validado (campos opcionais)
+        │   ├── dto/update-trip-preference.dto.ts [NOVO]
+        │   ├── traveler-dna.controller.ts       [MOD] usa DTO de update
+        │   ├── trip-preferences.controller.ts   [MOD] usa DTO de update
         │   ├── profiles.module.ts               [MOD] User no forFeature
         │   └── profiles.service.ts              [MOD] is_profile_complete
         ├── destinations/
@@ -86,7 +91,8 @@ backend-nest/
         │   ├── itinerary-rules.ts               [NOVO] defaults de criação + visibilidade (puros)
         │   ├── review.presenter.ts              [NOVO] review sem dados sensíveis
         │   ├── itineraries.controller.ts        [MOD] PATCH :id; retrieve público com is_owner
-        │   ├── itineraries.service.ts           [MOD] create c/ defaults, update, findVisible, top-rated/templates, reviews CRUD + stats
+        │   ├── itineraries.service.ts           [MOD] create c/ defaults, update, findVisible, top-rated/templates (sai a parte de reviews)
+        │   ├── reviews.service.ts               [NOVO] CRUD de avaliacoes + ReviewStat + auditoria
         │   ├── reviews.controller.ts            [MOD] PATCH/DELETE :id; presenter
         │   └── __tests__/itinerary-rules.spec.ts, review.presenter.spec.ts [NOVOS]
         └── ai/ai.service.ts                     [MOD] regeneração transacional; falha → status failed
@@ -113,7 +119,7 @@ front/
     ├── pages/roteiros/itinerary-card.tsx        [MOD] badge de nota
     └── pages/dashboard/dashboard.tsx            [MOD] "Roteiros mais bem avaliados"
 
-insomnia-viajero.json                            [MOD] avatar (multipart) e suggest
+insomnia-viajero.json                            [MOD] avatar (multipart)
 ```
 
 ## 1. Fundação do backend-nest
@@ -195,6 +201,7 @@ Resposta: destino no mesmo formato de `GET /api/destinations/:id`, mensagem `Des
 - **`templates`**: `ready` e `metadata @> {"is_template": true}`.
 - **`top-rated`**: `ready` e `review_stats.review_count > 0`, ordenado por `average_rating` desc, `review_count` desc, `updated_at` desc; limite 10; inclui `destination` e `review_stats`.
 - **`is_profile_complete`**: após upsert de DNA ou preferências, se o usuário tem os dois, marca `true`.
+- **PATCH de DNA/preferências validado**: hoje o `@Body()` é `Partial<Dto>` (o `ValidationPipe` não valida nem descarta campos), então um corpo com `id` sobrescreve o registro de outro usuário. Passa a usar DTOs de update com campos opcionais validados (`whitelist` descarta `id`/`user`).
 
 ## 4. Avaliações (US-13 / RF08)
 
@@ -255,7 +262,7 @@ Padrões visuais: tokens e classes já existentes (`badge`, `travel-card`, `sect
 
 - `backend-nest/README.md`: endpoints novos, `uploads/`, explicação do subscriber/`parseInt8`, `npm run smoke`.
 - `front/README.md`: como rodar contra o backend-nest; remove mock e o link quebrado para `RODAR_LOCALMENTE.md`.
-- `insomnia-viajero.json`: requests de avatar (multipart) e `POST /api/destinations/suggest/` (PATCH de roteiro e PATCH/DELETE de review já existem). Base URL continua 8000; README explica trocar para 8001.
+- `insomnia-viajero.json`: request de avatar (multipart). Suggest, PATCH de roteiro e PATCH/DELETE de review já existem. Base URL continua 8000; README explica trocar para 8001.
 - `backend-nest/package.json`: `lint` só em `src/**/*.ts`; `smoke`.
 
 ## 7. Testes e verificação
