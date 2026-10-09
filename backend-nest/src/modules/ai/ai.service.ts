@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { LlmJob, LlmJobLog, LlmModel, PromptTemplate } from './entities';
 import { Itinerary, ItineraryDailyEvent, ItineraryDay } from '../itineraries/entities';
 import { TravelerDnaProfile, UserTripPreference } from '../profiles/entities';
@@ -15,8 +15,6 @@ export class AiService {
     @InjectRepository(LlmModel) private readonly models: Repository<LlmModel>,
     @InjectRepository(PromptTemplate) private readonly templates: Repository<PromptTemplate>,
     @InjectRepository(Itinerary) private readonly itineraries: Repository<Itinerary>,
-    @InjectRepository(ItineraryDay) private readonly days: Repository<ItineraryDay>,
-    @InjectRepository(ItineraryDailyEvent) private readonly events: Repository<ItineraryDailyEvent>,
     @InjectRepository(TravelerDnaProfile) private readonly profiles: Repository<TravelerDnaProfile>,
     @InjectRepository(UserTripPreference) private readonly preferences: Repository<UserTripPreference>,
     @InjectRepository(PointOfInterest) private readonly pois: Repository<PointOfInterest>,
@@ -58,7 +56,7 @@ export class AiService {
       where: { id: jobId },
       relations: { itinerary: { destination: true }, destination: true, prompt_template: true, llm_model: true, user: true },
     });
-    if (!job) throw new NotFoundException('LLM job not found.');
+    if (!job) throw new NotFoundException('Job de geracao nao encontrado.');
     if (!job.itinerary) {
       job.status = 'failed';
       job.error_message = 'Missing itinerary.';
@@ -69,59 +67,77 @@ export class AiService {
     await this.jobs.save(job);
     await this.logs.save(this.logs.create({ llm_job: job, message: 'Job started.', payload: {} }));
 
+    const itinerary = job.itinerary;
     const profile = await this.profiles.findOne({ where: { user: { id: job.user.id } } });
     const preferences = await this.preferences.findOne({ where: { user: { id: job.user.id } } });
-    const pois = await this.pois.find({ where: { destination: { id: job.itinerary.destination.id } }, order: { rating: 'DESC', name: 'ASC' } });
+    const pois = await this.pois.find({ where: { destination: { id: itinerary.destination.id } }, order: { rating: 'DESC', name: 'ASC' } });
     const result = this.generatorFactory.create().generate({
-      itinerary: job.itinerary,
+      itinerary,
       profile,
       preferences,
       pois,
       promptTemplate: job.prompt_template,
     });
 
-    job.itinerary.title = result.title;
-    job.itinerary.summary = result.summary;
-    job.itinerary.budget_total = result.estimated_cost;
-    job.itinerary.currency_code = result.currency_code;
-    job.itinerary.generation_status = 'ready';
-    job.itinerary.generation_context = {
-      profile_id: profile?.id ?? null,
-      preferences_id: preferences?.id ?? null,
-      ...result.metadata,
-    };
-    await this.itineraries.save(job.itinerary);
-    await this.days.delete({ itinerary: { id: job.itinerary.id } });
+    // Tudo ou nada: falha no meio nao deixa o roteiro sem dias.
+    await this.jobs.manager.transaction(async (manager) => {
+      itinerary.title = result.title;
+      itinerary.summary = result.summary;
+      itinerary.budget_total = result.estimated_cost;
+      itinerary.currency_code = result.currency_code;
+      itinerary.generation_status = 'ready';
+      itinerary.generation_context = {
+        profile_id: profile?.id ?? null,
+        preferences_id: preferences?.id ?? null,
+        ...result.metadata,
+      };
+      await manager.save(itinerary);
 
-    for (let dayIndex = 0; dayIndex < result.days.length; dayIndex += 1) {
-      const dayData = result.days[dayIndex];
-      const savedDay = await this.days.save(
-        this.days.create({
-          itinerary: job.itinerary,
-          day_number: dayIndex + 1,
-          title: dayData.title,
-          summary: dayData.summary,
-          estimated_cost: dayData.events.reduce((total, event) => total + Number(event.estimated_cost), 0).toFixed(2),
-        }),
-      );
-      for (const event of dayData.events) {
-        await this.events.save(
-          this.events.create({
-            itinerary_day: savedDay,
-            title: event.title,
-            description: event.description,
-            estimated_cost: event.estimated_cost,
-            order_index: event.order_index,
-            poi: event.poi_id ? ({ id: event.poi_id } as never) : null,
+      // As FKs do Django sao NO ACTION: eventos saem antes dos dias.
+      const previousDays = await manager.find(ItineraryDay, { select: { id: true }, where: { itinerary: { id: itinerary.id } } });
+      const dayIds = previousDays.map((day) => day.id);
+      if (dayIds.length > 0) {
+        const previousEvents = await manager.find(ItineraryDailyEvent, { select: { id: true }, where: { itinerary_day: { id: In(dayIds) } } });
+        if (previousEvents.length > 0) await manager.delete(ItineraryDailyEvent, previousEvents.map((event) => event.id));
+        await manager.delete(ItineraryDay, dayIds);
+      }
+
+      for (let dayIndex = 0; dayIndex < result.days.length; dayIndex += 1) {
+        const dayData = result.days[dayIndex];
+        const savedDay = await manager.save(
+          manager.create(ItineraryDay, {
+            itinerary,
+            day_number: dayIndex + 1,
+            title: dayData.title,
+            summary: dayData.summary,
+            estimated_cost: dayData.events.reduce((total, event) => total + Number(event.estimated_cost), 0).toFixed(2),
           }),
         );
+        for (const event of dayData.events) {
+          await manager.save(
+            manager.create(ItineraryDailyEvent, {
+              itinerary_day: savedDay,
+              title: event.title,
+              description: event.description,
+              estimated_cost: event.estimated_cost,
+              order_index: event.order_index,
+              poi: event.poi_id ? ({ id: event.poi_id } as PointOfInterest) : null,
+            }),
+          );
+        }
       }
-    }
+    });
 
     job.status = 'completed';
     job.response_payload = result as unknown as Record<string, unknown>;
     const savedJob = await this.jobs.save(job);
     await this.logs.save(this.logs.create({ llm_job: job, message: 'Job completed.', payload: result.metadata }));
     return savedJob;
+  }
+
+  async markJobFailed(jobId: number, itineraryId: number, reason: string): Promise<void> {
+    await this.jobs.update({ id: jobId }, { status: 'failed', error_message: reason });
+    await this.itineraries.update({ id: itineraryId }, { generation_status: 'failed' });
+    await this.logs.save(this.logs.create({ llm_job: { id: jobId } as LlmJob, level: 'error', message: 'Job failed.', payload: { error: reason } }));
   }
 }
