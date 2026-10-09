@@ -24,7 +24,7 @@ export class DestinationsService {
       where: { id },
       relations: { cost_profile: true, pois: { tags: true } },
     });
-    if (!destination) throw new NotFoundException('Destination not found.');
+    if (!destination) throw new NotFoundException('Destino nao encontrado.');
     return destination;
   }
 

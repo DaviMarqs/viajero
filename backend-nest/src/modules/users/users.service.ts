@@ -43,7 +43,7 @@ export class UsersService {
 
   async update(id: number, dto: UpdateUserDto): Promise<User> {
     const user = await this.findById(id);
-    if (!user) throw new NotFoundException('User not found.');
+    if (!user) throw new NotFoundException('Usuario nao encontrado.');
     Object.assign(user, dto);
     if (dto.email) user.email = dto.email.trim().toLowerCase();
     return this.users.save(user);
