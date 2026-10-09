@@ -3,13 +3,12 @@ import { randomUUID } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Raw, Repository } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
-import { FavoriteItinerary, Itinerary, ItineraryDay, Review, ReviewStat, SharedItineraryLink } from './entities';
+import { FavoriteItinerary, Itinerary, ItineraryDay, SharedItineraryLink } from './entities';
 import { Destination } from '../destinations/entities';
 import { UserTripPreference } from '../profiles/entities';
 import { CreateItineraryDto } from './dto/create-itinerary.dto';
 import { UpdateItineraryDto } from './dto/update-itinerary.dto';
 import { CreateFavoriteDto } from './dto/create-favorite.dto';
-import { CreateReviewDto } from './dto/create-review.dto';
 import { CreateSharedLinkDto } from './dto/create-shared-link.dto';
 import { AuditService } from '../audit/audit.service';
 import { AuditedServiceDecorator } from '../../common/decorators/audited-service.decorator';
@@ -27,8 +26,6 @@ export class ItinerariesService {
     @InjectRepository(Itinerary) private readonly itineraries: Repository<Itinerary>,
     @InjectRepository(ItineraryDay) private readonly days: Repository<ItineraryDay>,
     @InjectRepository(FavoriteItinerary) private readonly favorites: Repository<FavoriteItinerary>,
-    @InjectRepository(Review) private readonly reviews: Repository<Review>,
-    @InjectRepository(ReviewStat) private readonly reviewStats: Repository<ReviewStat>,
     @InjectRepository(SharedItineraryLink) private readonly sharedLinks: Repository<SharedItineraryLink>,
     @InjectRepository(Destination) private readonly destinations: Repository<Destination>,
     @InjectRepository(UserTripPreference) private readonly tripPreferences: Repository<UserTripPreference>,
@@ -172,43 +169,6 @@ export class ItinerariesService {
       ([input]) => ({ itinerary_id: input.itinerary }),
     );
     return operation.execute(dto);
-  }
-
-  listReviews(itinerary?: number): Promise<Review[]> {
-    return this.reviews.find({
-      where: itinerary ? { itinerary: { id: itinerary } } : {},
-      relations: { itinerary: true, user: true },
-      order: { created_at: 'DESC' },
-    });
-  }
-
-  async createReview(userId: number, dto: CreateReviewDto): Promise<Review> {
-    const review = await this.reviews.save(
-      this.reviews.create({
-        user: { id: userId } as never,
-        itinerary: { id: dto.itinerary } as never,
-        rating: dto.rating,
-        title: dto.title ?? '',
-        body: dto.body ?? '',
-      }),
-    );
-    const stats = await this.reviews
-      .createQueryBuilder('review')
-      .select('COUNT(review.id)', 'count')
-      .addSelect('AVG(review.rating)', 'average')
-      .where('review.itinerary_id = :itineraryId', { itineraryId: dto.itinerary })
-      .getRawOne<{ count: string; average: string }>();
-    const existing = await this.reviewStats.findOne({ where: { itinerary: { id: dto.itinerary } } });
-    await this.reviewStats.save(
-      this.reviewStats.create({
-        ...(existing ?? {}),
-        itinerary: { id: dto.itinerary } as never,
-        review_count: Number(stats?.count ?? 0),
-        average_rating: Number(stats?.average ?? 0).toFixed(2),
-      }),
-    );
-    await this.audit.log({ event_type: 'review.created', actor_id: userId, content_type: 'Itinerary', object_id: String(dto.itinerary), metadata: { rating: dto.rating } });
-    return review;
   }
 
   listSharedLinks(userId: number): Promise<SharedItineraryLink[]> {

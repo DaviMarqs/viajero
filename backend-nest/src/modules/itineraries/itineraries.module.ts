@@ -4,6 +4,7 @@ import { FavoriteItinerary, Itinerary, ItineraryDailyEvent, ItineraryDay, Review
 import { Destination } from '../destinations/entities';
 import { UserTripPreference } from '../profiles/entities';
 import { ItinerariesService } from './itineraries.service';
+import { ReviewsService } from './reviews.service';
 import { ItinerariesController } from './itineraries.controller';
 import { FavoritesController } from './favorites.controller';
 import { ReviewsController } from './reviews.controller';
@@ -28,7 +29,7 @@ import { AiModule } from '../ai/ai.module';
     AuditModule,
     AiModule,
   ],
-  providers: [ItinerariesService, ApiResponseBuilder],
+  providers: [ItinerariesService, ReviewsService, ApiResponseBuilder],
   controllers: [ItinerariesController, FavoritesController, ReviewsController, SharedLinksController],
   exports: [ItinerariesService, TypeOrmModule],
 })
