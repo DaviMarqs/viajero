@@ -4,6 +4,7 @@ import { useState, useRef, useId, cloneElement, isValidElement } from "react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/contexts/authContext";
+import type { AuthUser } from "@/lib/auth";
 import { Button } from '@/components/ui/button';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 
@@ -66,7 +67,7 @@ interface ProfilePageProps {
 
 export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
   const { user, loading, error, refetch, saveGuestProfile } = useUserProfile(token);
-  const { isGuest, refreshUser } = useAuth();
+  const { isGuest, refreshUser, updateUser } = useAuth();
 
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -118,7 +119,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
     }
 
     try {
-      await apiRequest("/api/users/me/", {
+      const response = await apiRequest<{ data?: AuthUser; }>("/api/users/me/", {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -126,6 +127,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
         },
         body: JSON.stringify(form),
       });
+      if (response.data) updateUser(response.data);
 
       setSuccess(true);
       setEditing(false);
@@ -150,19 +152,22 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
     }
 
     setAvatarUploading(true);
+    setSaveError(null);
     try {
       const fd = new FormData();
       fd.append("avatar", file);
-      await apiRequest("/api/users/me/avatar/", {
+      const response = await apiRequest<{ data?: AuthUser; }>("/api/users/me/avatar/", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: fd,
       });
+      if (response.data) updateUser(response.data);
       refetch();
-    } catch {
-      setSaveError("Não foi possível enviar o avatar. Tente novamente.");
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Não foi possível enviar o avatar. Tente novamente.");
     } finally {
       setAvatarUploading(false);
+      e.target.value = "";
     }
   }
 
@@ -245,7 +250,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
             <input
               ref={fileRef}
               type="file"
-              accept="image/*"
+              accept="image/png,image/jpeg,image/webp,image/gif"
               className="hidden"
               onChange={handleAvatarChange}
             />
