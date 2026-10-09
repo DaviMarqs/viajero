@@ -58,6 +58,29 @@ export interface ItineraryDay {
   events: ItineraryEvent[];
 }
 
+export interface ReviewStats {
+  id?: number | string;
+  review_count: number;
+  average_rating: number | string;
+}
+
+export interface ReviewAuthor {
+  id: number;
+  display_name: string;
+  avatar_url?: string | null;
+}
+
+export interface Review {
+  id: number;
+  itinerary: number;
+  rating: number;
+  title: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+  user: ReviewAuthor;
+}
+
 export interface Itinerary {
   [key: string]: unknown;
   id: number | string;
@@ -74,7 +97,9 @@ export interface Itinerary {
   budget_total?: number | string | null;
   currency_code?: string | null;
   generation_status?: "draft" | "generating" | "ready" | "failed" | string | null;
-  review_stats?: Record<string, unknown> | null;
+  review_stats?: ReviewStats | null;
+  /** Presente no detalhe: o usuário logado é o dono do roteiro. */
+  is_owner?: boolean;
   days?: ItineraryDay[] | null;
   generation_context?: Record<string, unknown> | null;
   metadata?: Record<string, unknown> | null;

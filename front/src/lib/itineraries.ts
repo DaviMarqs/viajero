@@ -15,9 +15,13 @@ export async function fetchItineraries() {
   return unwrapListResponse(payload);
 }
 
+export async function fetchTopRatedItineraries() {
+  const payload = await apiFetch<ItinerariesPayload>("/api/itineraries/top-rated/");
+  return unwrapListResponse(payload);
+}
+
 export async function fetchFeaturedItineraries() {
-  const topRatedPayload = await apiFetch<ItinerariesPayload>("/api/itineraries/top-rated/");
-  const topRated = unwrapListResponse(topRatedPayload);
+  const topRated = await fetchTopRatedItineraries();
 
   if (topRated.length > 0) {
     return topRated;

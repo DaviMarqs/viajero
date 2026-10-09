@@ -51,3 +51,11 @@ export function formatDuration(value: string | number | null | undefined) {
 
   return `${numeric} dias`;
 }
+
+export function formatRating(value: string | number | null | undefined) {
+  const numeric = Number(value);
+  return (Number.isFinite(numeric) ? numeric : 0).toLocaleString("pt-BR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+}
