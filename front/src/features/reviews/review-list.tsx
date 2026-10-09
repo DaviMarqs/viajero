@@ -16,7 +16,7 @@ export function ReviewItem({ review, mine = false, onEdit, onDelete }: {
   review: Review;
   mine?: boolean;
   onEdit?: () => void;
-  onDelete?: () => void;
+  onDelete?: (trigger: HTMLButtonElement) => void;
 }) {
   const name = review.user.display_name || "Viajante";
   return <article className="space-y-3 py-5" aria-label={`Avaliação de ${mine ? "você" : name}`}>
@@ -38,7 +38,7 @@ export function ReviewItem({ review, mine = false, onEdit, onDelete }: {
     {review.body && <p className="max-w-[65ch] whitespace-pre-line text-sm leading-6 text-strong">{review.body}</p>}
     {mine && (onEdit || onDelete) && <div className="flex flex-wrap gap-2">
       {onEdit && <Button variant="outline" onClick={onEdit}><Pencil aria-hidden="true" />Editar</Button>}
-      {onDelete && <Button variant="destructive" onClick={onDelete}><Trash2 aria-hidden="true" />Excluir</Button>}
+      {onDelete && <Button variant="destructive" onClick={event => onDelete(event.currentTarget)}><Trash2 aria-hidden="true" />Excluir</Button>}
     </div>}
   </article>;
 }

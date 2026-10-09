@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Feedback } from "@/components/ui/feedback";
@@ -17,16 +17,27 @@ export function ReviewsSection({ itinerary, onChanged }: { itinerary: Itinerary;
   const { reviews, loading, error, refetch, saving, saveError, clearSaveError, create, update, remove } = useReviews(itinerary.id);
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // O formulário/botões somem após salvar ou excluir; o foco vai para o título do card para não cair no body.
+  const cardTitleRef = useRef<HTMLHeadingElement>(null);
+  const deletedRef = useRef(false);
+  const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const mine = user ? reviews.find(review => review.user.id === user.id) : undefined;
   const others = reviews.filter(review => review !== mine);
-  const count = Number(itinerary.review_stats?.review_count ?? 0);
-  const average = Number(itinerary.review_stats?.average_rating ?? 0);
+  // A lista traz todas as avaliações do roteiro: o resumo acompanha cada mutação sem esperar o roteiro recarregar.
+  const listReady = !loading && !error;
+  const count = listReady ? reviews.length : Number(itinerary.review_stats?.review_count ?? 0);
+  const average = listReady
+    ? (count ? reviews.reduce((total, review) => total + review.rating, 0) / count : 0)
+    : Number(itinerary.review_stats?.average_rating ?? 0);
   const canReview = itinerary.generation_status === "ready";
 
   async function handleCreate(input: ReviewInput) {
     const ok = await create(input);
-    if (ok) onChanged();
+    if (ok) {
+      onChanged();
+      cardTitleRef.current?.focus();
+    }
     return ok;
   }
 
@@ -36,6 +47,7 @@ export function ReviewsSection({ itinerary, onChanged }: { itinerary: Itinerary;
     if (ok) {
       setEditing(false);
       onChanged();
+      cardTitleRef.current?.focus();
     }
     return ok;
   }
@@ -43,6 +55,7 @@ export function ReviewsSection({ itinerary, onChanged }: { itinerary: Itinerary;
   async function handleDelete() {
     if (!mine) return;
     const ok = await remove(mine.id);
+    deletedRef.current = ok;
     setConfirmDelete(false);
     if (ok) onChanged();
   }
@@ -59,9 +72,9 @@ export function ReviewsSection({ itinerary, onChanged }: { itinerary: Itinerary;
 
     {loading ? <Feedback kind="loading" title="Carregando avaliações…" /> : error ? <Feedback kind="error" title="Não conseguimos carregar as avaliações" description={error} onRetry={refetch} /> : <>
       {canReview ? <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
-        <h3 className="mb-4 text-lg">{mine ? "Sua avaliação" : count === 0 ? "Seja o primeiro a avaliar" : "Deixe sua avaliação"}</h3>
+        <h3 ref={cardTitleRef} tabIndex={-1} className="mb-4 text-lg outline-none">{mine ? "Sua avaliação" : count === 0 ? "Seja o primeiro a avaliar" : "Deixe sua avaliação"}</h3>
         {mine && !editing
-          ? <ReviewItem review={mine} mine onEdit={() => { clearSaveError(); setEditing(true); }} onDelete={() => { clearSaveError(); setConfirmDelete(true); }} />
+          ? <ReviewItem review={mine} mine onEdit={() => { clearSaveError(); setEditing(true); }} onDelete={trigger => { clearSaveError(); deleteTriggerRef.current = trigger; setConfirmDelete(true); }} />
           : <ReviewForm
             key={mine ? `edit-${mine.id}` : "new"}
             isOwner={Boolean(itinerary.is_owner)}
@@ -69,7 +82,7 @@ export function ReviewsSection({ itinerary, onChanged }: { itinerary: Itinerary;
             serverError={saveError}
             initial={mine ? { rating: mine.rating, title: mine.title, body: mine.body } : undefined}
             onSubmit={mine ? handleUpdate : handleCreate}
-            onCancel={mine ? () => setEditing(false) : undefined}
+            onCancel={mine ? () => { setEditing(false); cardTitleRef.current?.focus(); } : undefined}
           />}
         {mine && !editing && saveError && <p role="alert" className="mt-3 text-sm text-destructive">{saveError}</p>}
       </div> : <p className="text-sm text-muted-foreground">A avaliação fica disponível quando o roteiro estiver pronto.</p>}
@@ -81,7 +94,16 @@ export function ReviewsSection({ itinerary, onChanged }: { itinerary: Itinerary;
     </>}
 
     <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-      <DialogContent>
+      <DialogContent onCloseAutoFocus={event => {
+        // Sem DialogTrigger o Radix não sabe para onde devolver o foco.
+        event.preventDefault();
+        if (deletedRef.current) {
+          deletedRef.current = false;
+          cardTitleRef.current?.focus();
+          return;
+        }
+        deleteTriggerRef.current?.focus();
+      }}>
         <DialogHeader>
           <DialogTitle>Excluir sua avaliação?</DialogTitle>
           <DialogDescription>Essa ação não pode ser desfeita. A nota média do roteiro será recalculada.</DialogDescription>
