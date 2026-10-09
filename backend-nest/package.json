@@ -8,6 +8,7 @@
     "start": "node dist/main.js",
     "start:dev": "nest start --watch",
     "lint": "eslint \"src/**/*.ts\"",
+    "smoke": "node scripts/smoke-contract.mjs",
     "test": "jest",
     "test:cov": "jest --coverage"
   },
