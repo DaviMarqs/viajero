@@ -2,7 +2,7 @@ import { Feedback } from "@/components/ui/feedback";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Star } from "lucide-react";
 import { useParams } from "react-router-dom";
 
 import { apiRequest } from "@/lib/api";
@@ -11,6 +11,7 @@ import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { DestinationImage } from '@/features/destinations/destination-card';
 import { itineraryPresentation, itineraryStatus } from '@/features/itineraries/itinerary-presentation';
 import { useDestinations } from '@/hooks/useDestinations';
+import { ReviewsSection } from '@/features/reviews/reviews-section';
 import type { Itinerary } from "@/types/travel";
 
 type ItineraryResponse = ApiSuccessResponse<Itinerary>;
@@ -106,7 +107,10 @@ export default function RoteiroDetalhePage() {
       <div className="space-y-3"><h1 className="page-title">{itinerary.title}</h1>
         <p className="text-muted-foreground">{[visual.location, visual.country].filter(Boolean).join(', ')}</p>
       </div>
-      <span className="status-badge" data-status={itinerary.generation_status}>{itineraryStatus(itinerary.generation_status)}</span>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="status-badge" data-status={itinerary.generation_status}>{itineraryStatus(itinerary.generation_status)}</span>
+        {itinerary.generation_status === 'ready' && <Button asChild variant="outline"><a href="#avaliacoes"><Star aria-hidden="true" />Avaliar roteiro</a></Button>}
+      </div>
     </header>
     <DestinationImage src={visual.image} name={visual.location} className="h-48 rounded-card sm:h-60" />
     <dl className="grid grid-cols-2 gap-x-6 gap-y-5 border-b border-border pb-7 lg:grid-cols-4">
@@ -140,6 +144,7 @@ export default function RoteiroDetalhePage() {
           </details>)}
         </div>}
     </section>
-    <div><Button asChild variant="outline"><Link to="/roteiros">Voltar para seus roteiros</Link></Button></div>
+    <ReviewsSection itinerary={itinerary} onChanged={() => setRevision(value => value + 1)} />
+    <div><Button asChild variant="outline">{itinerary.is_owner === false ? <Link to="/">Voltar para a Home</Link> : <Link to="/roteiros">Voltar para seus roteiros</Link>}</Button></div>
   </section>;
 }

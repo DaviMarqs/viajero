@@ -1,8 +1,9 @@
-import { CalendarDays, Clock3 } from 'lucide-react';
+import { CalendarDays, Clock3, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DestinationImage } from '@/features/destinations/destination-card';
 import { itineraryPresentation, itineraryStatus } from '@/features/itineraries/itinerary-presentation';
+import { formatRating } from '@/lib/utils';
 import type { Destination, Itinerary } from '@/types/travel';
 
 function formatDate(value?: string | null) {
@@ -22,6 +23,8 @@ export default function ItineraryCard({ itinerary, destinations = [] }: { itiner
   const duration = Number(itinerary.duration_days ?? itinerary.duration);
   const title = itinerary.title || itinerary.name || 'Roteiro';
   const href = `/roteiros/${itinerary.id}`;
+  const reviewCount = Number(itinerary.review_stats?.review_count ?? 0);
+  const averageRating = Number(itinerary.review_stats?.average_rating ?? 0);
   return <article className="travel-card">
     <div className="relative">
       <Link to={href} aria-label={`Abrir roteiro: ${title}`} className="block focus-visible:outline-offset-[-4px]">
@@ -30,6 +33,11 @@ export default function ItineraryCard({ itinerary, destinations = [] }: { itiner
       <span className="status-badge pointer-events-none absolute left-4 top-4" data-status={itinerary.generation_status}>
         {itineraryStatus(itinerary.generation_status)}
       </span>
+      {reviewCount > 0 && <span className="badge pointer-events-none absolute right-4 top-4 bg-surface text-foreground shadow-control">
+        <Star aria-hidden="true" className="size-3.5 fill-amber-500 text-amber-500" />{formatRating(averageRating)}
+        <span className="text-muted-foreground">({reviewCount})</span>
+        <span className="sr-only"> de 5, {reviewCount} {reviewCount === 1 ? 'avaliação' : 'avaliações'}</span>
+      </span>}
     </div>
     <div className="travel-card-body">
       <div className="space-y-1.5">
