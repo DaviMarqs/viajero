@@ -11,6 +11,7 @@ import ItineraryCard from '@/pages/roteiros/itinerary-card';
 export function Dashboard() {
   const destinations = useDestinations();
   const trips = useItineraries();
+  const topRated = useItineraries('top-rated');
   return <section className="page-content">
     <Breadcrumbs current="Painel principal" />
     <header className="page-header pb-2">
@@ -28,6 +29,14 @@ export function Dashboard() {
       {trips.loading ? <CardSkeletons label="Carregando roteiros" /> : trips.error ? <Feedback kind="error" title="Roteiros indisponíveis" description={trips.error} onRetry={trips.refetch} /> : trips.itineraries.length ? <div className="travel-grid">
         {trips.itineraries.slice(0, 2).map(trip => <ItineraryCard key={trip.id} itinerary={trip} destinations={destinations.destinations} />)}
       </div> : <Feedback title="Nenhum roteiro salvo" description="Conte suas preferências para começar a planejar."><Button asChild><Link to="/onboard/preferências">Criar roteiro</Link></Button></Feedback>}
+    </section>
+    <section className="space-y-5" aria-labelledby="top-rated-title">
+      <div className="page-header border-b border-border pb-4">
+        <div className="space-y-2"><h2 id="top-rated-title" className="section-title">Roteiros mais bem avaliados</h2><p className="text-sm text-muted-foreground">Planos que outros viajantes aprovaram.</p></div>
+      </div>
+      {topRated.loading ? <CardSkeletons label="Carregando roteiros mais bem avaliados" /> : topRated.error ? <Feedback kind="error" title="Ranking indisponível" description={topRated.error} onRetry={topRated.refetch} /> : topRated.itineraries.length ? <div className="travel-grid">
+        {topRated.itineraries.slice(0, 3).map(trip => <ItineraryCard key={trip.id} itinerary={trip} destinations={destinations.destinations} />)}
+      </div> : <Feedback title="Nenhum roteiro avaliado ainda" description="Avalie seus roteiros prontos para inaugurar o ranking." />}
     </section>
     <section className="space-y-5">
       <div className="page-header border-b border-border pb-4">
