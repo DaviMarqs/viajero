@@ -193,6 +193,25 @@
       }
     },
     {
+      "_id": "req_users_me_avatar",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Me Avatar (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/api/users/me/avatar/",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "multipart/form-data" }
+      ],
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          { "name": "avatar", "type": "file", "fileName": "" }
+        ]
+      },
+      "description": "Somente backend-nest (porta 8001). Foto de perfil no campo avatar (PNG, JPG, WEBP ou GIF, ate 2 MB). Salva em backend-nest/uploads/avatars e grava a URL absoluta em avatar_url."
+    },
+    {
       "_id": "req_users_get",
       "_type": "request",
       "parentId": "fld_users",
