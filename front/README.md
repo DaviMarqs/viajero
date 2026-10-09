@@ -4,7 +4,7 @@ React 19, TypeScript 6, Vite 8 e Tailwind CSS v4. Radix, CVA e Lucide compõem a
 
 ## Executar
 
-O front consome o backend NestJS (`../backend-nest`). Suba o backend antes, seguindo `../backend-nest/README.md` (banco migrado pelo Django + `npm run start:dev`).
+O front consome o backend NestJS (`../backend-nest`). Para subir tudo do zero (banco, migrations, API e front), siga [`../RODAR_LOCALMENTE.md`](../RODAR_LOCALMENTE.md).
 
 ```powershell
 npm ci

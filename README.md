@@ -12,62 +12,22 @@ O Viajero é um projeto criado do zero (_greenfield_) com um backend em Django p
 
 ## Como rodar localmente (do zero)
 
-1. **Instale as ferramentas basicas**
-   - Git
-   - `uv` (instala o Python e gerencia dependencias)
+O passo a passo completo (pré-requisitos, banco, API, front, primeiro uso, testes e problemas comuns) está em **[RODAR_LOCALMENTE.md](./RODAR_LOCALMENTE.md)**.
 
-   Linux/macOS:
+Resumo, com Docker, Node 20.19+ e `uv` instalados:
 
-   ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
+```bash
+docker run -d --name viajero-pg -e POSTGRES_PASSWORD=1414 -e POSTGRES_DB=viajero -p 5432:5432 -v viajero-pgdata:/var/lib/postgresql/data postgres:16
+cd backend && uv sync && cp .env.example .env && uv run manage.py migrate && uv run manage.py loaddata seed_data.json
+cd ../backend-nest && npm ci && cp .env.example .env && npm run start:dev   # API em http://localhost:8001
+cd front && npm ci && npm run dev                                           # outro terminal; app em http://localhost:5173
+```
 
-   Windows (PowerShell):
-
-   ```powershell
-   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-   ```
-
-   Depois, feche e abra o terminal para o `uv` entrar no PATH.
-
-2. **Clone o repositorio**
-
-   ```bash
-   git clone https://github.com/DaviMarqs/viajero.git
-   cd viajero
-   ```
-
-3. **Configure o backend**
-
-   ```bash
-   cd backend
-   uv python install 3.12
-   uv sync
-   ```
-
-4. **Crie o arquivo de ambiente**
-   Crie o arquivo `backend/.env` com o basico para SQLite:
-
-   ```dotenv
-   DJANGO_SECRET_KEY=troque-isto
-   DATABASE_URL=sqlite:///./db.sqlite3
-   DEBUG=true
-   ALLOWED_HOSTS=*
-   CORS_ALLOW_ALL_ORIGINS=true
-   JWT_SECRET_KEY=troque-isto
-   DEFAULT_LLM_PROVIDER=mock
-   DEFAULT_LLM_MODEL=mock-itinerary-v1
-   ```
-
-5. **Crie o banco e rode o servidor**
-
-   ```bash
-   uv run manage.py migrate
-   uv run manage.py loaddata seed_data.json
-   uv run manage.py runserver
-   ```
-
-   A API fica disponivel em http://127.0.0.1:8000
+| Pasta | O que é |
+|---|---|
+| `backend/` | Django + DRF: dono do schema (migrations e seed) e API com IA real (opcional) |
+| `backend-nest/` | API NestJS usada pelo front |
+| `front/` | React + Vite |
 
 ## Notas
 

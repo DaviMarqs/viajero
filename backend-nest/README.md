@@ -11,6 +11,8 @@ Backend NestJS criado como migração funcional do backend Django/DRF existente.
 
 ## Primeira execução
 
+Guia completo do projeto (banco, migrations, API, front e problemas comuns): [`../RODAR_LOCALMENTE.md`](../RODAR_LOCALMENTE.md).
+
 O Nest usa o **mesmo banco** do Django: o schema vem das migrations do Django (`../backend`) e o Nest não altera a estrutura (`synchronize: false`).
 
 1. Schema e seed pelo Django (requer `uv`):
