@@ -19,14 +19,6 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
-function getFieldError(error: unknown) {
-  if (!error || typeof error !== "object") return undefined;
-
-  const detail = (error as Record<string, unknown>).detail;
-
-  return typeof detail === "string" ? detail : undefined;
-}
-
 async function getTravelerDNAProfile(token: string) {
   const response = await apiRequest<{ data?: TravelerDNAProfile | null; }>(
     "/api/traveler-dna/me/",
@@ -42,7 +34,7 @@ async function getTravelerDNAProfile(token: string) {
 
 export default function Login() {
   const navigate = useNavigate();
-  const { setAuth } = useAuth();
+  const { setAuth, sessionExpired } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -77,7 +69,7 @@ export default function Login() {
       navigate("/onboard", { replace: true });
     } catch (error) {
       if (error instanceof ApiError) {
-        setSubmitError(getFieldError(error.errors) ?? error.message);
+        setSubmitError(error.message);
         return;
       }
 
@@ -97,6 +89,12 @@ export default function Login() {
             Entre com seu email e senha para continuar.
           </p>
         </div>
+
+        {sessionExpired && !submitError && (
+          <div role="status" className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Sua sessão expirou. Entre novamente para continuar.
+          </div>
+        )}
 
         <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-2">

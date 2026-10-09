@@ -1,6 +1,10 @@
 const DEFAULT_API_BASE_URL = "http://localhost:8001";
 const ACCESS_TOKEN_KEY = "viajero.access_token";
 
+/** Disparado quando uma requisição autenticada recebe 401 (token expirado ou inválido). */
+export const SESSION_EXPIRED_EVENT = "viajero:session-expired";
+const SESSION_EXPIRED_MESSAGE = "Sua sessão expirou. Entre novamente para continuar.";
+
 export class ApiError extends Error {
   status: number;
   payload: unknown;
@@ -48,6 +52,13 @@ function buildUrl(path: string, params?: Record<string, string | number | boolea
   return url.toString();
 }
 
+/** O backend manda a mensagem para a UI em `message`; `detail` fica como alternativa. */
+function readErrorMessage(payload: unknown) {
+  if (!payload || typeof payload !== "object") return undefined;
+  const { message, detail } = payload as { message?: unknown; detail?: unknown; };
+  return [message, detail].find((value): value is string => typeof value === "string" && value.trim().length > 0);
+}
+
 export async function apiFetch<T>(
   path: string,
   init: RequestInit = {},
@@ -77,17 +88,19 @@ export async function apiFetch<T>(
   }
 
   if (!response.ok) {
-    let message = response.status === 401
-      ? "Sua sessão expirou. Entre novamente para continuar."
-      : `Não foi possível concluir a solicitação (erro ${response.status}). Tente novamente.`;
     let payload: unknown;
 
     try {
       payload = await response.json();
-      const errorPayload = payload as { detail?: string; message?: string; };
-      message = errorPayload.detail || errorPayload.message || message;
     } catch {
       // Keep fallback message when the server does not return JSON.
+    }
+
+    let message = readErrorMessage(payload) ?? `Não foi possível concluir a solicitação (erro ${response.status}). Tente novamente.`;
+
+    if (response.status === 401 && headers.has("Authorization")) {
+      message = SESSION_EXPIRED_MESSAGE;
+      if (typeof window !== "undefined") window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
     }
 
     throw new ApiError(message, response.status, payload);

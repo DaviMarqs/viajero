@@ -53,10 +53,14 @@ export interface RegisterInput {
   last_name: string;
 }
 
+export function persistUser(user: AuthUser) {
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
 export function persistAuth(payload: AuthPayload) {
   localStorage.setItem(ACCESS_TOKEN_KEY, payload.access);
   localStorage.setItem(REFRESH_TOKEN_KEY, payload.refresh);
-  localStorage.setItem(USER_KEY, JSON.stringify(payload.user));
+  persistUser(payload.user);
 }
 
 export function getStoredUser() {
