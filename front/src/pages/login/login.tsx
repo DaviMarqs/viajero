@@ -78,7 +78,7 @@ export default function Login() {
   };
 
   return (
-    <AuthLayout title="Sua próxima viagem não terminou." description="Acesse sua conta para continuar seus roteiros, recuperar preferências e deixe a IA montar a próxima experiência com contexto real." storySide="left">
+    <AuthLayout title="Sua próxima viagem não terminou." description="Acesse sua conta para continuar seus roteiros, recuperar preferências e deixe a IA montar a próxima experiência com contexto real." storySide="right">
 
       <div className="mx-auto w-full max-w-md">
         <div className="mb-10 space-y-3">

@@ -2,6 +2,22 @@
 
 Guia para subir o projeto inteiro numa máquina nova: banco, API, front e o primeiro uso. Leva uns 15 minutos, a maior parte em downloads.
 
+## Nesta máquina Windows
+
+O ambiente local usa Node.js 24, Python 3.12 em `backend/.venv` e o serviço PostgreSQL 18 instalado no Windows. Os dois backends já estão configurados para o mesmo banco `viajero`; Docker não é necessário. As migrations e os quatro destinos iniciais foram conferidos.
+
+Na raiz do projeto, execute:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\iniciar-local.ps1
+```
+
+O comando aplica migrations pendentes e inicia a API em `http://localhost:8001` e o front em `http://localhost:5173`, em segundo plano e com recarga automática. Serviços que já respondem são reutilizados. Os logs e os PIDs ficam em `.local/`, fora do Git. O script usa as portas locais padrão acima; se alterar as portas nos arquivos de ambiente, use os comandos manuais dos passos 5 e 6.
+
+Para encerrar os servidores, use os PIDs atuais mostrados por `Get-NetTCPConnection -State Listen -LocalPort 8001,5173` e execute `Stop-Process -Id <PID>`. Para o Nest em modo watch, encerre também o processo supervisor cujo PID está em `.local/api.pid`.
+
+O serviço PostgreSQL deve estar em execução. Não recarregue o seed em um banco com dados existentes; `loaddata` pode sobrescrever os registros iniciais.
+
 > O front novo e o `backend-nest` estão na branch `new-front` até o merge. Depois de clonar, rode `git checkout new-front`.
 
 ## Visão geral
@@ -123,6 +139,19 @@ npm run dev
 Abra `http://localhost:5173`. O front já aponta para `http://localhost:8001`. Só crie `front/.env.local` se a API estiver em outra porta (use `front/.env.example` como modelo) e reinicie o Vite depois.
 
 ## 7. Primeiro uso (roteiro de teste)
+
+### Fluxos atualizados da interface
+
+- A Home reúne Meus roteiros e Roteiros para você lado a lado no desktop, com destinos recomendados abaixo. Recomendações usam interesses do DNA e tags dos pontos de interesse; não há conteúdo fictício para preencher listas vazias.
+- Explorar mostra escolhas por DNA e outros destinos. Categorias vêm das tags do banco, incluindo Praia e Natureza quando presentes.
+- O detalhe do destino apresenta orçamento econômico/intermediário/alto, informações gerais, imagens e dados dos pontos de interesse. Gerar roteiro leva o destino selecionado para o planejamento; Ajustar preferências preserva essa seleção.
+- Favoritos está na navegação. Destinos favoritos são salvos por conta no armazenamento deste navegador; roteiros favoritos usam a API existente.
+- Perfil → Moeda de exibição salva `preferred_currency` na API. Valores de destinos e roteiros são convertidos aproximadamente com taxas do Frankfurter (`https://frankfurter.dev/`). A cotação consultada aparece na interface. Sem cotação, permanece o valor na moeda original; o orçamento de origem não é alterado.
+- Editar roteiro salva nome, resumo e datas na API. Edição, remoção e reordenação de atividades são salvas por conta e roteiro neste navegador, pois a API ainda não oferece mutação de eventos. Arrastar, teclado (espaço/setas/espaço) e botões de subir/descer são suportados. Reordenar não altera horários; as estimativas originais são preservadas.
+- O formulário de avaliação da viagem do proprietário aparece após o fim da data de volta. Avaliações usam a API existente. Confirmações são diálogos renderizados com controle de foco.
+- As microinterações usam CSS e respeitam redução de movimento; a reordenação usa dnd-kit. GSAP não é necessária para estes efeitos.
+
+Em `front/`, `npm test` cobre câmbio, personalização, persistência da programação e liberação da avaliação. Esse comando usa o suporte nativo a TypeScript do Node 22.18+ (nesta máquina, Node 24).
 
 1. **Cadastro:** "Criar uma conta nova" (senha com pelo menos 8 caracteres).
 2. **Perfil de viajante:** responda o onboarding e conclua.

@@ -1,7 +1,14 @@
-import { IsDateString, IsInt, IsNumber, IsOptional, IsString, Length, Max, MaxLength, Min } from 'class-validator';
+import { IsDateString, IsInt, IsNumber, IsOptional, IsString, Length, Max, MaxLength, Min, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+import { GenerationTripPreferenceDto } from './generation-trip-preference.dto';
 import { ToId } from '../../../common/validation';
 
 export class CreateItineraryDto {
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => GenerationTripPreferenceDto)
+  trip_preferences?: GenerationTripPreferenceDto;
+
   @ToId()
   @IsInt()
   destination!: number;

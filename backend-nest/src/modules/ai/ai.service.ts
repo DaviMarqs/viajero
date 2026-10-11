@@ -6,6 +6,7 @@ import { Itinerary, ItineraryDailyEvent, ItineraryDay } from '../itineraries/ent
 import { TravelerDnaProfile, UserTripPreference } from '../profiles/entities';
 import { PointOfInterest } from '../destinations/entities';
 import { ItineraryGeneratorFactory } from '../../common/factories/itinerary-generator.factory';
+import { requireTripParameters } from '../itineraries/trip-generation-context';
 
 @Injectable()
 export class AiService {
@@ -43,7 +44,7 @@ export class AiService {
         destination: itinerary.destination,
         llm_model: model,
         prompt_template: template,
-        request_payload: { itinerary_id: itinerary.id, destination_id: itinerary.destination.id },
+        request_payload: { itinerary_id: itinerary.id, destination_id: itinerary.destination.id, trip_preferences: requireTripParameters(itinerary.metadata?.trip_preferences) },
         status: 'queued',
       }),
     );
@@ -69,7 +70,10 @@ export class AiService {
 
     const itinerary = job.itinerary;
     const profile = await this.profiles.findOne({ where: { user: { id: job.user.id } } });
-    const preferences = await this.preferences.findOne({ where: { user: { id: job.user.id } } });
+    const parameters = requireTripParameters(job.request_payload?.trip_preferences ?? itinerary.metadata?.trip_preferences);
+    const preferences = Object.assign(new UserTripPreference(), parameters, {
+      budget_min: String(parameters.budget_min), budget_max: String(parameters.budget_max), metadata: parameters.metadata ?? {},
+    });
     const pois = await this.pois.find({ where: { destination: { id: itinerary.destination.id } }, order: { rating: 'DESC', name: 'ASC' } });
     const result = this.generatorFactory.create().generate({
       itinerary,
@@ -89,6 +93,7 @@ export class AiService {
       itinerary.generation_context = {
         profile_id: profile?.id ?? null,
         preferences_id: preferences?.id ?? null,
+        trip_preferences: parameters,
         ...result.metadata,
       };
       await manager.save(itinerary);
@@ -121,6 +126,8 @@ export class AiService {
               description: event.description,
               estimated_cost: event.estimated_cost,
               order_index: event.order_index,
+              start_time: event.start_time ?? null,
+              end_time: event.end_time ?? null,
               poi: event.poi_id ? ({ id: event.poi_id } as PointOfInterest) : null,
             }),
           );

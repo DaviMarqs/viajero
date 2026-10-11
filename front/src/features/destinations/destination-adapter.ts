@@ -1,4 +1,5 @@
 import type { Destination } from "@/types/travel";
+import { destinationCategories } from "@/lib/personalization";
 
 function positiveNumber(value: unknown) {
   if (value === null || value === undefined || value === "") return null;
@@ -11,7 +12,7 @@ export function destinationCardData(destination: Destination) {
   const cost = destination.cost_profile;
   const profile = cost && typeof cost === "object" ? cost : null;
   const daily = positiveNumber(profile?.daily_budget_mid);
-  const tags = destination.metadata?.tags ?? destination.tags;
+  const tags = destinationCategories(destination);
   return {
     id: destination.id,
     name: destination.name,

@@ -1,36 +1,34 @@
-import { Feedback } from "@/components/ui/feedback";
+import { Feedback, PageSkeleton } from "@/components/ui/feedback";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Loader2, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import { useParams } from "react-router-dom";
 
 import { apiRequest } from "@/lib/api";
 import type { ApiSuccessResponse } from "@/lib/api";
-import { Breadcrumbs } from '@/components/ui/breadcrumbs';
-import { DestinationImage } from '@/features/destinations/destination-card';
-import { itineraryPresentation, itineraryStatus } from '@/features/itineraries/itinerary-presentation';
-import { useDestinations } from '@/hooks/useDestinations';
-import { ReviewsSection } from '@/features/reviews/reviews-section';
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { DestinationImage } from "@/features/destinations/destination-card";
+import {
+  itineraryPresentation,
+  itineraryStatus,
+} from "@/features/itineraries/itinerary-presentation";
+import { useDestinations } from "@/hooks/useDestinations";
+import { ReviewsSection } from "@/features/reviews/reviews-section";
 import type { Itinerary } from "@/types/travel";
+import { useAuth } from "@/contexts/authContext";
+import { useMoney } from "@/contexts/currencyContext";
+import { ItineraryEditor, DayEditor } from "@/features/itineraries/itinerary-editor";
+import {
+  localProgramKey,
+  readLocalProgram,
+  tripHasEnded,
+} from "@/features/itineraries/itinerary-editing";
+import { ItineraryActivity } from "@/features/itineraries/itinerary-activity";
+import { FavoriteItineraryButton } from "@/features/itineraries/favorite-itinerary-button";
 
 type ItineraryResponse = ApiSuccessResponse<Itinerary>;
-
-function formatMoney(value?: string | number | null, currencyCode?: string | null) {
-  if (value === null || value === undefined || value === "") {
-    return "Não informado";
-  }
-
-  const amount = Number(value);
-  if (!Number.isFinite(amount)) {
-    return `${value} ${currencyCode ?? ""}`.trim();
-  }
-
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: currencyCode || "BRL",
-  }).format(amount);
-}
 
 function formatDate(value?: string | null) {
   if (!value) return "Não informado";
@@ -42,12 +40,18 @@ function formatDate(value?: string | null) {
 }
 
 export default function RoteiroDetalhePage() {
+  const { user } = useAuth();
+  const { money } = useMoney();
   const { id } = useParams();
   const { destinations } = useDestinations();
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [draft, setDraft] = useState<Itinerary | null>(null);
+  const [original, setOriginal] = useState<Itinerary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [selectedDay, setSelectedDay] = useState(0);
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
@@ -55,39 +59,61 @@ export default function RoteiroDetalhePage() {
     async function load() {
       if (!id) return;
       try {
-        const response = await apiRequest<ItineraryResponse>(`/api/itineraries/${id}/`, { signal: controller.signal });
+        const response = await apiRequest<ItineraryResponse>(
+          `/api/itineraries/${id}/`,
+          { signal: controller.signal },
+        );
         if (controller.signal.aborted) return;
-        setItinerary(response.data ?? null);
+        setOriginal(response.data ?? null);
+        setItinerary(
+          response.data
+            ? readLocalProgram(
+                response.data,
+                localProgramKey(user?.id, response.data.id),
+              )
+            : null,
+        );
         setError(null);
-        if (response.data?.generation_status === "generating") timeout = window.setTimeout(load, 4000);
+        if (response.data?.generation_status === "generating")
+          timeout = window.setTimeout(load, 4000);
       } catch (err) {
-        if (!controller.signal.aborted) setError(err instanceof Error ? err.message : "Não foi possível carregar o roteiro.");
-      } finally { if (!controller.signal.aborted) setLoading(false); }
+        if (!controller.signal.aborted)
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Não foi possível carregar o roteiro.",
+          );
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
     }
     void load();
-    return () => { controller.abort(); window.clearTimeout(timeout); };
-  }, [id, revision]);
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeout);
+    };
+  }, [id, revision, user?.id]);
   if (!id) return <Feedback title="Roteiro não informado" />;
-  if (loading) {
+  if (loading) return <PageSkeleton />;
+
+  if (error)
     return (
-      <section className="px-6 py-8 lg:px-10">
-        <div className="flex min-h-[40vh] items-center justify-center rounded-card border border-border bg-white">
-          <div className="flex flex-col items-center gap-3 text-muted-foreground">
-            <Loader2 className="size-6 animate-spin text-primary" />
-            <span>Carregando roteiro...</span>
-          </div>
-        </div>
+      <section className="page-content">
+        <Feedback
+          kind="error"
+          title="Não conseguimos carregar o roteiro"
+          description={error}
+          onRetry={() => {
+            setLoading(true);
+            setRevision((value) => value + 1);
+          }}
+        >
+          <Button asChild variant="outline">
+            <Link to="/roteiros">Voltar aos roteiros</Link>
+          </Button>
+        </Feedback>
       </section>
     );
-  }
-
-  if (error) return <section className="page-content">
-    <Feedback kind="error" title="Não conseguimos carregar o roteiro" description={error} onRetry={() => { setLoading(true); setRevision(value => value + 1); }}>
-      <Button asChild variant="outline">
-        <Link to="/roteiros">Voltar aos roteiros</Link>
-      </Button>
-    </Feedback>
-  </section>;
 
   if (!itinerary) {
     return (
@@ -99,52 +125,96 @@ export default function RoteiroDetalhePage() {
     );
   }
 
-  const days = itinerary.days ?? [];
+  const activeDraft = draft?.id === itinerary.id ? draft : null;
+  const displayed = activeDraft ?? itinerary;
+  const days = displayed.days ?? [];
   const visual = itineraryPresentation(itinerary, destinations);
-  return <section className="page-content">
-    <Breadcrumbs current={itinerary.title} />
-    <header className="page-header">
-      <div className="space-y-3"><h1 className="page-title">{itinerary.title}</h1>
-        <p className="text-muted-foreground">{[visual.location, visual.country].filter(Boolean).join(', ')}</p>
+  return (
+    <section className="page-content itinerary-detail">
+      <Breadcrumbs current={itinerary.title} />
+      <header className="page-header">
+        <div className="space-y-3">
+          <h1 className="page-title">{itinerary.title}</h1>
+          <p className="text-muted-foreground">
+            {[visual.location, visual.country].filter(Boolean).join(", ")}
+          </p>
+        </div>
+        <div className="action-bar">
+          <span
+            className="status-badge"
+            data-status={itinerary.generation_status}
+          >
+            {itineraryStatus(itinerary.generation_status)}
+          </span>
+          {itinerary.is_owner &&
+            itinerary.generation_status === "ready" &&
+            original && (
+              <ItineraryEditor
+                key={String(itinerary.id)}
+                itinerary={itinerary}
+                original={original}
+                draft={activeDraft}
+                onDraftChange={setDraft}
+                onSavingChange={setSavingEdit}
+                onSaved={setItinerary}
+              />
+            )}
+          <FavoriteItineraryButton itineraryId={itinerary.id} />
+          {itinerary.generation_status === "ready" &&
+            (!itinerary.is_owner || tripHasEnded(itinerary.end_date)) && (
+              <Button asChild variant="ghost">
+                <a href="#avaliacoes">
+                  <Star aria-hidden="true" />
+                  {itinerary.is_owner
+                    ? "Avaliar minha viagem"
+                    : "Avaliar roteiro"}
+                </a>
+              </Button>
+            )}
+        </div>
+      </header>
+      {activeDraft && <section className="reference-panel space-y-4" aria-label="Modo de edição">
+        <div><h2 className="text-lg">Modo de edição ativado</h2><p className="mt-1 text-sm text-muted-foreground">Arraste pela alça para reordenar. Remova atividades antes de salvar. Os horários serão recalculados pela duração das visitas, com 30 minutos entre atividades. A programação fica salva neste navegador.</p></div>
+        <fieldset disabled={savingEdit} className="grid gap-4 sm:grid-cols-3">
+          <label className="form-label">Nome do roteiro<Input maxLength={160} value={activeDraft.title} onChange={e => setDraft({...activeDraft, title:e.target.value})} /></label>
+          <label className="form-label">Ida<Input type="date" value={activeDraft.start_date ?? ""} onChange={e => setDraft({...activeDraft, start_date:e.target.value || null})} /></label>
+          <label className="form-label">Volta<Input type="date" min={activeDraft.start_date || undefined} value={activeDraft.end_date ?? ""} onChange={e => setDraft({...activeDraft, end_date:e.target.value || null})} /></label>
+        </fieldset>
+      </section>}
+      <div className="itinerary-layout">
+        <section className="space-y-6" aria-label="Programação da viagem">
+          <div className="day-tabs" role="tablist" aria-label="Dias do roteiro">
+            {days.map((day, index) => <button key={day.id} type="button" role="tab" id={`day-tab-${index}`} aria-controls={`day-panel-${index}`} aria-selected={selectedDay === index} onClick={() => setSelectedDay(index)}>{`Dia ${day.day_number}`}</button>)}
+          </div>
+          {days.length === 0 ? <Feedback title="Ainda não existem dias gerados para este roteiro." description={itinerary.generation_status === "generating" ? "A programação aparecerá aqui quando a geração terminar." : undefined} /> : days.map((day, index) => selectedDay === index ? <div key={day.id} role="tabpanel" id={`day-panel-${index}`} aria-labelledby={`day-tab-${index}`} hidden={selectedDay !== index} className="space-y-5">
+            <h2 className="section-title">{day.title}</h2>
+            {day.summary && <p className="text-sm leading-6 text-muted-foreground">{day.summary}</p>}
+            {activeDraft ? <fieldset disabled={savingEdit}><DayEditor day={day} destinationImage={visual.image} destinationName={visual.location} currency={itinerary.currency_code || "BRL"} update={next => setDraft(current => current ? {...current, days: current.days?.map(item => item.id === next.id ? next : item)} : current)} /></fieldset> : <ol className="space-y-5">{(day.events ?? []).map((event, eventIndex) => <ItineraryActivity key={event.id} event={event} index={eventIndex} currency={itinerary.currency_code || "BRL"} destinationImage={visual.image} destinationName={visual.location} />)}</ol>}
+            {!activeDraft && !day.events?.length && <p className="text-muted-foreground">Nenhuma atividade neste dia.</p>}
+          </div> : null)}
+        </section>
+        <aside className="itinerary-aside space-y-6">
+          <DestinationImage src={visual.image} name={visual.location} className="h-44 rounded-2xl" />
+          <div className="budget-panel space-y-5">
+            <h2 className="text-xl">Sua viagem</h2>
+            <p className="text-sm text-muted-foreground">{formatDate(itinerary.start_date)} — {formatDate(itinerary.end_date)}</p>
+            <div className="space-y-2"><p className="text-sm text-muted-foreground">Orçamento total</p><p className="text-2xl font-semibold tabular-nums">{money(itinerary.budget_total, itinerary.currency_code || "BRL")}</p></div>
+            <div className="space-y-2"><p className="text-sm text-muted-foreground">Estimativa do dia</p><p className="text-xl font-medium tabular-nums">{money(days[selectedDay]?.estimated_cost, itinerary.currency_code || "BRL")}</p></div>
+            <p className="text-sm text-muted-foreground">{itinerary.duration_days ? `${itinerary.duration_days} dias` : "Duração a definir"} · {visual.location}</p>
+          </div>
+          {itinerary.summary && <p className="text-sm leading-6 text-muted-foreground">{itinerary.summary}</p>}
+        </aside>
       </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="status-badge" data-status={itinerary.generation_status}>{itineraryStatus(itinerary.generation_status)}</span>
-        {itinerary.generation_status === 'ready' && <Button asChild variant="outline"><a href="#avaliacoes"><Star aria-hidden="true" />Avaliar roteiro</a></Button>}
+      <ReviewsSection itinerary={itinerary} onChanged={() => setRevision((value) => value + 1)} />
+      <div>
+        <Button asChild variant="outline">
+          {itinerary.is_owner === false ? (
+            <Link to="/">Voltar para a Home</Link>
+          ) : (
+            <Link to="/roteiros">Voltar para seus roteiros</Link>
+          )}
+        </Button>
       </div>
-    </header>
-    <DestinationImage src={visual.image} name={visual.location} className="h-48 rounded-card sm:h-60" />
-    <dl className="grid grid-cols-2 gap-x-6 gap-y-5 border-b border-border pb-7 lg:grid-cols-4">
-      <div className="space-y-2"><dt className="text-sm text-muted-foreground">Período</dt><dd className="text-sm font-medium">{formatDate(itinerary.start_date)}<br />{formatDate(itinerary.end_date)}</dd></div>
-      <div className="space-y-2"><dt className="text-sm text-muted-foreground">Destino</dt><dd className="text-sm font-medium">{visual.location}</dd></div>
-      <div className="space-y-2"><dt className="text-sm text-muted-foreground">Orçamento</dt><dd className="text-sm font-medium tabular-nums">{formatMoney(itinerary.budget_total, itinerary.currency_code)}</dd></div>
-      <div className="space-y-2"><dt className="text-sm text-muted-foreground">Duração</dt><dd className="text-sm font-medium">{itinerary.duration_days ? `${itinerary.duration_days} dias` : 'A definir'}</dd></div>
-    </dl>
-    {itinerary.summary && <p className="max-w-[70ch] text-sm leading-7 text-strong">{itinerary.summary}</p>}
-    <section className="space-y-5" aria-label="Programação da viagem">
-      <h2 className="section-title">Dias do roteiro</h2>
-      {days.length === 0 ? <Feedback title="Ainda não existem dias gerados para este roteiro." description={itinerary.generation_status === 'generating' ? 'A programação aparecerá aqui quando a geração terminar.' : undefined} /> :
-        <div className="divide-y divide-border rounded-card border border-border">
-          {days.map((day, index) => <details key={day.id} open={index === 0} className="group/day px-5 sm:px-7">
-            <summary className="flex min-h-20 cursor-pointer list-none flex-wrap items-center justify-between gap-4 py-5 [&::-webkit-details-marker]:hidden">
-              <span className="flex min-w-0 items-center gap-4"><span className="flex size-10 shrink-0 items-center justify-center rounded-control bg-secondary font-medium text-primary" aria-label={`Dia ${day.day_number}`}>{day.day_number}</span>
-                <span className="min-w-0"><span className="block font-display text-lg font-semibold">{day.title}</span><span className="text-xs text-muted-foreground">{day.events?.length ?? 0} atividades</span></span>
-              </span>
-              <span className="text-sm font-medium text-primary group-open/day:hidden">Ver atividades</span>
-              <span className="hidden text-sm font-medium text-primary group-open/day:inline">Recolher</span>
-            </summary>
-            <div className="space-y-5 pb-7">
-              {day.summary && <p className="max-w-[70ch] text-sm leading-6 text-strong">{day.summary}</p>}
-              <p className="text-sm text-muted-foreground">Custo estimado do dia: <span className="font-medium text-foreground">{formatMoney(day.estimated_cost, itinerary.currency_code)}</span></p>
-              {(day.events ?? []).length === 0 ? <p className="text-sm text-muted-foreground">Nenhum evento foi adicionado neste dia.</p> :
-                <ol className="divide-y divide-border border-t border-border">{day.events.map(event => <li key={event.id} className="grid gap-3 py-5 sm:grid-cols-[110px_1fr]">
-                  <p className="text-sm font-medium tabular-nums text-primary">{event.start_time || '--:--'}<span className="text-muted-foreground"> - {event.end_time || '--:--'}</span></p>
-                  <div className="space-y-2"><h4 className="text-base">{event.title}</h4><p className="max-w-[65ch] text-sm leading-6 text-strong">{event.description || 'Sem descrição para este evento.'}</p><p className="text-xs text-muted-foreground">Custo estimado: {formatMoney(event.estimated_cost, itinerary.currency_code)}</p></div>
-                </li>)}</ol>}
-            </div>
-          </details>)}
-        </div>}
     </section>
-    <ReviewsSection itinerary={itinerary} onChanged={() => setRevision(value => value + 1)} />
-    <div><Button asChild variant="outline">{itinerary.is_owner === false ? <Link to="/">Voltar para a Home</Link> : <Link to="/roteiros">Voltar para seus roteiros</Link>}</Button></div>
-  </section>;
+  );
 }

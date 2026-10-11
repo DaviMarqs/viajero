@@ -5,16 +5,24 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/contexts/authContext";
 import type { AuthUser } from "@/lib/auth";
-import { Button } from '@/components/ui/button';
-import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+import { Button } from "@/components/ui/button";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 
 import { TravelerDNASection } from "./traveler-dna-section";
+import { CurrencySection } from "./currency-section";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
 import {
   User,
   Mail,
   AtSign,
   Plane,
-  DollarSign,
   Camera,
   Check,
   X,
@@ -23,14 +31,6 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
-
-const CURRENCY_OPTIONS = [
-  { value: "BRL", label: "Real (BRL)" },
-  { value: "USD", label: "Dólar (USD)" },
-  { value: "EUR", label: "Euro (EUR)" },
-  { value: "GBP", label: "Libra (GBP)" },
-  { value: "ARS", label: "Peso Arg. (ARS)" },
-];
 
 interface FieldProps {
   label: string;
@@ -44,16 +44,24 @@ function Field({ label, value, icon, editing, inputNode }: FieldProps) {
   const id = useId();
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="flex items-center gap-2 text-sm font-medium text-muted-foreground ">
-        <span className="text-muted-foreground">{icon}
-        </span>
+      <label
+        htmlFor={id}
+        className="flex items-center gap-2 text-sm font-medium text-muted-foreground "
+      >
+        <span className="text-muted-foreground">{icon}</span>
         {label}
       </label>
       {editing ? (
-        isValidElement<{ id?: string; }>(inputNode) ? cloneElement(inputNode, { id }) : inputNode
+        isValidElement<{ id?: string }>(inputNode) ? (
+          cloneElement(inputNode, { id })
+        ) : (
+          inputNode
+        )
       ) : (
         <p className="text-sm text-foreground font-medium pl-0.5">
-          {value || <span className="text-muted-foreground font-normal">—</span>}
+          {value || (
+            <span className="text-muted-foreground font-normal">—</span>
+          )}
         </p>
       )}
     </div>
@@ -66,7 +74,8 @@ interface ProfilePageProps {
 }
 
 export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
-  const { user, loading, error, refetch, saveGuestProfile } = useUserProfile(token);
+  const { user, loading, error, refetch, saveGuestProfile } =
+    useUserProfile(token);
   const { isGuest, refreshUser, updateUser } = useAuth();
 
   const [editing, setEditing] = useState(false);
@@ -82,7 +91,6 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
     first_name: "",
     last_name: "",
     home_airport: "",
-    preferred_currency: "",
   });
 
   function startEditing() {
@@ -92,7 +100,6 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
       first_name: user.first_name ?? "",
       last_name: user.last_name ?? "",
       home_airport: user.home_airport ?? "",
-      preferred_currency: user.preferred_currency ?? "",
     });
     setSaveError(null);
     setSuccess(false);
@@ -119,7 +126,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
     }
 
     try {
-      const response = await apiRequest<{ data?: AuthUser; }>("/api/users/me/", {
+      const response = await apiRequest<{ data?: AuthUser }>("/api/users/me/", {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -156,15 +163,22 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
     try {
       const fd = new FormData();
       fd.append("avatar", file);
-      const response = await apiRequest<{ data?: AuthUser; }>("/api/users/me/avatar/", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd,
-      });
+      const response = await apiRequest<{ data?: AuthUser }>(
+        "/api/users/me/avatar/",
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
+        },
+      );
       if (response.data) updateUser(response.data);
       refetch();
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Não foi possível enviar o avatar. Tente novamente.");
+      setSaveError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível enviar o avatar. Tente novamente.",
+      );
     } finally {
       setAvatarUploading(false);
       e.target.value = "";
@@ -210,18 +224,41 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
     <section className="page-content">
       <Breadcrumbs current="Meu perfil" />
       <header className="page-header">
-        <div className="space-y-3"><h1 className="page-title">Meu perfil</h1><p className="text-muted-foreground">Suas informações e preferências de viagem.</p></div>
-        <Button variant="ghost"
-          onClick={onLogout}
-          disabled={isGuest}
-          className="text-muted-foreground hover:text-destructive"
-        >
-          <LogOut className="size-4" />
-          Sair
-        </Button>
+        <div className="space-y-3">
+          <h1 className="page-title">Meu perfil</h1>
+          <p className="text-muted-foreground">
+            Suas informações e preferências de viagem.
+          </p>
+        </div>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button
+              variant="ghost"
+              disabled={isGuest}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <LogOut className="size-4" />
+              Sair
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogTitle>Sair da conta?</DialogTitle>
+            <DialogDescription>
+              Seus roteiros salvos continuarão disponíveis quando você entrar
+              novamente.
+            </DialogDescription>
+            <div className="flex justify-end gap-2">
+              <DialogClose asChild>
+                <Button variant="outline">Cancelar</Button>
+              </DialogClose>
+              <Button onClick={onLogout}>Sair da conta</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </header>
 
       <div className="flex w-full max-w-4xl flex-col gap-6">
+        <CurrencySection />
         <div className="flex flex-wrap items-center gap-4 rounded-card border border-border bg-surface p-5 sm:flex-nowrap sm:p-6">
           <div className="relative shrink-0">
             <div className="flex size-16 items-center justify-center overflow-hidden rounded-full border border-border bg-secondary sm:size-20">
@@ -239,7 +276,9 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
                 </span>
               )}
             </div>
-            <Button variant="outline" size="icon"
+            <Button
+              variant="outline"
+              size="icon"
               onClick={() => fileRef.current?.click()}
               disabled={isGuest}
               className="absolute -bottom-2 -right-2 size-11 rounded-full bg-white"
@@ -262,7 +301,8 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
                 `${user.first_name} ${user.last_name}`.trim() ||
                 "—"}
             </p>
-            <p className="text-sm text-muted-foreground truncate">{user.email}
+            <p className="text-sm text-muted-foreground truncate">
+              {user.email}
             </p>
             {!user.is_profile_complete && (
               <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-full px-2.5 py-0.5 w-fit">
@@ -273,7 +313,8 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
           </div>
 
           {!editing && (
-            <Button variant="travel"
+            <Button
+              variant="travel"
               onClick={startEditing}
               className="ml-auto w-full sm:w-auto"
             >
@@ -372,46 +413,12 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
                   />
                 }
               />
-              <Field
-                label="Moeda preferida"
-                value={
-                  CURRENCY_OPTIONS.find(
-                    (c) => c.value === user.preferred_currency,
-                  )?.label ??
-                  user.preferred_currency ??
-                  ""
-                }
-                icon={<DollarSign className="size-3.5" />}
-                editing={editing}
-                inputNode={
-                  <select
-                    className={inputClass}
-                    value={form.preferred_currency}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        preferred_currency: e.target.value,
-                      }))
-                    }
-                  >
-                    <option value="">Selecionar…</option>
-                    {CURRENCY_OPTIONS.map((c) => (
-                      <option key={c.value} value={c.value}>
-                        {c.label}
-                      </option>
-                    ))}
-                  </select>
-                }
-              />
             </div>
           </div>
 
           {editing && (
             <div className="flex items-center gap-3 pt-2">
-              <Button
-                onClick={handleSave}
-                disabled={saving}
-              >
+              <Button onClick={handleSave} disabled={saving}>
                 {saving ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
@@ -419,7 +426,8 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
                 )}
                 {saving ? "Salvando…" : "Salvar alterações"}
               </Button>
-              <Button variant="outline"
+              <Button
+                variant="outline"
                 onClick={cancelEditing}
                 disabled={saving}
               >
@@ -446,7 +454,8 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
           {isGuest && (
             <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
               <AlertCircle className="size-4 shrink-0" />
-              Modo visitante ativo. As alterações ficam salvas apenas neste navegador.
+              Modo visitante ativo. As alterações ficam salvas apenas neste
+              navegador.
             </div>
           )}
         </div>

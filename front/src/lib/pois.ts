@@ -1,6 +1,7 @@
 import { apiRequest } from "./api";
 
 export interface Poi {
+  tags?: { id?: number | string; name: string; slug: string }[];
   id: number;
   destination: number;
   name: string;
@@ -31,13 +32,12 @@ export interface ApiResponse<T> {
 
 import type { ApiSuccessResponse } from "./api";
 
-export async function getPois(token: string): Promise<ApiSuccessResponse<PoisResponse>> {
-  return apiRequest<ApiSuccessResponse<PoisResponse>>(
-    `/api/pois/`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+export async function getPois(
+  token: string,
+): Promise<ApiSuccessResponse<PoisResponse>> {
+  return apiRequest<ApiSuccessResponse<PoisResponse>>(`/api/pois/`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 }

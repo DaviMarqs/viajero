@@ -32,6 +32,8 @@ export interface TravelerDNAUpsertInput {
 
 export interface TripPreferenceMetadata {
   flexible_dates?: boolean;
+  start_date?: string;
+  end_date?: string;
   notes?: string;
   climate?: string[];
   destination_types?: string[];

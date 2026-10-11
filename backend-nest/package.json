@@ -52,6 +52,7 @@
     "typescript": "^5.7.2"
   },
   "jest": {
+    "setupFiles": ["reflect-metadata"],
     "moduleFileExtensions": ["js", "json", "ts"],
     "rootDir": ".",
     "testRegex": ".*\\.spec\\.ts$",

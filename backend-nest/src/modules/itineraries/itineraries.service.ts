@@ -13,6 +13,7 @@ import { CreateSharedLinkDto } from './dto/create-shared-link.dto';
 import { AuditService } from '../audit/audit.service';
 import { AuditedServiceDecorator } from '../../common/decorators/audited-service.decorator';
 import { canViewItinerary, resolveItineraryDefaults } from './itinerary-rules';
+import { requireTripParameters } from './trip-generation-context';
 
 const RANKING_LIMIT = 10;
 
@@ -65,7 +66,11 @@ export class ItinerariesService {
   async create(userId: number, dto: CreateItineraryDto): Promise<Itinerary> {
     const destination = await this.destinations.findOne({ where: { id: dto.destination } });
     if (!destination) throw new NotFoundException('Destino nao encontrado.');
-    const preferences = await this.tripPreferences.findOne({ where: { user: { id: userId } } });
+    const parameters = dto.trip_preferences ? requireTripParameters(dto.trip_preferences) : null;
+    const preferences = parameters ?? await this.tripPreferences.findOne({ where: { user: { id: userId } } });
+    if (dto.start_date && dto.end_date && dto.end_date < dto.start_date) {
+      throw new BadRequestException('A data final não pode ser anterior à data inicial.');
+    }
     const defaults = resolveItineraryDefaults(dto, preferences, destination.name);
     const itinerary = await this.itineraries.save(
       this.itineraries.create({
@@ -80,7 +85,7 @@ export class ItinerariesService {
         currency_code: defaults.currency_code,
         generation_status: 'draft',
         generation_context: {},
-        metadata: {},
+        metadata: parameters ? { trip_preferences: { ...parameters }, trip_parameters_confirmed: true } : {},
       }),
     );
     await this.audit.log({ event_type: 'itinerary.created', actor_id: userId, content_type: 'Itinerary', object_id: String(itinerary.id) });
@@ -108,6 +113,7 @@ export class ItinerariesService {
 
   async markGenerating(id: number, userId: number): Promise<Itinerary> {
     const itinerary = await this.findForUser(id, userId);
+    requireTripParameters(itinerary.metadata?.trip_preferences);
     itinerary.generation_status = 'generating';
     return this.itineraries.save(itinerary);
   }
@@ -173,6 +179,13 @@ export class ItinerariesService {
 
   listSharedLinks(userId: number): Promise<SharedItineraryLink[]> {
     return this.sharedLinks.find({ where: { created_by: { id: userId } }, relations: { itinerary: true }, order: { created_at: 'DESC' } });
+  }
+
+  async removeFavorite(userId: number, id: number): Promise<void> {
+    const favorite = await this.favorites.findOne({ where: { id, user: { id: userId } }, relations: { itinerary: true } });
+    if (!favorite) throw new NotFoundException('Favorito nao encontrado.');
+    await this.favorites.delete({ id: favorite.id, user: { id: userId } });
+    await this.audit.log({ event_type: 'itinerary.unfavorited', actor_id: userId, content_type: 'Itinerary', object_id: String(favorite.itinerary.id), metadata: {} });
   }
 
   async createSharedLink(userId: number, dto: CreateSharedLinkDto): Promise<SharedItineraryLink> {

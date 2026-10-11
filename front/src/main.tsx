@@ -1,12 +1,15 @@
-import { createRoot } from 'react-dom/client'
-import "@fontsource-variable/geist"
-import "./index.css"
-import App from './App.tsx'
+import { createRoot } from "react-dom/client";
+import "@fontsource-variable/geist";
+import "./index.css";
+import App from "./App.tsx";
 
-import { AuthProvider } from '@/contexts/authContext'
+import { AuthProvider } from "@/contexts/authContext";
+import { CurrencyProvider } from "@/contexts/currencyContext";
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <AuthProvider>
-    <App />
-  </AuthProvider>
-)
+    <CurrencyProvider>
+      <App />
+    </CurrencyProvider>
+  </AuthProvider>,
+);

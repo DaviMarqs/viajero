@@ -9,7 +9,7 @@ export interface GeneratedItinerary {
   summary: string;
   currency_code: string;
   estimated_cost: string;
-  days: Array<{ title: string; summary: string; events: Array<{ title: string; description: string; estimated_cost: string; order_index: number; poi_id?: number }> }>;
+  days: Array<{ title: string; summary: string; events: Array<{ title: string; description: string; estimated_cost: string; order_index: number; poi_id?: number; start_time?: string; end_time?: string }> }>;
   metadata: Record<string, unknown>;
 }
 
@@ -45,6 +45,8 @@ export class MockItineraryGenerator extends BaseItineraryGenerator {
         estimated_cost: String(20 + eventIndex * 15),
         order_index: eventIndex,
         poi_id: Number(poi.id),
+        start_time: `${String(9 + eventIndex * 3).padStart(2, '0')}:00`,
+        end_time: `${String(9 + eventIndex * 3 + Math.floor(Math.min(Math.max(poi.estimated_visit_minutes || 90, 30), 150) / 60)).padStart(2, '0')}:${String(Math.min(Math.max(poi.estimated_visit_minutes || 90, 30), 150) % 60).padStart(2, '0')}`,
       }));
       const day = {
         title: `Day ${index + 1}: ${input.itinerary.destination.name}`,

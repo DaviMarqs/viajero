@@ -1,3 +1,4 @@
+import { localizedDestination } from "@/lib/destination-language";
 import type { Destination, Itinerary } from '@/types/travel';
 import { destinationCardData } from '@/features/destinations/destination-adapter';
 
@@ -6,7 +7,8 @@ export function itineraryPresentation(itinerary: Itinerary, destinations: Destin
   const nested = itinerary.destination && typeof itinerary.destination === 'object' ? itinerary.destination : null;
   const enriched = itinerary.destinationData && typeof itinerary.destinationData === 'object'
     ? itinerary.destinationData as Destination : null;
-  const destination = nested ?? enriched ?? destinations.find(item => String(item.id) === String(itinerary.destination));
+  const rawDestination = nested ?? enriched ?? destinations.find(item => String(item.id) === String(itinerary.destination));
+  const destination = rawDestination ? localizedDestination(rawDestination) : null;
   const image = [itinerary.image_url, itinerary.image, itinerary.cover_image, itinerary.hero_image_url]
     .find((value): value is string => typeof value === 'string' && value.length > 0);
   return {

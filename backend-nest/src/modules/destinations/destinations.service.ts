@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Destination, PointOfInterest } from './entities';
+import { matchesDestinationQuery, normalizeDestinationText, portugueseCountry, portuguesePlaceName } from './destination-language';
 import { CreateDestinationDto } from './dto/create-destination.dto';
 
 @Injectable()
@@ -29,24 +30,15 @@ export class DestinationsService {
   }
 
   async search(input: { q?: string; country?: string; city?: string }): Promise<Destination[]> {
-    const q = input.q?.trim();
-    const where = q
-      ? [
-          { name: ILike(`%${q}%`) },
-          { country: ILike(`%${q}%`) },
-          { city: ILike(`%${q}%`) },
-          { summary: ILike(`%${q}%`) },
-        ]
-      : {};
+    // Search original names and Portuguese aliases without accents; never create duplicate cities for a translated query.
     let results = await this.destinations.find({
-      where,
       relations: { cost_profile: true, pois: { tags: true } },
       order: { average_rating: 'DESC', name: 'ASC' },
-      take: 20,
     });
-    if (input.country) results = results.filter((item) => item.country.toLowerCase() === input.country?.toLowerCase());
-    if (input.city) results = results.filter((item) => item.city.toLowerCase() === input.city?.toLowerCase());
-    return results;
+    if (input.q?.trim()) results = results.filter(item => matchesDestinationQuery(item, input.q!));
+    if (input.country) results = results.filter(item => normalizeDestinationText(portugueseCountry(item.country)) === normalizeDestinationText(portugueseCountry(input.country!)));
+    if (input.city) results = results.filter(item => normalizeDestinationText(portuguesePlaceName(item.city)) === normalizeDestinationText(portuguesePlaceName(input.city!)));
+    return results.slice(0, 20);
   }
 
   create(dto: CreateDestinationDto, userId?: number): Promise<Destination> {

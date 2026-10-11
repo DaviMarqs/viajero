@@ -18,15 +18,27 @@ export function Feedback({ title, description, kind = "empty", onRetry, children
   </div>;
 }
 
-export function CardSkeletons({ label = 'Carregando destinos' }: { label?: string }) {
-  return <div role="status" aria-label={label} aria-busy="true" className="travel-grid">
-    {[0, 1].map(id => <div key={id} aria-hidden="true" className="overflow-hidden rounded-card border border-border motion-safe:animate-pulse">
-      <div className="travel-card-media bg-muted" />
-      <div className="space-y-4 p-6">
-        <div className="h-5 w-2/3 rounded bg-muted" />
-        <div className="h-4 rounded bg-muted" />
-        <div className="h-4 w-1/2 rounded bg-muted" />
+export function CardSkeletons({ label = "Carregando destinos", layout = "grid" }: { label?: string; layout?: "grid" | "collection" }) {
+  return <div role="status" aria-busy="true" className={layout === "collection" ? "collection-scroll" : "travel-grid"}>
+    <span className="sr-only">{label}</span>
+    {(layout === "collection" ? [0] : [0, 1, 2]).map(id => <div key={id} aria-hidden="true" className="travel-card skeleton-card">
+      <div className="travel-card-media skeleton-block" />
+      <div className="travel-card-body">
+        <div className="h-4 w-1/3 skeleton-block" />
+        <div className="h-14 w-3/4 skeleton-block" />
+        <div className="h-12 skeleton-block" />
+        <div className="h-5 w-2/3 skeleton-block" />
+        <div className="travel-card-footer"><div className="h-11 w-1/3 skeleton-block" /><div className="h-11 w-1/3 skeleton-block" /></div>
       </div>
     </div>)}
+  </div>;
+}
+
+export function PageSkeleton() {
+  return <div className="page-content" role="status" aria-busy="true">
+    <span className="sr-only">Carregando página…</span>
+    <div aria-hidden="true" className="h-8 w-1/3 skeleton-block" />
+    <div aria-hidden="true" className="h-52 skeleton-block" />
+    <CardSkeletons />
   </div>;
 }

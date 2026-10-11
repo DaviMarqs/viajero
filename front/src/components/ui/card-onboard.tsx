@@ -20,6 +20,7 @@ export default function CardOnboard({
   return (
     <button
       type="button"
+      data-onboard-card
       className={cn(
         "flex w-full items-center gap-4 rounded-card border px-5 py-4 text-left transition-colors",
         selected

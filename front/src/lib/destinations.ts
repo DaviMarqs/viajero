@@ -1,3 +1,4 @@
+import { localizedDestination } from "./destination-language";
 import { apiFetch, unwrapListResponse } from "./api";
 import type { Destination } from "../types/travel";
 
@@ -7,7 +8,7 @@ export type { Destination } from "../types/travel";
 
 export async function fetchDestinations(signal?: AbortSignal) {
   const payload = await apiFetch<DestinationsPayload>("/api/destinations/", { signal });
-  return unwrapListResponse(payload);
+  return unwrapListResponse(payload).map(localizedDestination);
 }
 
 export async function suggestDestination() {

@@ -1,5 +1,7 @@
 import { PartyPopper, AlertCircle, Loader2, ArrowLeft } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import type { Destination } from "@/types/travel";
+import { Input } from "@/components/ui/input";
 import { useEffect, useRef, useState } from "react";
 import OnboardingSidebar from "@/components/ui/onboarding-sidebar";
 import OnboardingStepFields from "@/components/ui/onboarding-step-fields";
@@ -49,6 +51,8 @@ function buildSnapshotFromPreferences(
         preferences.preferred_trip_length_days,
       ),
       travel_month: preferences.travel_month,
+      start_date: preferences.metadata?.start_date,
+      end_date: preferences.metadata?.end_date,
     },
     tagValues: {
       dietary_preferences: preferences.dietary_preferences ?? [],
@@ -56,7 +60,9 @@ function buildSnapshotFromPreferences(
       interests: preferences.interests ?? [],
     },
     cardSelections: {
-      companionship: getCardIndexes("companionship", [preferences.companionship]),
+      companionship: getCardIndexes("companionship", [
+        preferences.companionship,
+      ]),
       timing: getCardIndexes("timing", [
         String(Boolean(preferences.metadata?.flexible_dates)),
       ]),
@@ -69,6 +75,9 @@ function buildSnapshotFromPreferences(
 }
 
 export default function TravelPreferencesOnboarding() {
+  const location = useLocation();
+  const destination = (location.state as { destination?: Destination } | null)
+    ?.destination;
   const { token: contextToken } = useAuth();
   const navigate = useNavigate();
   const token =
@@ -102,21 +111,21 @@ export default function TravelPreferencesOnboarding() {
     hydratedRef.current = true;
   }, [preferences, setSnapshot]);
 
-  const canAdvance = hasSelection();
   const flexibleDatesValue = getCardValues("timing")[0] === "true";
+  const canAdvance = hasSelection() && (currentStep.key !== "timing" || flexibleDatesValue || (!!fieldValues.start_date && !!fieldValues.end_date && fieldValues.end_date >= fieldValues.start_date));
   const companionship = getCardValues("companionship")[0] ?? "";
 
   async function handleFinish() {
     const budgetMin = currencyStringToNumber(fieldValues.budget_min ?? "");
     const budgetMax = currencyStringToNumber(fieldValues.budget_max ?? "");
-    const tripLength = parseInt(
+    let tripLength = parseInt(
       fieldValues.preferred_trip_length_days ?? "0",
       10,
     );
     const hotelLevel = getCardValues("stay")[0] ?? "";
     const transportationStyle = getCardValues("transport")[0] ?? "";
 
-    if (!budgetMin || !budgetMax) {
+    if (!fieldValues.budget_min?.trim() || !Number.isFinite(budgetMin) || budgetMin < 0 || !budgetMax) {
       setSubmitError("Informe a faixa de Orçamento antes de continuar.");
       return;
     }
@@ -138,13 +147,23 @@ export default function TravelPreferencesOnboarding() {
       return;
     }
 
+    if (!flexibleDatesValue) {
+      if (!fieldValues.start_date || !fieldValues.end_date || fieldValues.end_date < fieldValues.start_date) {
+        setSubmitError("Informe as datas de ida e volta desta viagem."); return;
+      }
+      tripLength = Math.round((Date.parse(fieldValues.end_date) - Date.parse(fieldValues.start_date)) / 86400000) + 1;
+      if (tripLength < 1 || tripLength > 60) { setSubmitError("A viagem deve durar entre 1 e 60 dias."); return; }
+    }
+    if (!(tagValues.interests ?? []).length) { setSubmitError("Selecione ao menos um interesse desta viagem."); return; }
     const payload: TripPreferenceUpsertInput = {
       budget_min: budgetMin,
       budget_max: budgetMax,
       currency_code: fieldValues.currency_code,
       companionship,
       preferred_trip_length_days: tripLength,
-      travel_month: fieldValues.travel_month,
+      travel_month: !flexibleDatesValue
+        ? new Intl.DateTimeFormat("en", { month: "long", timeZone: "UTC" }).format(new Date(`${fieldValues.start_date}T00:00:00Z`))
+        : fieldValues.travel_month,
       hotel_level: hotelLevel,
       transportation_style: transportationStyle,
       dietary_preferences: tagValues.dietary_preferences ?? [],
@@ -152,6 +171,7 @@ export default function TravelPreferencesOnboarding() {
       interests: tagValues.interests ?? [],
       metadata: {
         flexible_dates: flexibleDatesValue,
+        ...(!flexibleDatesValue ? { start_date: fieldValues.start_date, end_date: fieldValues.end_date } : {}),
       },
     };
 
@@ -166,7 +186,7 @@ export default function TravelPreferencesOnboarding() {
           : "/roteiros/criacao",
         {
           replace: true,
-          state: preferencesId ? { preferencesId } : undefined,
+          state: { preferencesId, destination, tripPreferences: payload },
         },
       );
     } catch (error) {
@@ -183,7 +203,9 @@ export default function TravelPreferencesOnboarding() {
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Carregando preferências...</p>
+          <p className="text-sm text-muted-foreground">
+            Carregando preferências...
+          </p>
         </div>
       </div>
     );
@@ -194,8 +216,7 @@ export default function TravelPreferencesOnboarding() {
       <div className="flex min-h-screen items-center justify-center bg-background px-6">
         <div className="flex max-w-md flex-col items-center gap-3 rounded-3xl border border-red-100 bg-white px-6 py-8 text-center">
           <AlertCircle className="size-6 text-red-500" />
-          <p className="text-sm leading-6 text-muted-foreground">{error}
-          </p>
+          <p className="text-sm leading-6 text-muted-foreground">{error}</p>
         </div>
       </div>
     );
@@ -203,7 +224,7 @@ export default function TravelPreferencesOnboarding() {
 
   if (finished) {
     return (
-      <div className="min-h-screen bg-background lg:flex">
+      <div className="onboarding-shell">
         <OnboardingSidebar
           currentIndex={currentIndex}
           steps={TRAVEL_PREFERENCES_STEPS}
@@ -241,7 +262,7 @@ export default function TravelPreferencesOnboarding() {
   const hasCards = currentStep.fields.some((field) => field.type === "cards");
 
   return (
-    <div className="min-h-screen bg-background lg:flex">
+    <div className="onboarding-shell">
       <OnboardingSidebar
         currentIndex={currentIndex}
         steps={TRAVEL_PREFERENCES_STEPS}
@@ -280,6 +301,7 @@ export default function TravelPreferencesOnboarding() {
           </header>
 
           <div className="mt-8 flex flex-1 flex-col gap-5">
+            <p className="text-sm text-muted-foreground">Configuração desta viagem. Seu DNA de viajante permanece no perfil.</p>
             <OnboardingStepFields
               currentStep={currentStep}
               selectedCards={selectedCards}
@@ -289,13 +311,17 @@ export default function TravelPreferencesOnboarding() {
               onSetField={setField}
               onSetTags={setTags}
             />
+            {currentStep.key === "timing" && !flexibleDatesValue && <div className="grid gap-4 sm:grid-cols-2">
+              <label className="form-label">Data de ida<Input type="date" value={fieldValues.start_date ?? ""} onChange={event => setField("start_date", event.target.value)} /></label>
+              <label className="form-label">Data de volta<Input type="date" min={fieldValues.start_date || undefined} value={fieldValues.end_date ?? ""} onChange={event => setField("end_date", event.target.value)} /></label>
+              <p className="text-sm text-muted-foreground sm:col-span-2">Para datas fixas, a duração do roteiro será calculada pelo período escolhido.</p>
+            </div>}
           </div>
 
           {(submitError || saveError) && (
             <div className="mt-6 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               <AlertCircle className="mt-0.5 size-4 shrink-0" />
-              <span>{submitError || saveError}
-              </span>
+              <span>{submitError || saveError}</span>
             </div>
           )}
 
@@ -309,11 +335,11 @@ export default function TravelPreferencesOnboarding() {
               {saving
                 ? "Salvando..."
                 : isLast
-                  ? "Concluir preferências"
+                  ? "Revisar destino e gerar"
                   : "Próximo"}
             </button>
 
-            {!isLast && (
+            {!isLast && currentStep.key === "needs" && (
               <button
                 type="button"
                 className="text-sm font-medium text-muted-foreground transition hover:text-foreground"

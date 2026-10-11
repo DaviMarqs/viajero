@@ -1,4 +1,5 @@
 import { apiRequest, type ApiSuccessResponse } from "@/lib/api";
+import type { TripPreferenceUpsertInput } from "@/lib/profiles";
 import type { Destination, Itinerary } from "@/types/travel";
 
 type Progress = { message: string; itineraryId?: number | string; };
@@ -13,19 +14,16 @@ function waitForNextPoll(signal: AbortSignal) {
 }
 
 /** Facade for the existing create → dates → generate → poll flow. */
-export async function generateItinerary(destination: Destination, signal: AbortSignal, onProgress: (progress: Progress) => void) {
+export async function generateItinerary(destination: Destination, preferences: TripPreferenceUpsertInput, signal: AbortSignal, onProgress: (progress: Progress) => void) {
   onProgress({ message: "Criando a estrutura inicial do roteiro…" });
   const created = await apiRequest<ApiSuccessResponse<Itinerary>>("/api/itineraries/", {
-    method: "POST", body: JSON.stringify({ destination: destination.id, title: destination.name }), signal,
+    method: "POST", body: JSON.stringify({ destination: destination.id, title: destination.name, trip_preferences: preferences,
+      duration_days: preferences.preferred_trip_length_days, currency_code: preferences.currency_code,
+      start_date: preferences.metadata.start_date, end_date: preferences.metadata.end_date }), signal,
   });
   const itinerary = created.data;
   if (!itinerary?.id) throw new Error("Não foi possível identificar o roteiro criado. Confira seus roteiros antes de tentar novamente.");
   const report = (message: string) => onProgress({ message, itineraryId: itinerary.id });
-  report("Preparando as datas do roteiro…");
-  const start = new Date(); start.setDate(start.getDate() + 5);
-  const duration = Number(itinerary.duration_days ?? 5);
-  const end = new Date(start); end.setDate(start.getDate() + (Number.isFinite(duration) && duration > 0 ? duration : 5) - 1);
-  await apiRequest(`/api/itineraries/${itinerary.id}/`, { method: "PATCH", body: JSON.stringify({ start_date: start.toISOString().slice(0, 10), end_date: end.toISOString().slice(0, 10) }), signal });
   report("Solicitando a geração do roteiro…");
   await apiRequest(`/api/itineraries/${itinerary.id}/generate/`, { method: "POST", signal });
   for (let attempt = 0; attempt < 30; attempt += 1) {

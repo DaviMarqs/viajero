@@ -86,7 +86,7 @@ export default function Register() {
   };
 
   return (
-    <AuthLayout title="Seu próximo destino começa aqui." description="Crie a conta, configure seu perfil de viagem e deixe o Viajero usar esse contexto para recomendar experiências com mais precisão." storySide="right">
+    <AuthLayout title="Seu próximo destino começa aqui." description="Crie a conta, configure seu perfil de viagem e deixe o Viajero usar esse contexto para recomendar experiências com mais precisão." storySide="left">
 
       <div className="mx-auto w-full max-w-md">
         <div className="mb-10 space-y-3">
@@ -235,7 +235,7 @@ export default function Register() {
             )}
           </div>
 
-          <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-strong">
+          <label className="flex items-start gap-3 text-sm text-strong">
             <input
               id="termos"
               type="checkbox"

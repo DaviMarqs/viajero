@@ -162,7 +162,7 @@ export default function Onboarding() {
 
   if (finished) {
     return (
-      <div className="min-h-screen bg-background lg:flex">
+      <div className="onboarding-shell">
         <OnboardingSidebar currentIndex={currentIndex} />
         <main className="flex min-w-0 flex-1 px-6 py-8 sm:px-8 lg:p-10">
           <div className="flex flex-1 items-center justify-center rounded-card border border-border bg-white px-6 py-10">
@@ -203,7 +203,7 @@ export default function Onboarding() {
   const hasCards = currentStep.fields.some((field) => field.type === "cards");
 
   return (
-    <div className="min-h-screen bg-background lg:flex">
+    <div className="onboarding-shell">
       <OnboardingSidebar currentIndex={currentIndex} />
 
       <main className="flex min-w-0 flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:p-10">

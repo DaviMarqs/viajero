@@ -17,11 +17,11 @@ export default function OnboardingSidebar({
   description = "Suas preferências permitem que a IA recomende destinos e monte roteiros feitos para você.",
 }: OnboardingSidebarProps) {
   return (
-    <aside className="flex w-full shrink-0 flex-col gap-6 overflow-hidden border-b border-border bg-muted/60 p-5 text-foreground lg:w-60 lg:border-b-0 lg:border-r lg:p-6">
+    <aside className="onboarding-story flex min-w-0 flex-col gap-6 overflow-hidden">
       <div className="hidden flex-col gap-3 lg:flex">
-        <h1 className="text-xl font-semibold leading-tight">{title}
+        <h1 className="font-semibold leading-tight">{title}
         </h1>
-        <p className="text-sm leading-6 text-muted-foreground">{description}
+        <p className="text-sm leading-6 text-white">{description}
         </p>
       </div>
 
@@ -53,7 +53,7 @@ export default function OnboardingSidebar({
               <span
                 className={cn(
                   "hidden text-sm leading-none lg:inline",
-                  isActive ? "font-semibold text-primary" : "text-muted-foreground",
+                  isActive ? "font-semibold text-white" : "text-white/75",
                 )}
               >
                 {step.label}
