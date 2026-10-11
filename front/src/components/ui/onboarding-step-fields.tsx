@@ -111,6 +111,7 @@ export default function OnboardingStepFields({
         <InputCurrency
           key={field.key}
           label={field.label}
+          currency={fieldValues.currency_code || "BRL"}
           hint={field.hint}
           required={field.required}
           value={fieldValues[field.key] ?? ""}

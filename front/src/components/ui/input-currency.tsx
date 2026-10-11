@@ -8,13 +8,14 @@ interface InputCurrencyProps {
   required?: boolean;
   value: string;
   onChange: (value: string) => void;
+  currency?: string;
 }
 
-function formatBRL(raw: string): string {
+function formatBRL(raw: string, currency: string): string {
   const digits = raw.replace(/\D/g, "");
   if (!digits) return "";
   const number = parseInt(digits, 10) / 100;
-  return number.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return number.toLocaleString("pt-BR", { style: "currency", currency });
 }
 
 function parseBRL(formatted: string): string {
@@ -27,6 +28,7 @@ export default function InputCurrency({
   required,
   value,
   onChange,
+  currency = "BRL",
 }: InputCurrencyProps) {
   const id = useId();
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -49,8 +51,8 @@ export default function InputCurrency({
           type="text"
           inputMode="numeric"
           className="h-full w-full border-0 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-          placeholder="R$ 0,00"
-          value={value ? formatBRL(value) : ""}
+          placeholder={formatBRL("0", currency)}
+          value={value ? formatBRL(value, currency) : ""}
           onChange={handleChange}
         />
       </div>

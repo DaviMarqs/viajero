@@ -262,6 +262,8 @@ export function ItineraryEditor({ itinerary, original, draft, onDraftChange, onS
     try {
       previous = localStorage.getItem(key);
       const days = saveLocalProgram(original, draft.days ?? [], key);
+      const previousTimes = new Map((itinerary.days ?? []).flatMap(day => day.events).map(event => [String(event.id), event]));
+      const changedTimes = days.flatMap(day => day.events).filter(event => { const previous = previousTimes.get(String(event.id)); return previous && (previous.start_time?.slice(0, 5) !== event.start_time || previous.end_time?.slice(0, 5) !== event.end_time); }).length;
       localSaved = true;
       const response = await apiRequest<ApiSuccessResponse<Itinerary>>(
         `/api/itineraries/${itinerary.id}/`,
@@ -281,7 +283,7 @@ export function ItineraryEditor({ itinerary, original, draft, onDraftChange, onS
         );
       onSaved({ ...response.data, is_owner: true, days });
       onDraftChange(null);
-      setMessage("Alterações salvas. A programação foi salva neste navegador.");
+      setMessage(`Alterações salvas. ${changedTimes ? `${changedTimes} ${changedTimes === 1 ? "atividade teve o horário recalculado" : "atividades tiveram os horários recalculados"}. ` : ""}A programação foi salva neste navegador.`);
     } catch (err) {
       if (localSaved) {
         try {

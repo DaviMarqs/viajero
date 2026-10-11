@@ -12,6 +12,7 @@ import {
   rankDestinations,
   destinationAffinity,
   itineraryDestination,
+  destinationRecommendationReason,
 } from "@/lib/personalization";
 import { DestinationCard } from "@/features/destinations/destination-card";
 import ItineraryCard from "@/pages/roteiros/itinerary-card";
@@ -82,12 +83,13 @@ export function Dashboard() {
                   key={trip.id}
                   itinerary={trip}
                   destinations={destinations.destinations}
+                  recommendationReason={destinationRecommendationReason(itineraryDestination(trip, destinations.destinations) ?? { id: "unknown", name: "" }, dna.profile)}
                 />
               ))}
             </TravelCollection>
           ) : ranked.length ? (
             <TravelCollection label="Destinos para seu jeito de viajar" single>
-              {ranked.slice(0, 6).map((destination) => <DestinationCard key={destination.id} destination={destination} />)}
+              {ranked.slice(0, 6).map((destination) => <DestinationCard key={destination.id} destination={destination} recommendationReason={destinationRecommendationReason(destination, dna.profile)} />)}
             </TravelCollection>
           ) : (
             <Feedback
@@ -183,7 +185,7 @@ export function Dashboard() {
         ) : ranked.length ? (
           <TravelCollection label="Escolhas alinhadas ao seu perfil">
             {ranked.slice(0, 6).map((destination) => (
-              <DestinationCard key={destination.id} destination={destination} />
+              <DestinationCard key={destination.id} destination={destination} recommendationReason={destinationRecommendationReason(destination, dna.profile)} />
             ))}
           </TravelCollection>
         ) : (

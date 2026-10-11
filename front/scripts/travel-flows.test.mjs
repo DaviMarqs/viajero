@@ -2,6 +2,11 @@ import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { localizedDestination, matchesDestinationQuery } from "../src/lib/destination-language.ts";
 import { scheduleItineraryDays } from "../src/features/itineraries/itinerary-schedule.ts";
+import { tripDuration, parseTripDate, selectTripRange } from "../src/lib/trip-dates.ts";
+import { readPlanningDraft, savePlanningDraft, clearPlanningDraft, planningDraftKey } from "../src/lib/planning-draft.ts";
+import { filterDestinations } from "../src/lib/destination-filters.ts";
+import { destinationRecommendationReason } from "../src/lib/personalization.ts";
+import { dayInsights, draftChanges } from "../src/features/itineraries/itinerary-insights.ts";
 import { convertAmount } from "../src/lib/currency.ts";
 import {
   destinationCategories,
@@ -21,6 +26,44 @@ globalThis.localStorage = {
   removeItem: (key) => storage.delete(key),
 };
 beforeEach(() => storage.clear());
+test("calendar counts inclusive dates across month, leap year and daylight saving boundaries", () => {
+  assert.equal(tripDuration("2028-02-28", "2028-03-01"), 3);
+  assert.equal(tripDuration("2026-03-07", "2026-03-09"), 3);
+  assert.equal(tripDuration("2026-10-10", "2026-10-10"), 1);
+  assert.equal(tripDuration("2026-10-11", "2026-10-10"), null);
+  assert.equal(parseTripDate("2026-02-30"), null);
+  assert.deepEqual(selectTripRange("2026-10-20", "", "2026-10-10"), { start: "2026-10-10", end: "" });
+  assert.deepEqual(selectTripRange("2026-10-10", "", "2026-10-15"), { start: "2026-10-10", end: "2026-10-15" });
+});
+test("planning draft survives reload, isolates accounts and expires after 30 days", () => {
+  const value = { destination: { id: 3, name: "Rio" }, snapshot: { currentIndex: 2, fieldValues: { start_date: "2026-10-10" }, cardSelections: { timing: [1] }, tagValues: {} } };
+  assert.equal(savePlanningDraft(1, value), true);
+  assert.deepEqual(readPlanningDraft(1), value);
+  assert.equal(readPlanningDraft(2), null);
+  localStorage.setItem(planningDraftKey(1), JSON.stringify({ version: 1, updatedAt: Date.now() - 31 * 86400000, value }));
+  assert.equal(readPlanningDraft(1), null);
+  savePlanningDraft(1, value);
+  clearPlanningDraft(1);
+  assert.equal(readPlanningDraft(1), null);
+  localStorage.setItem(planningDraftKey(1), "invalid JSON");
+  assert.equal(readPlanningDraft(1), null);
+});
+test("combined filters match Portuguese names, country and every selected experience", () => {
+  const rio = { id: 1, name: "Rio", country: "Brasil", tags: ["Natureza", "Família"] };
+  const tokyo = localizedDestination({ id: 2, name: "Tokyo", country: "Japan", tags: ["Família", "Compras"] });
+  assert.deepEqual(filterDestinations([rio, tokyo], "Toquio", "Japão", ["Família", "Compras"]).map(item => item.id), [2]);
+  assert.equal(filterDestinations([rio, tokyo], "", "", ["Natureza", "Compras"]).length, 0);
+  assert.deepEqual(filterDestinations([rio, tokyo], "familia", "Brasil", []).map(item => item.id), [1]);
+});
+test("recommendation explanations require real categories and strong DNA interests", () => {
+  assert.equal(destinationRecommendationReason({ id: 1, name: "Rio", tags: ["Natureza"] }, { nature_interest: 9 }), "Combina com seu interesse em natureza.");
+  assert.equal(destinationRecommendationReason({ id: 1, name: "Rio", tags: ["Natureza"] }, { nature_interest: 2 }).includes("Combina"), false);
+  assert.equal(destinationRecommendationReason({ id: 1, name: "Rio" }, { nature_interest: 9 }).includes("insuficientes"), true);
+});
+test("day overview distinguishes unknown cost and duration from zero", () => {
+  const overview = dayInsights({ events: [{ id: 1, title: "A", estimated_cost: 0, start_time: "09:00", end_time: "10:00" }, { id: 2, title: "B", estimated_cost: null }] });
+  assert.deepEqual(overview, { activities: 2, visitMinutes: 60, missingDurations: 1, knownCost: 0, missingCosts: 1 });
+});
 const trip = {
   id: 1,
   title: "Viagem",
@@ -36,6 +79,14 @@ const trip = {
     },
   ],
 };
+test("draft change summary tracks removals and reordering, and undo restores the baseline", () => {
+  const reordered = { ...trip, days: [{ ...trip.days[0], events: [...trip.days[0].events].reverse() }] };
+  assert.equal(draftChanges(trip, reordered).reorderedDays, 1);
+  const removed = { ...trip, days: [{ ...trip.days[0], events: [trip.days[0].events[1]] }] };
+  assert.equal(draftChanges(trip, removed).removed, 1);
+  assert.equal(draftChanges(trip, structuredClone(trip)).changed, false);
+  assert.equal(trip.days[0].events.length, 2);
+});
 test("Portuguese destination search preserves English aliases and identity", () => {
   const destination = localizedDestination({ id: 55, name: "Tokyo", city: "Tokyo", country: "Japan" });
   assert.equal(destination.id, 55);

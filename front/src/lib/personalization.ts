@@ -63,6 +63,22 @@ export function rankDestinations(
   );
 }
 
+/** Reasons use only explicit categories and strong interests from the traveler's DNA. */
+export function destinationRecommendationReason(destination: Destination, profile: TravelerDNAProfile | null): string {
+  if (!profile) return "Explore o catálogo; complete seu DNA para personalizar.";
+  const tags = destinationCategories(destination).map(normalize);
+  if (!tags.length) return "Categorias insuficientes para explicar a afinidade com seu DNA.";
+  const interests: [string[], string, number][] = [
+    [["cultura", "historia"], "cultura", Number(profile.cultural_interest)],
+    [["gastronomia"], "gastronomia", Number(profile.food_focus)],
+    [["natureza", "praia"], "natureza", Number(profile.nature_interest)],
+    [["vida noturna"], "vida noturna", Number(profile.nightlife_interest)],
+    [["aventura"], "aventura", Number(profile.adventure_level)],
+  ];
+  const matches = interests.filter(([categories, , value]) => value >= 6 && categories.some(category => tags.includes(category))).sort((a, b) => b[2] - a[2]).slice(0, 2).map(([, label]) => label);
+  return matches.length ? `Combina com seu interesse em ${matches.join(" e ")}.` : "Uma descoberta além dos seus interesses principais.";
+}
+
 export function itineraryDestination(
   itinerary: Itinerary,
   destinations: Destination[],

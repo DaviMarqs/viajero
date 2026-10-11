@@ -5,7 +5,7 @@ export function Breadcrumbs({ current }: { current: string; }) {
   return <nav aria-label="Localização" className="text-sm text-muted-foreground">
     <ol className="flex flex-wrap items-center gap-3">
       <li>
-        <Link to="/" className="hover:text-primary">Home</Link>
+        <Link to="/" className="hover:text-primary">Início</Link>
       </li>
       <li aria-hidden="true">
         <ChevronRight className="size-4" />

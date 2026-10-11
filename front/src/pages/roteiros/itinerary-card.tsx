@@ -28,11 +28,13 @@ export default function ItineraryCard({
   destinations = [],
   favoriteId,
   onRemoved,
+  recommendationReason,
 }: {
   itinerary: Itinerary;
   destinations?: Destination[];
   favoriteId?: number | string;
   onRemoved?: () => void;
+  recommendationReason?: string;
 }) {
   const { money } = useMoney();
   const visual = itineraryPresentation(itinerary, destinations);
@@ -88,6 +90,7 @@ export default function ItineraryCard({
             </Link>
           </h3>
         </div>
+        {recommendationReason && <p className="recommendation-reason">{recommendationReason}</p>}
         <p className="line-clamp-2 text-sm leading-6 text-strong">
           {itinerary.summary ||
             "Os detalhes estarão disponíveis quando seu roteiro estiver pronto."}

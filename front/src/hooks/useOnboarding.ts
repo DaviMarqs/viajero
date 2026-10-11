@@ -123,7 +123,7 @@ export function useOnboarding(steps: OnboardingStep[] = []) {
             next.add(cardIndex);
           }
         } else if (next.has(cardIndex)) {
-          next.clear();
+          return current;
         } else {
           next.clear();
           next.add(cardIndex);

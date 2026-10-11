@@ -1,7 +1,9 @@
 import { PartyPopper, AlertCircle, Loader2, ArrowLeft } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import type { Destination } from "@/types/travel";
-import { Input } from "@/components/ui/input";
+import { TripCalendar } from "@/components/ui/trip-calendar";
+import { tripDuration } from "@/lib/trip-dates";
+import { readPlanningDraft, savePlanningDraft } from "@/lib/planning-draft";
 import { useEffect, useRef, useState } from "react";
 import OnboardingSidebar from "@/components/ui/onboarding-sidebar";
 import OnboardingStepFields from "@/components/ui/onboarding-step-fields";
@@ -76,20 +78,25 @@ function buildSnapshotFromPreferences(
 
 export default function TravelPreferencesOnboarding() {
   const location = useLocation();
-  const destination = (location.state as { destination?: Destination } | null)
-    ?.destination;
-  const { token: contextToken } = useAuth();
+  const { token: contextToken, user } = useAuth();
+  const [restored] = useState(() => readPlanningDraft(user?.id));
+  const passedState = location.state as { destination?: Destination; stepKey?: string } | null;
+  const destination = passedState?.destination ?? restored?.destination;
   const navigate = useNavigate();
   const token =
     contextToken || localStorage.getItem("viajero.access_token") || "";
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [draftNotice, setDraftNotice] = useState("");
+  const [draftReady, setDraftReady] = useState(false);
   const hydratedRef = useRef(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const {
     currentIndex,
     currentStep,
     isLast,
     finished,
     selectedCards,
+    cardSelections,
     fieldValues,
     tagValues,
     hasSelection,
@@ -106,14 +113,33 @@ export default function TravelPreferencesOnboarding() {
     useTripPreferences(token);
 
   useEffect(() => {
-    if (!preferences || hydratedRef.current) return;
-    setSnapshot(buildSnapshotFromPreferences(preferences));
+    if (loading || hydratedRef.current) return;
+    const sameDestination = String(restored?.destination?.id ?? "") === String(destination?.id ?? "");
+    const initial = sameDestination && restored?.snapshot ? restored.snapshot : preferences ? buildSnapshotFromPreferences(preferences) : {};
+    const index = TRAVEL_PREFERENCES_STEPS.findIndex(step => step.key === passedState?.stepKey);
+    setSnapshot({ ...initial, ...(index >= 0 ? { currentIndex: index } : {}) });
+    setDraftNotice(sameDestination && restored?.snapshot ? "Rascunho recuperado neste navegador." : preferences ? "Preenchemos com suas últimas preferências. Revise para esta viagem." : "");
     hydratedRef.current = true;
-  }, [preferences, setSnapshot]);
+    setDraftReady(true);
+  }, [preferences, loading, restored, destination?.id, passedState?.stepKey, setSnapshot]);
+
+  useEffect(() => {
+    if (!draftReady || saving) return;
+    const persist = () => { if (!savePlanningDraft(user?.id, { destination, tripPreferences: undefined, snapshot: { currentIndex, fieldValues, tagValues, cardSelections } })) setDraftNotice("Não foi possível guardar o rascunho neste navegador. Mantenha esta página aberta para continuar."); };
+    const timer = window.setTimeout(persist, 200);
+    window.addEventListener("pagehide", persist);
+    return () => { window.clearTimeout(timer); window.removeEventListener("pagehide", persist); };
+  }, [draftReady, saving, user?.id, destination, currentIndex, fieldValues, tagValues, cardSelections]);
 
   const flexibleDatesValue = getCardValues("timing")[0] === "true";
-  const canAdvance = hasSelection() && (currentStep.key !== "timing" || flexibleDatesValue || (!!fieldValues.start_date && !!fieldValues.end_date && fieldValues.end_date >= fieldValues.start_date));
+  const fixedDuration = tripDuration(fieldValues.start_date, fieldValues.end_date);
+  const validBudget = !!fieldValues.budget_min?.trim() && !!fieldValues.budget_max?.trim() && currencyStringToNumber(fieldValues.budget_min) <= currencyStringToNumber(fieldValues.budget_max) && currencyStringToNumber(fieldValues.budget_max) > 0;
+  const canAdvance = currentStep.key === "budget" ? hasSelection() && validBudget : currentStep.key === "timing" && !flexibleDatesValue
+    ? getCardValues("timing").length > 0 && fixedDuration != null && fixedDuration <= 60
+    : hasSelection();
+  const visibleStep = currentStep.key === "timing" && !flexibleDatesValue ? { ...currentStep, fields: currentStep.fields.filter(field => field.type === "cards") } : currentStep;
   const companionship = getCardValues("companionship")[0] ?? "";
+  useEffect(() => { headingRef.current?.focus(); }, [currentIndex]);
 
   async function handleFinish() {
     const budgetMin = currencyStringToNumber(fieldValues.budget_min ?? "");
@@ -136,10 +162,10 @@ export default function TravelPreferencesOnboarding() {
     }
 
     if (
-      !tripLength ||
+      (flexibleDatesValue && (!tripLength || tripLength > 60)) ||
       !fieldValues.currency_code ||
       !companionship ||
-      !fieldValues.travel_month ||
+      (flexibleDatesValue && !fieldValues.travel_month) ||
       !hotelLevel ||
       !transportationStyle
     ) {
@@ -163,7 +189,7 @@ export default function TravelPreferencesOnboarding() {
       preferred_trip_length_days: tripLength,
       travel_month: !flexibleDatesValue
         ? new Intl.DateTimeFormat("en", { month: "long", timeZone: "UTC" }).format(new Date(`${fieldValues.start_date}T00:00:00Z`))
-        : fieldValues.travel_month,
+        : fieldValues.travel_month ?? "",
       hotel_level: hotelLevel,
       transportation_style: transportationStyle,
       dietary_preferences: tagValues.dietary_preferences ?? [],
@@ -179,6 +205,7 @@ export default function TravelPreferencesOnboarding() {
     try {
       const savedPreferences = await save(payload);
       const preferencesId = savedPreferences?.id;
+      savePlanningDraft(user?.id, { destination, tripPreferences: payload, snapshot: { currentIndex, fieldValues, tagValues, cardSelections } });
 
       navigate(
         preferencesId
@@ -217,6 +244,7 @@ export default function TravelPreferencesOnboarding() {
         <div className="flex max-w-md flex-col items-center gap-3 rounded-3xl border border-red-100 bg-white px-6 py-8 text-center">
           <AlertCircle className="size-6 text-red-500" />
           <p className="text-sm leading-6 text-muted-foreground">{error}</p>
+          <button type="button" className="min-h-11 text-sm font-medium text-primary underline" onClick={() => navigate(0)}>Tentar novamente</button>
         </div>
       </div>
     );
@@ -286,7 +314,8 @@ export default function TravelPreferencesOnboarding() {
               </button>
             )}
 
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground">
+            <p className="text-sm text-muted-foreground">Etapa {currentIndex + 1} de {TRAVEL_PREFERENCES_STEPS.length}</p>
+            <h2 ref={headingRef} tabIndex={-1} className="text-3xl font-semibold tracking-tight text-foreground">
               {currentStep.title}
             </h2>
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
@@ -302,8 +331,10 @@ export default function TravelPreferencesOnboarding() {
 
           <div className="mt-8 flex flex-1 flex-col gap-5">
             <p className="text-sm text-muted-foreground">Configuração desta viagem. Seu DNA de viajante permanece no perfil.</p>
+            {draftNotice && <p role="status" className="text-sm text-strong">{draftNotice}</p>}
+            {currentStep.key === "budget" && fieldValues.budget_min && fieldValues.budget_max && !validBudget && <p role="alert" className="text-sm text-destructive">O máximo deve ser maior que zero e igual ou superior ao mínimo.</p>}
             <OnboardingStepFields
-              currentStep={currentStep}
+              currentStep={visibleStep}
               selectedCards={selectedCards}
               fieldValues={fieldValues}
               tagValues={tagValues}
@@ -311,15 +342,11 @@ export default function TravelPreferencesOnboarding() {
               onSetField={setField}
               onSetTags={setTags}
             />
-            {currentStep.key === "timing" && !flexibleDatesValue && <div className="grid gap-4 sm:grid-cols-2">
-              <label className="form-label">Data de ida<Input type="date" value={fieldValues.start_date ?? ""} onChange={event => setField("start_date", event.target.value)} /></label>
-              <label className="form-label">Data de volta<Input type="date" min={fieldValues.start_date || undefined} value={fieldValues.end_date ?? ""} onChange={event => setField("end_date", event.target.value)} /></label>
-              <p className="text-sm text-muted-foreground sm:col-span-2">Para datas fixas, a duração do roteiro será calculada pelo período escolhido.</p>
-            </div>}
+            {currentStep.key === "timing" && !flexibleDatesValue && <TripCalendar start={fieldValues.start_date ?? ""} end={fieldValues.end_date ?? ""} onChange={(start, end) => { setField("start_date", start); setField("end_date", end); }} />}
           </div>
 
           {(submitError || saveError) && (
-            <div className="mt-6 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div role="alert" className="mt-6 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               <AlertCircle className="mt-0.5 size-4 shrink-0" />
               <span>{submitError || saveError}</span>
             </div>
@@ -335,7 +362,7 @@ export default function TravelPreferencesOnboarding() {
               {saving
                 ? "Salvando..."
                 : isLast
-                  ? "Revisar destino e gerar"
+                  ? "Revisar minha viagem"
                   : "Próximo"}
             </button>
 

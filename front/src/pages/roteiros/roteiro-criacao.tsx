@@ -13,6 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { TripPreferenceUpsertInput } from "@/lib/profiles";
 import type { Destination } from "@/types/travel";
+import { useAuth } from "@/contexts/authContext";
+import { TripReview } from "@/features/itineraries/trip-review";
+import { clearPlanningDraft, readPlanningDraft, savePlanningDraft } from "@/lib/planning-draft";
 
 function readDestinations(value: unknown): Destination[] {
   if (Array.isArray(value)) return value.flatMap(readDestinations);
@@ -27,32 +30,44 @@ function readDestinations(value: unknown): Destination[] {
 export default function RoteiroCriacaoPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const passed = location.state as {
     destination?: Destination;
     preferencesId?: number;
     tripPreferences?: TripPreferenceUpsertInput;
   } | null;
-  const wantsSuggestion =
-    new URLSearchParams(location.search).get("auto") === "destino";
+  const wantsSuggestion = new URLSearchParams(location.search).get("auto") === "destino";
+  const [restored] = useState(() => readPlanningDraft(user?.id));
+  const initialDestination = passed?.destination ?? (wantsSuggestion ? undefined : restored?.destination);
+  const [tripPreferences, setTripPreferences] = useState(passed?.tripPreferences ?? (!wantsSuggestion && String(initialDestination?.id) === String(restored?.destination?.id) ? restored?.tripPreferences : undefined));
+  const [reviewing, setReviewing] = useState(!!initialDestination && !!tripPreferences);
   const [mode, setMode] = useState<"suggest" | "search" | null>(
-    passed?.destination ? "search" : wantsSuggestion ? "suggest" : null,
+    wantsSuggestion ? "suggest" : initialDestination ? "search" : null,
   );
-  const [query, setQuery] = useState(passed?.destination?.name ?? "");
+  const [query, setQuery] = useState(initialDestination?.name ?? "");
   const [results, setResults] = useState<Destination[] | null>(
-    passed?.destination ? [passed.destination] : null,
+    initialDestination ? [initialDestination] : null,
   );
   const [selected, setSelected] = useState<Destination | null>(
-    passed?.destination ?? null,
+    initialDestination ?? null,
   );
   const [busy, setBusy] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState("");
+  const [draftError, setDraftError] = useState("");
   const [createdId, setCreatedId] = useState<number | string | undefined>();
   const controller = useRef<AbortController | null>(null);
   const locked = useRef(false);
   const destinations = useDestinations();
   useEffect(() => () => controller.current?.abort(), []);
+  useEffect(() => {
+    if (!selected || createdId) return;
+    const persist = () => { if (!savePlanningDraft(user?.id, { destination: selected, tripPreferences })) setDraftError("Não foi possível guardar o rascunho neste navegador."); };
+    const timer = window.setTimeout(persist, 200);
+    window.addEventListener("pagehide", persist);
+    return () => { window.clearTimeout(timer); window.removeEventListener("pagehide", persist); };
+  }, [selected, tripPreferences, createdId, user?.id]);
   async function search(event?: FormEvent, requestedMode = mode) {
     event?.preventDefault();
     if (locked.current) return;
@@ -64,6 +79,7 @@ export default function RoteiroCriacaoPage() {
     setBusy(true);
     setError(null);
     setSelected(null);
+    setReviewing(false);
     controller.current?.abort();
     const request = new AbortController();
     controller.current = request;
@@ -96,10 +112,11 @@ export default function RoteiroCriacaoPage() {
   }
   async function generate() {
     if (!selected || locked.current || createdId) return;
-    if (!passed?.tripPreferences) {
+    if (!tripPreferences) {
       navigate("/onboard/preferências", { state: { destination: selected } });
       return;
     }
+    if (!reviewing) { setReviewing(true); return; }
     locked.current = true;
     setGenerating(true);
     setError(null);
@@ -108,11 +125,11 @@ export default function RoteiroCriacaoPage() {
     try {
       const itinerary = await generateItinerary(
         selected,
-        passed.tripPreferences,
+        tripPreferences,
         request.signal,
         (next) => {
           setProgress(next.message);
-          if (next.itineraryId) setCreatedId(next.itineraryId);
+          if (next.itineraryId) { setCreatedId(next.itineraryId); clearPlanningDraft(user?.id); }
         },
       );
       navigate("/roteiros/" + itinerary.id);
@@ -135,7 +152,7 @@ export default function RoteiroCriacaoPage() {
       <section className="reference-panel creation-panel space-y-8">
         <header className="mx-auto max-w-2xl space-y-4 py-4 text-center">
           <h1 className="page-title">
-            {!mode
+            {reviewing && !generating ? "Confira antes de partir" : !mode
               ? "Como você quer começar a próxima viagem?"
               : mode === "search"
                 ? "Para onde você vai?"
@@ -147,6 +164,8 @@ export default function RoteiroCriacaoPage() {
               : "Selecione um destino e confirme para montar seu roteiro."}
           </p>
         </header>
+        {restored?.destination && !passed?.destination && !createdId && selected && !wantsSuggestion && <div className="flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm text-strong">Seu planejamento foi retomado neste navegador.</p><Button variant="ghost" size="sm" onClick={() => { clearPlanningDraft(user?.id); setTripPreferences(undefined); setReviewing(false); setSelected(null); setResults(null); setMode(null); setQuery(""); }}>Descartar rascunho</Button></div>}
+        {draftError && <p role="status" className="text-sm text-destructive">{draftError}</p>}
         {!mode ? (
           <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
             {[
@@ -207,7 +226,7 @@ export default function RoteiroCriacaoPage() {
                 ← Alterar forma de começar
               </Button>
             )}
-            {!createdId && !generating && (
+            {!createdId && !generating && !reviewing && (
               <form onSubmit={search} className="space-y-3">
                 <label
                   htmlFor="destination-search"
@@ -268,7 +287,7 @@ export default function RoteiroCriacaoPage() {
                 description={progress}
               />
             )}
-            {!generating && !createdId && !busy && (
+            {!generating && !createdId && !busy && !reviewing && (
               <div className="space-y-4">
                 {results === null && (
                   <h2 className="section-title">Destinos disponíveis</h2>
@@ -330,6 +349,7 @@ export default function RoteiroCriacaoPage() {
                 )}
               </div>
             )}
+            {reviewing && selected && tripPreferences && !createdId && !generating && <TripReview destination={selected} preferences={tripPreferences} onChangeDestination={() => { setReviewing(false); setMode("search"); }} onEdit={stepKey => navigate("/onboard/preferências", { state: { destination: selected, stepKey } })} />}
             {selected && !createdId && !generating && !busy && (
               <div className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-border bg-background p-4">
                 <div>
@@ -341,7 +361,7 @@ export default function RoteiroCriacaoPage() {
                   </p>
                 </div>
                 <Button onClick={generate}>
-                  {passed?.tripPreferences ? "Gerar roteiro para este destino" : "Configurar esta viagem"}
+                  {tripPreferences ? reviewing ? "Confirmar e gerar roteiro" : "Revisar minha viagem" : "Configurar esta viagem"}
                 </Button>
               </div>
             )}

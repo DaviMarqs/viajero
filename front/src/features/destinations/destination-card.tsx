@@ -36,7 +36,7 @@ export function DestinationImage({
   );
 }
 
-export function DestinationCard({ destination }: { destination: Destination }) {
+export function DestinationCard({ destination, recommendationReason }: { destination: Destination; recommendationReason?: string }) {
   const { money } = useMoney();
   const card = destinationCardData(destination);
   const href = `/destinos/${card.id}`;
@@ -87,6 +87,7 @@ export function DestinationCard({ destination }: { destination: Destination }) {
             ))}
           </div>
         )}
+        {recommendationReason && <p className="recommendation-reason">{recommendationReason}</p>}
         <p className="line-clamp-2 text-sm leading-6 text-strong">
           {card.summary ||
             "Conheça as informações disponíveis sobre este destino."}

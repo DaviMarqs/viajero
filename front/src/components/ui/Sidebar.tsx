@@ -25,11 +25,11 @@ import {
 import { cn } from "@/lib/utils";
 
 const links = [
-  { to: "/", label: "Home", icon: Home },
+  { to: "/", label: "Início", icon: Home },
   { to: "/roteiros", label: "Roteiros", icon: Map },
   { to: "/destinos", label: "Destinos", icon: MapPin },
-  { to: "/explorar", label: "Explorar", icon: Compass },
-  { to: "/recomendações", label: "Recomendações", icon: TrendingUp },
+  { to: "/explorar", label: "Experiências", icon: Compass },
+  { to: "/recomendações", label: "Para você", icon: TrendingUp },
   { to: "/favoritos", label: "Favoritos", icon: Heart },
   { to: "/perfil", label: "Perfil", icon: User },
 ];
@@ -45,6 +45,7 @@ export default function Sidebar() {
               <NavLink
                 to={to}
                 end={to === "/"}
+                title={to === "/destinos" ? "Pesquisar cidades e países" : to === "/explorar" ? "Descobrir destinos por tipo de experiência" : to === "/recomendações" ? "Recomendações baseadas no seu DNA" : label}
                 onClick={() => setMobileOpen(false)}
                 className={({ isActive }) =>
                   cn(

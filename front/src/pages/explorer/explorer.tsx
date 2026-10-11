@@ -78,7 +78,7 @@ export default function Explorer({
         .slice(0, 2)
     : [];
   return <section className="page-content">
-    <Breadcrumbs current={recommendations ? "Recomendações" : "Explorar"} />
+    <Breadcrumbs current={recommendations ? "Para você" : "Experiências"} />
     <section className="reference-panel space-y-6" aria-labelledby="dna-choices-title">
       <div className="page-header"><div className="space-y-2"><h1 id="dna-choices-title" className="page-title">Escolhas alinhadas ao seu perfil</h1><p className="text-sm text-muted-foreground">Destinos selecionados pelos interesses do seu DNA de viajante.</p></div><Button asChild variant="travel"><Link to="/roteiros/criacao?auto=destino"><Sparkles aria-hidden="true" />Sugerir destino</Link></Button></div>
       {loading || dna.loading ? <CardSkeletons /> : error || dna.error ? <Feedback kind="error" title="Destinos indisponíveis" description={error || dna.error || ""} onRetry={() => { refetch(); dna.refetch(); }} /> : visible.length ? <TravelCollection label="Destinos alinhados ao seu perfil">{(aligned.length ? aligned : rankDestinations(visible, dna.profile)).map(destination => <DestinationCard key={destination.id} destination={destination} />)}</TravelCollection> : <Feedback title="Nenhum destino encontrado" description="Tente outra busca ou remova os filtros." />}

@@ -8,6 +8,7 @@ import { useTravelerDNAProfile } from "@/hooks/useTravelerDNAProfile";
 import {
   itineraryDestination,
   destinationAffinity,
+  destinationRecommendationReason,
 } from "@/lib/personalization";
 import ItineraryCard from "@/pages/roteiros/itinerary-card";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
@@ -80,11 +81,12 @@ export default function Recommendations() {
               key={trip.id}
               itinerary={trip}
               destinations={destinations.destinations}
+              recommendationReason={destinationRecommendationReason(itineraryDestination(trip, destinations.destinations) ?? { id: "unknown", name: "" }, dna.profile)}
             />
           ))}
         </div>
       ) : destinations.destinations.length ? (
-        <div className="travel-grid">{rankDestinations(destinations.destinations, dna.profile).slice(0, 6).map((destination) => <DestinationCard key={destination.id} destination={destination} />)}</div>
+        <div className="travel-grid">{rankDestinations(destinations.destinations, dna.profile).slice(0, 6).map((destination) => <DestinationCard key={destination.id} destination={destination} recommendationReason={destinationRecommendationReason(destination, dna.profile)} />)}</div>
       ) : (
         <Feedback
           title="Seu próximo roteiro começa com uma descoberta"
