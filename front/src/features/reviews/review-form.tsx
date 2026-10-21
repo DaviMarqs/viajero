@@ -58,9 +58,9 @@ export function ReviewForm({ initial, isOwner, saving, serverError, onSubmit, on
       {errors.body && <p id="review-body-error" role="alert" className="text-sm text-destructive">{errors.body.message}</p>}
     </div>
     {isOwner && !editing && <p className="text-xs leading-5 text-muted-foreground">Ao avaliar, este roteiro passa a aparecer anonimamente no ranking de mais bem avaliados.</p>}
-    {serverError && <p role="alert" className="rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-destructive">{serverError}</p>}
+    {serverError && <p role="alert" className="rounded-control border border-line bg-canvas px-4 py-3 text-sm text-destructive">{serverError}</p>}
     <div className="flex flex-wrap gap-3">
-      <Button type="submit" disabled={saving}>{saving ? "Salvando…" : editing ? "Salvar alterações" : "Publicar avaliação"}</Button>
+      <Button type="submit" loading={saving}>{editing ? "Salvar alterações" : "Publicar avaliação"}</Button>
       {onCancel && <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>Cancelar</Button>}
     </div>
   </form>;

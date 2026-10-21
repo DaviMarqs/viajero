@@ -81,25 +81,26 @@ export default function Explorer({
     <Breadcrumbs current={recommendations ? "Para você" : "Experiências"} />
     <section className="reference-panel space-y-6" aria-labelledby="dna-choices-title">
       <div className="page-header"><div className="space-y-2"><h1 id="dna-choices-title" className="page-title">Escolhas alinhadas ao seu perfil</h1><p className="text-sm text-muted-foreground">Destinos selecionados pelos interesses do seu DNA de viajante.</p></div><Button asChild variant="travel"><Link to="/roteiros/criacao?auto=destino"><Sparkles aria-hidden="true" />Sugerir destino</Link></Button></div>
-      {loading || dna.loading ? <CardSkeletons /> : error || dna.error ? <Feedback kind="error" title="Destinos indisponíveis" description={error || dna.error || ""} onRetry={() => { refetch(); dna.refetch(); }} /> : visible.length ? <TravelCollection label="Destinos alinhados ao seu perfil">{(aligned.length ? aligned : rankDestinations(visible, dna.profile)).map(destination => <DestinationCard key={destination.id} destination={destination} />)}</TravelCollection> : <Feedback title="Nenhum destino encontrado" description="Tente outra busca ou remova os filtros." />}
+      {!dna.loading && !dna.profile && <p className="text-sm text-muted-foreground">Seu DNA ainda não foi informado. Os destinos abaixo permitem explorar o catálogo disponível.</p>}
+      {loading || dna.loading ? <CardSkeletons /> : error || dna.error ? <Feedback kind="error" title="Destinos indisponíveis" description={error || dna.error || ""} onRetry={() => { refetch(); dna.refetch(); }} /> : !query && !category && sort === "default" ? visible.length ? <TravelCollection label="Destinos alinhados ao seu perfil">{(aligned.length ? aligned : rankDestinations(visible, dna.profile)).map(destination => <DestinationCard key={destination.id} destination={destination} compact />)}</TravelCollection> : <Feedback title="Nenhum destino encontrado" description="Tente outra busca ou remova os filtros." /> : null}
     </section>
     <section className="reference-panel space-y-6">
       <div className="page-header"><div className="space-y-2"><h2 className="section-title">Explorar por categorias</h2><p className="text-sm text-muted-foreground">Encontre o destino perfeito para seu gosto.</p></div><Button variant="travel" onClick={() => update("categoria", "")}>Ver todas</Button></div>
-      <div className="category-grid">{categories.map(tag => {
+      <div className="category-collection"><TravelCollection label="Categorias">{categories.map(tag => {
         const destination = destinations.find(item => destinationCategories(item).includes(tag));
         const photoPoi = destination?.pois?.find(poi => poi.tags?.some(item => travelTagLabel(item.name) === tag) && typeof poi.metadata?.image_url === "string");
         const photo = typeof photoPoi?.metadata?.image_url === "string" ? photoPoi.metadata.image_url : destination ? destinationCardData(destination).image : undefined;
         return <button type="button" className="category-tile" key={tag} aria-pressed={category === tag} onClick={() => update("categoria", category === tag ? "" : tag)}><DestinationImage src={photo} name={tag} className="category-photo" /><span>{tag}</span></button>;
-      })}</div>
-      <div className="grid items-end gap-4 sm:grid-cols-[1fr_auto]">
+      })}</TravelCollection></div>
+      <div className="grid items-end gap-4 explore-filters">
         <label className="form-label" htmlFor="explore-search">Buscar destinos<div className="relative"><Search aria-hidden="true" className="absolute left-3 top-3 size-5 text-muted-foreground" /><Input id="explore-search" type="search" placeholder="Cidade ou país" value={query} onChange={event => update("q", event.target.value)} className="pl-10" /></div></label>
         <label className="form-label" htmlFor="explore-sort">Ordenar por<select id="explore-sort" className="h-11 rounded-control border border-input bg-surface px-3" value={sort} onChange={event => update("ordem", event.target.value)}><option value="default">Seu perfil</option><option value="budget">Menor orçamento</option><option value="duration">Menor duração</option><option value="rating">Melhor avaliação</option></select></label>
       </div>
       {(query || category || sort !== "default") && <><p role="status" className="text-sm text-muted-foreground">{visible.length} destinos encontrados{category ? ` em ${category}` : ""}</p><div className="travel-grid">{visible.map(destination => <DestinationCard key={destination.id} destination={destination} />)}</div><Button variant="outline" onClick={() => setParams({})}>Limpar filtros</Button></>}
     </section>
-    <section className="reference-panel space-y-6">
+    {(topTrips.loading || topTrips.error || topTrips.itineraries.length > 0) && <section className="reference-panel space-y-6">
       <div className="page-header"><div className="space-y-2"><h2 className="section-title">{topTrips.itineraries.length ? "Roteiros com melhor avaliação" : "Destinos com melhor avaliação"}</h2><p className="text-sm text-muted-foreground">Explore as escolhas mais bem avaliadas.</p></div><Button asChild variant="travel"><Link to="/recomendações">Ver todos</Link></Button></div>
       {topTrips.loading || loading ? <CardSkeletons /> : topTrips.error ? <Feedback kind="error" title="Avaliações indisponíveis" description={topTrips.error} onRetry={topTrips.refetch} /> : topTrips.itineraries.length ? <TravelCollection label="Roteiros mais bem avaliados">{topTrips.itineraries.map(trip => <ItineraryCard key={trip.id} itinerary={trip} destinations={destinations} />)}</TravelCollection> : <TravelCollection label="Destinos mais bem avaliados">{[...destinations].sort((a,b) => Number(b.average_rating ?? 0) - Number(a.average_rating ?? 0)).map(destination => <DestinationCard key={destination.id} destination={destination} />)}</TravelCollection>}
-    </section>
+    </section>}
   </section>;
 }

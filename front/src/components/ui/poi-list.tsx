@@ -4,6 +4,7 @@ import PoiFilter from "./poi-filter";
 
 import type { Poi } from "@/lib/pois";
 import { DestinationImage } from "@/features/destinations/destination-card";
+import { TagList } from "./tag-list";
 
 type PoiType = "all" | "attraction" | "restaurant" | "activity" | "lodging";
 
@@ -29,21 +30,21 @@ interface PoiListProps {
 
 function PoiCard({ poi }: { poi: Poi }) {
   return (
-    <div className="flex flex-col gap-3 bg-background border border-border rounded-2xl px-4 py-4 hover:bg-background transition-colors">
+    <article className="poi-row">
       {typeof poi.metadata?.image_url === "string" && (
         <DestinationImage
           src={poi.metadata.image_url}
           name={poi.name}
-          className="h-40 rounded-control"
+          className="poi-thumbnail"
         />
       )}
-      <div className="flex items-start justify-between gap-2">
+      <div className="poi-body"><div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-0.5">
-          <h3 className="text-lg font-semibold text-foreground leading-snug">
+          <h3 className="text-lg font-medium text-foreground leading-snug">
             {poi.name}
           </h3>
 
-          <span className="text-xs mt-1 text-primary font-medium">
+          <span className="text-xs mt-1 text-muted-foreground">
             {poiTypeLabel[poi.poi_type] ?? poi.poi_type}
           </span>
         </div>
@@ -56,7 +57,7 @@ function PoiCard({ poi }: { poi: Poi }) {
             rel="noopener noreferrer"
             className="flex items-center text-sm gap-2 shrink-0 text-muted-foreground hover:text-strong transition-colors"
           >
-            Acessar site
+            <span className="sr-only">Acessar site</span>
             <ExternalLink className="size-4" />
           </a>
         )}
@@ -66,18 +67,18 @@ function PoiCard({ poi }: { poi: Poi }) {
         <p className="text-sm text-strong leading-relaxed">{poi.summary}</p>
       )}
 
-      <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+      <div className="flex flex-wrap gap-2">
         {poi.rating > 0 && (
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Star className="size-3 fill-amber-400 text-amber-400 shrink-0" />
-            <span>{Number(poi.rating).toFixed(1)}</span>
+            <Star className="size-3 shrink-0" />
+            <span className="font-mono">{Number(poi.rating).toFixed(1)}</span>
           </div>
         )}
 
         {poi.estimated_visit_minutes > 0 && (
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Clock className="size-3 shrink-0" />
-            <span>{poi.estimated_visit_minutes} min</span>
+            <span className="font-mono">{poi.estimated_visit_minutes} min · estimado</span>
           </div>
         )}
 
@@ -98,19 +99,13 @@ function PoiCard({ poi }: { poi: Poi }) {
 
       {poi.opening_hours && (
         <p className="text-xs text-muted-foreground">
-          Horário: {poi.opening_hours}
+          Horário: <span className="font-mono">{poi.opening_hours}</span>
         </p>
       )}
       {!!poi.tags?.length && (
-        <div className="flex flex-wrap gap-2">
-          {poi.tags.map((tag) => (
-            <span className="badge" key={tag.slug}>
-              {tag.name}
-            </span>
-          ))}
-        </div>
+        <TagList tags={poi.tags.map(tag => tag.name)} />
       )}
-    </div>
+    </div></article>
   );
 }
 
@@ -123,10 +118,10 @@ export default function PoiList({ pois }: PoiListProps) {
       : pois.filter((poi) => poi.poi_type === activeFilter);
 
   return (
-    <div className="flex flex-col gap-3">
-      <h2 className="text-base font-semibold text-foreground">
-        Pontos de interesse
-        <span className="ml-2 text-xs font-normal text-muted-foreground">
+    <section className="flex flex-col gap-4">
+      <h2 className="section-title">
+        Experiências neste destino
+        {" "}<span className="ml-2 font-mono text-xs font-normal text-muted-foreground">
           {filteredPois.length} {filteredPois.length === 1 ? "local" : "locais"}
         </span>
       </h2>
@@ -142,11 +137,11 @@ export default function PoiList({ pois }: PoiListProps) {
           filtro.
         </p>
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="poi-list">
         {filteredPois.map((poi) => (
           <PoiCard key={poi.id} poi={poi} />
         ))}
       </div>
-    </div>
+    </section>
   );
 }

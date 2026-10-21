@@ -1,3 +1,4 @@
+import { SlidingNav } from "../motion/sliding-nav";
 import { useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import {
@@ -33,12 +34,12 @@ const links = [
   { to: "/favoritos", label: "Favoritos", icon: Heart },
   { to: "/perfil", label: "Perfil", icon: User },
 ];
-export default function Sidebar() {
+export default function Sidebar({ hideCurrency = false }: { hideCurrency?: boolean }) {
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   function navigation() {
     return (
-      <nav aria-label="Navegação principal">
+      <SlidingNav label="Navegação principal">
         <ul className="flex flex-col gap-1.5">
           {links.map(({ to, label, icon: Icon }) => (
             <li key={to}>
@@ -62,19 +63,18 @@ export default function Sidebar() {
             </li>
           ))}
         </ul>
-      </nav>
+      </SlidingNav>
     );
   }
   function footer() {
     return (
       <div className="space-y-3 border-t border-border pt-5">
-        <Link
-          to="/perfil"
+        <div
           className="flex min-w-0 items-center gap-3 rounded-control px-2 py-2 hover:bg-surface"
         >
           <span
             aria-hidden="true"
-            className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface text-sm font-semibold text-primary"
+            className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface text-sm font-medium text-ink-muted"
           >
             {user?.avatar_url ? (
               <img
@@ -87,12 +87,12 @@ export default function Sidebar() {
             )}
           </span>
           <span className="min-w-0">
-            <span className="block truncate text-sm font-medium">
-              {user?.display_name}
+            <span className="block truncate text-sm font-medium" title={user?.display_name}>
+              {user?.display_name?.trim().split(/\s+/)[0]}
             </span>
-            <span className="text-xs text-muted-foreground">Meu perfil</span>
+
           </span>
-        </Link>
+        </div>
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="ghost" className="w-full justify-start">
@@ -119,11 +119,11 @@ export default function Sidebar() {
   }
   return (
     <>
-      <aside className="app-sidebar hidden h-dvh w-sidebar shrink-0 flex-col justify-between gap-8 overflow-y-auto border-r border-border bg-muted/60 p-5 lg:sticky lg:top-0 lg:flex">
+      <aside className="app-sidebar hidden h-dvh w-sidebar shrink-0 flex-col justify-between gap-8 overflow-y-auto border-r border-border bg-muted/60 p-6 lg:sticky lg:top-0 lg:flex">
         <div className="space-y-8">
           <Link
             to="/"
-            className="block px-3 py-2 font-display text-[28px] font-semibold tracking-tight text-foreground"
+            className="block px-3 py-2 font-display text-2xl font-medium tracking-tight text-foreground"
           >
             Viajero
           </Link>
@@ -134,19 +134,19 @@ export default function Sidebar() {
       <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background px-4 lg:hidden">
         <Link
           to="/"
-          className="font-display text-2xl font-semibold tracking-tight text-foreground"
+          className="font-display text-2xl font-medium tracking-tight text-foreground"
         >
           Viajero
         </Link>
         <div className="flex items-center gap-2">
-        <CurrencyPicker />
+        {!hideCurrency && <CurrencyPicker />}
         <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
           <DialogTrigger asChild>
             <Button variant="ghost" size="icon" aria-label="Abrir navegação">
               <Menu />
             </Button>
           </DialogTrigger>
-          <DialogContent className="inset-y-0 left-0 h-dvh w-72 max-w-[85vw] translate-x-0 translate-y-0 rounded-none bg-background p-6 sm:max-w-72">
+          <DialogContent className="inset-y-0 left-0 h-dvh w-72 max-w-drawer translate-x-0 translate-y-0 rounded-none bg-background p-6 sm:max-w-72">
             <DialogTitle className="font-display text-2xl">Viajero</DialogTitle>
             <DialogDescription className="sr-only">
               Acesse as páginas da sua viagem.

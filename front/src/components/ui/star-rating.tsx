@@ -8,7 +8,7 @@ const STAR_LABELS = ["Péssimo", "Ruim", "Regular", "Bom", "Excelente"];
 export function StarRating({ value, size = "sm", className }: { value: number; size?: "sm" | "md"; className?: string; }) {
   const filled = Math.round(value);
   return <span role="img" aria-label={`Nota ${formatRating(value)} de 5`} className={cn("inline-flex items-center gap-0.5", className)}>
-    {STARS.map(star => <Star key={star} aria-hidden="true" className={cn(size === "md" ? "size-5" : "size-4", star <= filled ? "fill-amber-500 text-amber-500" : "fill-transparent text-input")} />)}
+    {STARS.map(star => <Star key={star} aria-hidden="true" className={cn(size === "md" ? "size-5" : "size-4", star <= filled ? "fill-amber-500 text-ink-muted" : "fill-transparent text-input")} />)}
   </span>;
 }
 
@@ -29,7 +29,7 @@ export function StarRatingInput({ name, legend, value, onChange, error, disabled
         const id = `${name}-${star}`;
         return <label key={star} htmlFor={id} className="inline-flex size-11 cursor-pointer items-center justify-center rounded-control transition-colors hover:bg-muted has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60">
           <input id={id} type="radio" name={name} value={star} checked={value === star} onChange={() => onChange(star)} className="sr-only" aria-label={`${star} de 5: ${STAR_LABELS[star - 1]}`} />
-          <Star aria-hidden="true" className={cn("size-7 transition-colors", star <= value ? "fill-amber-500 text-amber-500" : "fill-transparent text-input")} />
+          <Star aria-hidden="true" className={cn("size-7 transition-colors", star <= value ? "fill-amber-500 text-ink-muted" : "fill-transparent text-input")} />
         </label>;
       })}
       <span className="ml-2 text-sm text-muted-foreground">{value ? STAR_LABELS[value - 1] : "Selecione uma nota"}</span>

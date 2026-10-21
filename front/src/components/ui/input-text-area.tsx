@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { Info } from "lucide-react";
+
 
 interface InputTextareaProps {
   label: string;
@@ -25,7 +25,7 @@ export default function InputTextarea({
     <div className="space-y-2">
       <label htmlFor={id} className="text-sm font-medium text-strong">
         {label}
-        {required && <span className="text-red-500"> *</span>}
+        {!required && <span className="text-ink-muted"> (opcional)</span>}
       </label>
 
       <textarea id={id} required={required} aria-describedby={hint ? id + "-hint" : undefined}
@@ -37,11 +37,7 @@ export default function InputTextarea({
       />
 
       {hint && (
-        <p id={id + "-hint"} className="flex items-start gap-2 text-sm leading-6 text-muted-foreground">
-          <span className="text-muted-foreground">
-            <Info className="size-5" />
-          </span> {hint}
-        </p>
+        <p id={id + "-hint"} className="field-support">{hint}</p>
       )}
     </div>
   );

@@ -48,8 +48,8 @@ function formatCurrency(value: number, currencyCode: string) {
 
 export default function TripRecomendation({ trip }: TripRecomendationProps) {
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-3xl border border-neutral-200 bg-white transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-950/5">
-      <div className="relative h-52 overflow-hidden bg-blue-100">
+    <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-line bg-white transition hover:-translate-y-0.5 hover:border-accent  ">
+      <div className="relative h-52 overflow-hidden bg-canvas">
         <img
           src={trip.imageUrl}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
@@ -59,11 +59,11 @@ export default function TripRecomendation({ trip }: TripRecomendationProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
 
         <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-          <span className="rounded-full bg-white/95 px-3 py-1 text-xs font-medium text-neutral-800 shadow-sm">
+          <span className="rounded-full bg-white/95 px-3 py-1 text-xs font-medium text-neutral-800 ">
             {statusLabel[trip.generationStatus]}
           </span>
 
-          <span className="flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1 text-xs font-medium text-white shadow-sm">
+          <span className="flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-xs font-medium text-white ">
             <Sparkles size={13} />
             {trip.travelStyle}
           </span>
@@ -83,9 +83,9 @@ export default function TripRecomendation({ trip }: TripRecomendationProps) {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-5 p-5">
+      <div className="flex flex-1 flex-col gap-6 p-5">
         <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-2xl bg-neutral-50 px-3 py-3">
+          <div className="rounded-lg bg-canvas px-3 py-3">
             <div className="mb-1 flex items-center gap-1 text-neutral-500">
               <CalendarDays size={14} />
               <span className="text-xs">Duração</span>
@@ -95,7 +95,7 @@ export default function TripRecomendation({ trip }: TripRecomendationProps) {
             </p>
           </div>
 
-          <div className="rounded-2xl bg-neutral-50 px-3 py-3">
+          <div className="rounded-lg bg-canvas px-3 py-3">
             <div className="mb-1 flex items-center gap-1 text-neutral-500">
               <CircleDollarSign size={14} />
               <span className="text-xs">Orçamento</span>
@@ -105,7 +105,7 @@ export default function TripRecomendation({ trip }: TripRecomendationProps) {
             </p>
           </div>
 
-          <div className="rounded-2xl bg-neutral-50 px-3 py-3">
+          <div className="rounded-lg bg-canvas px-3 py-3">
             <div className="mb-1 flex items-center gap-1 text-neutral-500">
               <Star size={14} />
               <span className="text-xs">Nota</span>
@@ -124,14 +124,14 @@ export default function TripRecomendation({ trip }: TripRecomendationProps) {
           {trip.tags.map((tag) => (
             <span
               key={tag}
-              className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs font-medium text-neutral-700"
+              className="rounded-full border border-line bg-canvas px-3 py-1 text-xs font-medium text-neutral-700"
             >
               {tag}
             </span>
           ))}
         </div>
 
-        <div className="rounded-2xl border border-neutral-200 p-4">
+        <div className="rounded-lg border border-line p-4">
           <div className="mb-3 flex items-center gap-2 text-sm font-medium text-neutral-900">
             <Clock3 size={16} />
             Destaques do roteiro
@@ -141,7 +141,7 @@ export default function TripRecomendation({ trip }: TripRecomendationProps) {
             {trip.highlights.map((highlight) => (
               <span
                 key={highlight}
-                className="rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-700"
+                className="rounded-lg bg-surface px-2.5 py-1.5 text-xs font-medium text-ink"
               >
                 {highlight}
               </span>
@@ -156,14 +156,14 @@ export default function TripRecomendation({ trip }: TripRecomendationProps) {
         <div className="mt-auto flex flex-col gap-2 sm:flex-row">
           <Link
             to={`/destinos/${trip.id}`}
-            className="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            className="inline-flex w-full items-center justify-center rounded-xl bg-accent px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
           >
             Ver roteiro
           </Link>
 
           <Link
             to={`/destinos/${trip.destinationSlug}`}
-            className="inline-flex w-full items-center justify-center rounded-xl border border-neutral-300 px-5 py-3 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
+            className="inline-flex w-full items-center justify-center rounded-xl border border-line px-6 py-3 text-sm font-medium text-neutral-700 transition-colors hover:bg-canvas"
           >
             Ver destino
           </Link>

@@ -203,7 +203,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-3 text-center max-w-xs">
-          <AlertCircle className="size-6 text-red-400" />
+          <AlertCircle className="size-6 text-ink-muted" />
           <p className="text-sm text-muted-foreground">
             {error ?? "Usuário não encontrado."}
           </p>
@@ -259,11 +259,11 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
 
       <div className="flex w-full max-w-4xl flex-col gap-6">
         <CurrencySection />
-        <div className="flex flex-wrap items-center gap-4 rounded-card border border-border bg-surface p-5 sm:flex-nowrap sm:p-6">
+        <div className="flex flex-wrap items-center gap-4 rounded-card border border-border bg-surface p-6 sm:flex-nowrap sm:p-6">
           <div className="relative shrink-0">
             <div className="flex size-16 items-center justify-center overflow-hidden rounded-full border border-border bg-secondary sm:size-20">
               {avatarUploading ? (
-                <Loader2 className="size-5 animate-spin text-primary" />
+                <Loader2 className="size-5 animate-spin text-ink-muted" />
               ) : user.avatar_url ? (
                 <img
                   src={user.avatar_url}
@@ -271,7 +271,7 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
                   className="size-full object-cover"
                 />
               ) : (
-                <span className="text-xl font-semibold text-primary">
+                <span className="text-xl font-medium text-ink-muted">
                   {initials}
                 </span>
               )}
@@ -296,16 +296,16 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <p className="text-lg font-semibold text-foreground truncate">
+            <p className="text-lg font-medium text-foreground break-words">
               {user.display_name ||
                 `${user.first_name} ${user.last_name}`.trim() ||
                 "—"}
             </p>
-            <p className="text-sm text-muted-foreground truncate">
+            <p className="text-sm text-muted-foreground break-words">
               {user.email}
             </p>
             {!user.is_profile_complete && (
-              <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-full px-2.5 py-0.5 w-fit">
+              <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-ink-muted bg-canvas border border-line rounded-full px-2.5 py-0.5 w-fit">
                 <AlertCircle className="size-3" />
                 Perfil incompleto
               </span>
@@ -324,12 +324,12 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl border border-border p-6 flex flex-col gap-5">
-          <h2 className="text-lg font-semibold text-foreground">
+        <div className="bg-white rounded-lg border border-border p-6 flex flex-col gap-6">
+          <h2 className="text-lg font-medium text-foreground">
             Informações pessoais
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <Field
               label="Nome"
               value={user.first_name}
@@ -387,12 +387,12 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
             />
           </div>
 
-          <div className="border-t border-border pt-5 flex flex-col gap-5">
-            <h2 className="text-lg font-semibold text-foreground">
+          <div className="border-t border-border pt-5 flex flex-col gap-6">
+            <h2 className="text-lg font-medium text-foreground">
               Preferências de viagem
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <Field
                 label="Aeroporto de origem"
                 value={user.home_airport ?? ""}
@@ -418,13 +418,9 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
 
           {editing && (
             <div className="flex items-center gap-3 pt-2">
-              <Button onClick={handleSave} disabled={saving}>
-                {saving ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Check className="size-4" />
-                )}
-                {saving ? "Salvando…" : "Salvar alterações"}
+              <Button onClick={handleSave} loading={saving}>
+                <Check className="size-4" />
+                Salvar alterações
               </Button>
               <Button
                 variant="outline"
@@ -438,21 +434,21 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
           )}
 
           {saveError && (
-            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-2 text-sm text-ink-muted bg-canvas border border-line rounded-xl px-4 py-3">
               <AlertCircle className="size-4 shrink-0" />
               {saveError}
             </div>
           )}
 
           {saveSuccess && (
-            <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-2 text-sm text-ink-muted bg-canvas border border-line rounded-xl px-4 py-3">
               <Check className="size-4 shrink-0" />
               Perfil atualizado com sucesso!
             </div>
           )}
 
           {isGuest && (
-            <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-2 text-sm text-ink-muted bg-canvas border border-line rounded-xl px-4 py-3">
               <AlertCircle className="size-4 shrink-0" />
               Modo visitante ativo. As alterações ficam salvas apenas neste
               navegador.
@@ -463,8 +459,8 @@ export default function ProfilePage({ token, onLogout }: ProfilePageProps) {
         {/* {token && <TripPreferencesSection token={token} />} */}
         {token && <TravelerDNASection token={token} />}
 
-        <div className="bg-white rounded-2xl border border-border px-6 py-4 flex flex-col gap-1">
-          <h2 className="text-sm font-semibold text-strong mb-2">Conta</h2>
+        <div className="bg-white rounded-lg border border-border px-6 py-4 flex flex-col gap-1">
+          <h2 className="text-sm font-medium text-strong mb-2">Conta</h2>
           <div className="grid grid-cols-2 gap-y-2 text-xs text-muted-foreground">
             <span>ID do usuário</span>
             <span className="text-right font-mono text-muted-foreground">

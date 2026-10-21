@@ -131,7 +131,7 @@ export function ReviewsSection({
       ) : (
         <>
           {canReview ? (
-            <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
+            <div className="rounded-card border border-border bg-surface p-6 sm:p-6">
               <h3
                 ref={cardTitleRef}
                 tabIndex={-1}

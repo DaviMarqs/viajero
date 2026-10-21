@@ -1,6 +1,5 @@
-import { CalendarDays, Clock3, Star } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock3, Star } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { DestinationImage } from "@/features/destinations/destination-card";
 import {
   itineraryPresentation,
@@ -10,6 +9,9 @@ import { formatRating } from "@/lib/utils";
 import type { Destination, Itinerary } from "@/types/travel";
 import { useMoney } from "@/contexts/currencyContext";
 import { FavoriteItineraryButton } from "@/features/itineraries/favorite-itinerary-button";
+import { TravelCard } from "@/components/ui/travel-card";
+import { TagList } from "@/components/ui/tag-list";
+import { destinationCategories } from "@/lib/personalization";
 
 function formatDate(value?: string | null) {
   if (!value) return "Data a definir";
@@ -44,19 +46,9 @@ export default function ItineraryCard({
   const reviewCount = Number(itinerary.review_stats?.review_count ?? 0);
   const averageRating = Number(itinerary.review_stats?.average_rating ?? 0);
   return (
-    <article className="travel-card">
+    <TravelCard variant="itinerary">
       <div className="relative">
-        <Link
-          to={href}
-          aria-label={`Abrir roteiro: ${title}`}
-          className="block focus-visible:outline-offset-[-4px]"
-        >
-          <DestinationImage
-            src={visual.image}
-            name={visual.location}
-            className="travel-card-media"
-          />
-        </Link>
+        <DestinationImage src={visual.image} name={visual.location} className="travel-card-media" />
         <span
           className="status-badge pointer-events-none absolute left-4 top-4"
           data-status={itinerary.generation_status}
@@ -64,10 +56,10 @@ export default function ItineraryCard({
           {itineraryStatus(itinerary.generation_status)}
         </span>
         {reviewCount > 0 && (
-          <span className="badge pointer-events-none absolute right-4 top-4 bg-surface text-foreground shadow-control">
+          <span className="badge pointer-events-none absolute right-4 top-4 bg-surface text-foreground">
             <Star
               aria-hidden="true"
-              className="size-3.5 fill-amber-500 text-amber-500"
+              className="size-4 fill-current text-foreground"
             />
             {formatRating(averageRating)}
             <span className="text-muted-foreground">({reviewCount})</span>
@@ -80,22 +72,23 @@ export default function ItineraryCard({
         )}
       </div>
       <div className="travel-card-body">
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
-            {[visual.location, visual.country].filter(Boolean).join(", ")}
+            {visual.country || "País não informado"}
           </p>
           <h3 className="travel-card-title">
-            <Link to={href} className="transition-colors hover:text-primary">
+            <Link to={href} className="travel-card-link">
               {title}
             </Link>
           </h3>
         </div>
+        {visual.destination && <TagList tags={destinationCategories(visual.destination)} />}
         {recommendationReason && <p className="recommendation-reason">{recommendationReason}</p>}
         <p className="line-clamp-2 text-sm leading-6 text-strong">
           {itinerary.summary ||
             "Os detalhes estarão disponíveis quando seu roteiro estiver pronto."}
         </p>
-        <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-strong">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs font-mono text-strong">
           <p className="inline-flex items-center gap-2">
             <CalendarDays
               aria-hidden="true"
@@ -123,21 +116,17 @@ export default function ItineraryCard({
         </div>
         <div className="travel-card-footer">
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">Orçamento da viagem</p>
-            <p className="font-display text-lg font-semibold tabular-nums">
+            <p className="text-xs text-muted-foreground">Custo conhecido das atividades</p>
+            <p className="font-mono text-lg font-medium tabular-nums">
               {money(itinerary.budget_total, itinerary.currency_code || "BRL")}
             </p>
           </div>
           <div className="card-actions">
           {favoriteId != null && <FavoriteItineraryButton itineraryId={itinerary.id} initialFavoriteId={favoriteId} onRemoved={onRemoved} compact />}
-          <Button asChild size="default">
-            <Link to={href} aria-label={`Abrir roteiro: ${title}`}>
-              Abrir roteiro
-            </Link>
-          </Button>
+          <ArrowRight className="card-arrow" aria-hidden="true" />
           </div>
         </div>
       </div>
-    </article>
+    </TravelCard>
   );
 }

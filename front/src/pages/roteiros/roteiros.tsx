@@ -41,14 +41,14 @@ export default function Roteiros() {
           title="Nenhum roteiro criado ainda"
           description="Conte suas preferências e planeje sua primeira viagem."
         >
-          <Button asChild>
+          <Button asChild variant="outline">
             <Link to="/roteiros/criacao">Criar roteiro</Link>
           </Button>
         </Feedback>
       ) : (
         <section className="space-y-5" aria-label="Roteiros salvos">
           <div className="flex items-center justify-between border-b border-border pb-4">
-            <h2 className="text-base font-semibold">Suas viagens</h2>
+            <h2 className="text-base font-medium">Suas viagens</h2>
             <p className="text-sm text-muted-foreground" role="status">
               {itineraries.length}{" "}
               {itineraries.length === 1 ? "roteiro salvo" : "roteiros salvos"}

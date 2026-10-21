@@ -201,7 +201,7 @@ export function TripPreferencesSection({ token }: Props) {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-border p-6 flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="bg-white rounded-lg border border-border p-6 flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="size-4 animate-spin" />
         Carregando preferências da viagem...
       </div>
@@ -210,7 +210,7 @@ export function TripPreferencesSection({ token }: Props) {
 
   if (error) {
     return (
-      <div className="bg-white rounded-2xl border border-border p-6 flex items-center gap-2 text-sm text-red-500">
+      <div className="bg-white rounded-lg border border-border p-6 flex items-center gap-2 text-sm text-ink-muted">
         <AlertCircle className="size-4" />
         {error}
       </div>
@@ -220,10 +220,10 @@ export function TripPreferencesSection({ token }: Props) {
   const hasData = !!preferences;
 
   return (
-    <div className="bg-white rounded-2xl border border-border p-6 flex flex-col gap-5">
+    <div className="bg-white rounded-lg border border-border p-6 flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-medium text-foreground">
             Preferências da viagem
           </h2>
           {!hasData && !editing && (
@@ -243,7 +243,7 @@ export function TripPreferencesSection({ token }: Props) {
       </div>
 
       {!editing && hasData && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
           <ReadOnly icon={<Wallet className="size-3.5" />} label="Orçamento">
             {preferences?.budget_min} – {preferences?.budget_max}{" "}
             {preferences?.currency_code}
@@ -294,7 +294,7 @@ export function TripPreferencesSection({ token }: Props) {
       )}
 
       {editing && (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <FieldGroup
               icon={<Wallet className="size-3.5" />}
@@ -479,14 +479,10 @@ export function TripPreferencesSection({ token }: Props) {
           <div className="flex items-center gap-3 pt-2">
             <Button variant="default"
               onClick={handleSave}
-              disabled={saving}
+              loading={saving}
             >
-              {saving ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Check className="size-4" />
-              )}
-              {saving ? "Salvando..." : "Salvar"}
+              <Check className="size-4" />
+              Salvar
             </Button>
             <Button variant="outline"
               onClick={() => setEditing(false)}
@@ -501,14 +497,14 @@ export function TripPreferencesSection({ token }: Props) {
       )}
 
       {saveError && (
-        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+        <div className="flex items-center gap-2 text-sm text-ink-muted bg-canvas border border-line rounded-xl px-4 py-3">
           <AlertCircle className="size-4 shrink-0" />
           {saveError}
         </div>
       )}
 
       {success && (
-        <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+        <div className="flex items-center gap-2 text-sm text-ink-muted bg-canvas border border-line rounded-xl px-4 py-3">
           <Check className="size-4 shrink-0" />
           Preferencias atualizadas com sucesso!
         </div>
@@ -588,8 +584,8 @@ function TagPicker({
               onClick={() => onToggle(o.value)}
               className={
                 active
-                  ? "px-3 py-1.5 rounded-full text-xs font-medium border border-ring bg-primary text-white transition-colors"
-                  : "px-3 py-1.5 rounded-full text-xs font-medium border border-border bg-white text-strong hover:border-border transition-colors"
+                  ? "px-3 py-1.5 rounded-control text-xs font-medium border border-ring bg-primary text-white transition-colors"
+                  : "px-3 py-1.5 rounded-control text-xs font-medium border border-border bg-white text-strong hover:border-border transition-colors"
               }
             >
               {o.label}

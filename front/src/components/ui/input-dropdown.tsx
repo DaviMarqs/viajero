@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { Calendar, ChevronDown, Info } from "lucide-react";
+import { Calendar, ChevronDown } from "lucide-react";
 
 interface InputDropdownProps {
   label: string;
@@ -27,7 +27,7 @@ export default function InputDropdown({
     <div className="space-y-2">
       <label htmlFor={id} className="text-sm font-medium text-strong">
         {label}
-        {required && <span className="text-red-500"> *</span>}
+        {!required && <span className="text-ink-muted"> (opcional)</span>}
       </label>
 
       <div className="form-control-shell">
@@ -44,6 +44,7 @@ export default function InputDropdown({
           <option value="" disabled>
             {placeholder}
           </option>
+          {value && !options.some(option => option.value === value) && <option value={value}>{icon === "calendar" && label === "Duração ideal" ? `${value} dias` : value}</option>}
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
@@ -56,11 +57,7 @@ export default function InputDropdown({
       </div>
 
       {hint && (
-        <p id={id + "-hint"} className="flex items-start gap-2 text-sm leading-6 text-muted-foreground">
-          <span className="text-muted-foreground">
-            <Info className="size-5" />
-          </span> {hint}
-        </p>
+        <p id={id + "-hint"} className="field-support">{hint}</p>
       )}
     </div>
   );

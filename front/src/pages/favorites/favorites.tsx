@@ -36,6 +36,7 @@ export default function FavoritesPage() {
           Destinos e roteiros que você quer guardar por perto.
         </p>
       </header>
+      <p className="text-xs text-muted-foreground">Destinos: salvos neste navegador. Roteiros: sincronizados com a conta.</p>
       <div className="flex gap-2" role="group" aria-label="Tipo de favorito">
         <Button
           aria-pressed={tab === "destinations"}
@@ -115,12 +116,6 @@ export default function FavoritesPage() {
               <Link to="/roteiros">Ver roteiros</Link>
             </Button>
           </Feedback>
-        )}
-        {tab === "destinations" && (
-          <p className="text-xs text-muted-foreground">
-            Seus destinos favoritos ficam salvos para esta conta neste
-            navegador.
-          </p>
         )}
       </section>
     </section>

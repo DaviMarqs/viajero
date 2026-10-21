@@ -22,7 +22,7 @@ export function ReviewItem({ review, mine = false, onEdit, onDelete }: {
   return <article className="space-y-3 py-5" aria-label={`Avaliação de ${mine ? "você" : name}`}>
     <header className="flex flex-wrap items-start justify-between gap-3">
       <div className="flex min-w-0 items-center gap-3">
-        <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-secondary text-sm font-semibold text-primary">
+        <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-secondary text-sm font-medium text-ink-muted">
           {review.user.avatar_url ? <img src={review.user.avatar_url} alt="" className="size-full object-cover" /> : name.slice(0, 1).toUpperCase()}
         </span>
         <div className="min-w-0">
@@ -35,7 +35,7 @@ export function ReviewItem({ review, mine = false, onEdit, onDelete }: {
       <StarRating value={review.rating} />
     </header>
     {review.title && <h4 className="text-base">{review.title}</h4>}
-    {review.body && <p className="max-w-[65ch] whitespace-pre-line text-sm leading-6 text-strong">{review.body}</p>}
+    {review.body && <p className="copy-measure whitespace-pre-line text-sm leading-6 text-strong">{review.body}</p>}
     {mine && (onEdit || onDelete) && <div className="flex flex-wrap gap-2">
       {onEdit && <Button variant="outline" onClick={onEdit}><Pencil aria-hidden="true" />Editar</Button>}
       {onDelete && <Button variant="destructive" onClick={event => onDelete(event.currentTarget)}><Trash2 aria-hidden="true" />Excluir</Button>}

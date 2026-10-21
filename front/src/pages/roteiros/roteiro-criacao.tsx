@@ -148,9 +148,10 @@ export default function RoteiroCriacaoPage() {
   const options = results ?? destinations.destinations.slice(0, 3);
   return (
     <section className="page-content">
-      <Breadcrumbs current="Criar roteiro" />
-      <section className="reference-panel creation-panel space-y-8">
-        <header className="mx-auto max-w-2xl space-y-4 py-4 text-center">
+      <Breadcrumbs current="Criar roteiro" parent={{ label: "Roteiros", to: "/roteiros" }} />
+      <section className="creation-panel space-y-6">
+        <ol className="planning-progress" aria-label="Etapas do planejamento"><li aria-current={!reviewing ? "step" : undefined}>Destino e preferências</li><li aria-current={reviewing && !generating ? "step" : undefined}>Revisão</li><li aria-current={generating ? "step" : undefined}>Geração</li></ol>
+        <header className="max-w-2xl space-y-2 text-left">
           <h1 className="page-title">
             {reviewing && !generating ? "Confira antes de partir" : !mode
               ? "Como você quer começar a próxima viagem?"
@@ -192,9 +193,9 @@ export default function RoteiroCriacaoPage() {
                   setSelected(null);
                   if (key === "suggest") void search(undefined, key);
                 }}
-                className="choice-button space-y-5 rounded-card border border-border p-8 text-left hover:border-ring hover:bg-secondary/30"
+                className="choice-button space-y-4 rounded-card border border-border bg-surface p-6 text-left hover:border-line-strong"
               >
-                <span className="inline-flex rounded-card bg-secondary p-4 text-primary">
+                <span className="inline-flex text-muted-foreground">
                   <Icon aria-hidden="true" />
                 </span>
                 <h2 className="text-2xl">{title}</h2>
@@ -207,7 +208,7 @@ export default function RoteiroCriacaoPage() {
             <p className="text-sm text-muted-foreground">
               Cada roteiro precisa dos parâmetros desta viagem.{" "}
               <Link
-                className="font-medium text-primary underline"
+                className="font-medium text-ink underline"
                 to="/onboard/preferências"
                 state={{ destination: selected ?? undefined }}
               >
@@ -247,10 +248,8 @@ export default function RoteiroCriacaoPage() {
                     disabled={busy}
                   />
                 )}
-                <Button type="submit" disabled={busy}>
-                  {busy
-                    ? "Buscando destinos…"
-                    : mode === "suggest"
+                <Button type="submit" variant={selected ? "outline" : "default"} loading={busy}>
+                  {mode === "suggest"
                       ? "Sugerir um destino"
                       : "Buscar destino"}
                 </Button>
@@ -351,12 +350,12 @@ export default function RoteiroCriacaoPage() {
             )}
             {reviewing && selected && tripPreferences && !createdId && !generating && <TripReview destination={selected} preferences={tripPreferences} onChangeDestination={() => { setReviewing(false); setMode("search"); }} onEdit={stepKey => navigate("/onboard/preferências", { state: { destination: selected, stepKey } })} />}
             {selected && !createdId && !generating && !busy && (
-              <div className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-border bg-background p-4">
+              <div className="planning-summary flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">
                     Destino selecionado
                   </p>
-                  <p className="font-display text-xl font-semibold">
+                  <p className="font-display text-xl font-medium">
                     {selected.name}
                   </p>
                 </div>
@@ -368,7 +367,7 @@ export default function RoteiroCriacaoPage() {
             {createdId && (
               <p className="text-sm text-muted-foreground">
                 Sair desta tela interrompe apenas o acompanhamento.{" "}
-                <Link className="text-primary underline" to="/roteiros">
+                <Link className="text-ink underline" to="/roteiros">
                   Ver meus roteiros
                 </Link>
               </p>

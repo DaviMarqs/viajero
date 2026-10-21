@@ -52,7 +52,7 @@ export function CurrencySection() {
     >
       <div className="space-y-2">
         <h2 className="section-title">Moeda de exibição</h2>
-        <p className="max-w-[65ch] text-sm leading-6 text-muted-foreground">
+        <p className="copy-measure text-sm leading-6 text-muted-foreground">
           Escolha a moeda para comparar destinos e roteiros. Isso não altera o
           orçamento original da viagem.
         </p>
@@ -76,11 +76,11 @@ export function CurrencySection() {
             ))}
           </select>
         </label>
-        <Button onClick={save} disabled={saving || selected === currency}>
-          {saving ? "Salvando…" : "Salvar moeda"}
+        <Button variant="outline" onClick={save} loading={saving} disabled={selected === currency}>
+          Salvar moeda
         </Button>
       </div>
-      <p className="max-w-[70ch] text-xs leading-5 text-muted-foreground">
+      <p className="note-measure text-xs leading-5 text-muted-foreground">
         {status === "ready"
           ? `Conversões aproximadas, com cotação de ${date}. Taxas e impostos não estão incluídos. Valores sem cotação disponível permanecem na moeda original.`
           : status === "loading"

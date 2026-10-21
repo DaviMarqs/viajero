@@ -45,7 +45,7 @@ export function CurrencyPicker() {
     <Popover.Root open={open} onOpenChange={(value) => { if (!saving) { setOpen(value); setQuery(""); setError(""); } }}>
       <Popover.Trigger asChild>
         <Button variant="ghost" size="sm" className="text-muted-foreground" aria-label={`Moeda de exibição: ${currency}. Alterar moeda`}>
-          <CurrencyFlag currency={currency} />{currency}<ChevronDown className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+          <CurrencyFlag currency={currency} /><span className="font-mono">{currency}</span><ChevronDown className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
         </Button>
       </Popover.Trigger>
       <Popover.Portal>
@@ -56,7 +56,7 @@ export function CurrencyPicker() {
           </label>
           <div className="max-h-64 overflow-y-auto" aria-busy={!!saving}>
             {results.map(([code, name]) => <button key={code} type="button" disabled={!!saving} onClick={() => void select(code)} aria-pressed={currency === code} className="currency-option">
-              <CurrencyFlag currency={code} /><span className="w-10 shrink-0 font-medium">{code}</span><span className="flex-1 text-left">{name}</span>
+              <CurrencyFlag currency={code} /><span className="w-10 shrink-0 font-mono">{code}</span><span className="flex-1 text-left">{name}</span>
               {saving === code ? <LoaderCircle className="size-4 animate-spin" aria-label="Salvando" /> : currency === code ? <Check className="size-4 text-primary" aria-label="Selecionada" /> : null}
             </button>)}
             {!results.length && <p className="p-3 text-sm text-muted-foreground" role="status">Nenhuma moeda encontrada.</p>}

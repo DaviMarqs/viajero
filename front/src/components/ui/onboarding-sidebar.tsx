@@ -19,14 +19,14 @@ export default function OnboardingSidebar({
   return (
     <aside className="onboarding-story flex min-w-0 flex-col gap-6 overflow-hidden">
       <div className="hidden flex-col gap-3 lg:flex">
-        <h1 className="font-semibold leading-tight">{title}
+        <h1 className="font-medium leading-tight">{title}
         </h1>
-        <p className="text-sm leading-6 text-white">{description}
+        <p className="text-sm leading-6 text-muted-foreground">{description}
         </p>
       </div>
 
       <nav
-        className="flex gap-2 overflow-x-auto lg:flex-col lg:gap-5"
+        className="flex gap-2 overflow-x-auto lg:flex-col lg:gap-4"
         aria-label="Progresso do cadastro"
       >
         {steps.map((step: OnboardingStep, i: number) => {
@@ -41,19 +41,19 @@ export default function OnboardingSidebar({
             >
               <div
                 className={cn(
-                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition",
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition",
                   isDone || isActive
                     ? "border-primary bg-primary text-white"
                     : "border-input bg-surface text-muted-foreground",
                 )}
               >
-                {isDone ? <Check size={12} strokeWidth={3} /> : <span className="text-xs">{i + 1}</span>}
+                {isDone ? <Check size={12} strokeWidth={1.5} /> : <span className="text-xs">{i + 1}</span>}
               </div>
 
               <span
                 className={cn(
                   "hidden text-sm leading-none lg:inline",
-                  isActive ? "font-semibold text-white" : "text-white/75",
+                  isActive ? "font-medium text-foreground" : "text-muted-foreground",
                 )}
               >
                 {step.label}

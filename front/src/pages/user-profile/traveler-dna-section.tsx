@@ -149,7 +149,7 @@ export function TravelerDNASection({ token }: Props) {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-border p-6 flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="bg-white rounded-lg border border-border p-6 flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="size-4 animate-spin" />
         Carregando preferências do viajante…
       </div>
@@ -158,7 +158,7 @@ export function TravelerDNASection({ token }: Props) {
 
   if (error) {
     return (
-      <div className="bg-white rounded-2xl border border-border p-6 flex items-center gap-2 text-sm text-red-500">
+      <div className="bg-white rounded-lg border border-border p-6 flex items-center gap-2 text-sm text-ink-muted">
         <AlertCircle className="size-4" />
         {error}
       </div>
@@ -168,10 +168,10 @@ export function TravelerDNASection({ token }: Props) {
   const hasData = !!profile;
 
   return (
-    <div className="bg-white rounded-2xl border border-border p-6 flex flex-col gap-5">
+    <div className="bg-white rounded-lg border border-border p-6 flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-medium text-foreground">
             Preferências do viajante
           </h2>
           {!hasData && !editing && (
@@ -191,8 +191,8 @@ export function TravelerDNASection({ token }: Props) {
       </div>
 
       {!editing && hasData && (
-        <div className="flex flex-col gap-5">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 text-sm">
+        <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm">
             <ReadOnly icon={<Compass className="size-3.5" />} label="Estilo">
               {labelFor(TRAVEL_STYLE_OPTIONS, profile?.travel_style)}
             </ReadOnly>
@@ -222,7 +222,7 @@ export function TravelerDNASection({ token }: Props) {
       )}
 
       {editing && (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <FieldGroup icon={<Compass className="size-3.5" />} label="Estilo">
               <select
@@ -309,14 +309,10 @@ export function TravelerDNASection({ token }: Props) {
           <div className="flex items-center gap-3 pt-2">
             <Button variant="default"
               onClick={handleSave}
-              disabled={saving}
+              loading={saving}
             >
-              {saving ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Check className="size-4" />
-              )}
-              {saving ? "Salvando..." : "Salvar"}
+              <Check className="size-4" />
+              Salvar
             </Button>
             <Button variant="outline"
               onClick={() => setEditing(false)}
@@ -331,14 +327,14 @@ export function TravelerDNASection({ token }: Props) {
       )}
 
       {saveError && (
-        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+        <div className="flex items-center gap-2 text-sm text-ink-muted bg-canvas border border-line rounded-xl px-4 py-3">
           <AlertCircle className="size-4 shrink-0" />
           {saveError}
         </div>
       )}
 
       {success && (
-        <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+        <div className="flex items-center gap-2 text-sm text-ink-muted bg-canvas border border-line rounded-xl px-4 py-3">
           <Check className="size-4 shrink-0" />
           Preferências atualizadas com sucesso!
         </div>

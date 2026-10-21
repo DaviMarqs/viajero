@@ -91,7 +91,7 @@ export default function Login() {
         </div>
 
         {sessionExpired && !submitError && (
-          <div role="status" className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <div role="status" className="mb-5 rounded-lg border border-line bg-canvas px-4 py-3 text-sm text-ink-muted">
             Sua sessão expirou. Entre novamente para continuar.
           </div>
         )}
@@ -164,13 +164,13 @@ export default function Login() {
           </div>
 
           {submitError && (
-            <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div role="alert" className="rounded-lg border border-line bg-canvas px-4 py-3 text-sm text-ink-muted">
               {submitError}
             </div>
           )}
 
-          <Button type="submit" disabled={isSubmitting} size="lg" className="w-full">
-            {isSubmitting ? "Entrando..." : "Fazer login"}
+          <Button type="submit" loading={isSubmitting} size="lg" className="w-full">
+            Fazer login
           </Button>
         </form>
 

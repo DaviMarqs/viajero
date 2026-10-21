@@ -78,8 +78,8 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
   {
     key: "companionship",
     label: "Companhia",
-    title: "Com quem voce pretende viajar?",
-    sub: "Essa escolha ajusta sugestoes, ritmo e tipos de experiencias para o contexto da viagem.",
+    title: "Com quem você pretende viajar?",
+    sub: "Escolha a companhia desta viagem.",
     fields: [
       {
         type: "cards",
@@ -87,25 +87,25 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
           {
             icon: Plane,
             title: "Sozinho",
-            desc: "Roteiros com autonomia, flexibilidade e exploracao individual.",
+            desc: "Roteiros com autonomia, flexibilidade e exploração individual.",
             value: "solo",
           },
           {
             icon: Baby,
-            title: "Familia",
-            desc: "Sugestoes pensando em conforto, praticidade e atividades em grupo.",
+            title: "Família",
+            desc: "Conforto, praticidade e atividades em grupo.",
             value: "family",
           },
           {
             icon: Heart,
             title: "Casal",
-            desc: "Experiencias mais intimistas, romanticas ou equilibradas para dois.",
+            desc: "Experiências intimistas ou equilibradas para dois.",
             value: "couple",
           },
           {
             icon: Users,
             title: "Amigos",
-            desc: "Opcao ideal para viagens mais sociais, dinamicas e compartilhadas.",
+            desc: "Viagens sociais, dinâmicas e compartilhadas.",
             value: "friends",
           },
         ],
@@ -188,7 +188,7 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
     key: "transport",
     label: "Deslocamento",
     title: "Estilo de deslocamento",
-    sub: "Como você prefere circular pelo destino durante a viagem?",
+    sub: "Escolha a forma de circular pelo destino.",
     fields: [
       {
         type: "cards",
@@ -196,7 +196,7 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
           {
             icon: Bus,
             title: "Transporte público",
-            desc: "Metro, ônibus e modais locais com boa autonomia.",
+            desc: "Metrô, ônibus e modais locais com boa autonomia.",
             value: "public",
           },
           {
@@ -250,7 +250,7 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
     key: "interests",
     label: "Interesses",
     title: "Interesses da viagem",
-    sub: "Esses temas ajudam a IA a priorizar experiências mais aderentes ao seu perfil.",
+    sub: "Selecione os temas que quer priorizar no roteiro.",
     fields: [
       {
         type: "tags",

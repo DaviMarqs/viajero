@@ -1,4 +1,6 @@
 import { lazy, Suspense } from "react";
+import { ScreenEntrance } from "./components/ui/screen-entrance";
+import { RouteFocus } from "./components/motion/route-focus";
 import { PageSkeleton } from "./components/ui/feedback";
 import {
   BrowserRouter,
@@ -6,6 +8,7 @@ import {
   Route,
   Outlet,
   useOutletContext,
+  useLocation,
   Navigate,
 } from "react-router-dom";
 import { useAuth } from "@/contexts/authContext";
@@ -45,6 +48,8 @@ import { CurrencyPicker } from "./components/ui/currency-picker";
 
 function PrivateRoute() {
   const { token, logout, isGuest, isAuthenticated } = useAuth();
+  const { pathname } = useLocation();
+  const isOnboarding = pathname.startsWith("/onboard");
 
   if (!isAuthenticated || !token) {
     return <Navigate to="/login" replace />;
@@ -55,13 +60,13 @@ function PrivateRoute() {
       <a href="#main-content" className="skip-link">
         Pular para o conteúdo
       </a>
-      <Sidebar />
+      <Sidebar hideCurrency={isOnboarding} />
       <main
         id="main-content"
         tabIndex={-1}
         className="app-main relative min-w-0 flex-1 pt-16 lg:pt-0"
       >
-        <div className="platform-toolbar hidden lg:flex"><CurrencyPicker /></div>
+        {!isOnboarding && <div className="platform-toolbar hidden lg:flex"><CurrencyPicker /></div>}
         <Outlet context={{ token, logout, isGuest }} />
       </main>
     </div>
@@ -83,6 +88,8 @@ function ProfilePageWrapper() {
 function App() {
   return (
     <BrowserRouter>
+      <ScreenEntrance />
+      <RouteFocus />
       <Suspense
         fallback={<PageSkeleton />}
       >

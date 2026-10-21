@@ -1,3 +1,4 @@
+import { DefinitionList } from "./definition-list";
 import { Sun, Clock, Globe, Star, DollarSign } from "lucide-react";
 import type { Destination } from "@/lib/destinations";
 import { useMoney } from "@/contexts/currencyContext";
@@ -86,27 +87,8 @@ export default function DestinationInfo({ destination }: DestinationInfoProps) {
       : []),
   ];
 
-  return (
-    <div className="flex flex-col gap-3">
-      <h2 className="text-base font-semibold text-foreground">
-        Informações gerais
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {items.map((item, i) => (
-          <div
-            key={i}
-            className="flex items-start gap-3 bg-background hover:bg-background transition-colors rounded-2xl px-4 py-3.5 border border-border"
-          >
-            <div className="shrink-0 mt-0.5 text-primary">{item.icon}</div>
-            <div className="flex flex-col gap-0.5">
-              <p className="text-sm text-strong">{item.label}</p>
-              <p className="text-sm font-medium text-foreground">
-                {item.value}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return <section className="flex flex-col gap-4">
+    <h2 className="section-title">Informações</h2>
+    <DefinitionList items={items.slice(0, 2)} />
+  </section>;
 }

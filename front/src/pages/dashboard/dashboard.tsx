@@ -2,7 +2,6 @@ import { TravelCollection } from "@/components/ui/travel-collection";
 import { HomeHero } from "@/components/ui/home-hero";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Feedback, CardSkeletons } from "@/components/ui/feedback";
 import { useDestinations } from "@/hooks/useDestinations";
 import { useItineraries } from "@/hooks/useItineraries";
@@ -15,7 +14,21 @@ import {
   destinationRecommendationReason,
 } from "@/lib/personalization";
 import { DestinationCard } from "@/features/destinations/destination-card";
-import ItineraryCard from "@/pages/roteiros/itinerary-card";
+import { HomeItineraryCard } from "@/components/ui/home-itinerary-card";
+import { parseTripDate } from "@/lib/trip-dates";
+import type { Itinerary } from "@/types/travel";
+function upcomingTrip(trips: Itinerary[]) {
+  const now = new Date();
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const upcoming = trips.flatMap(trip => {
+    const date = parseTripDate(trip.start_date ?? "");
+    return date && date.getTime() > today ? [{ trip, days: Math.round((date.getTime() - today) / 86400000) }] : [];
+  }).sort((a, b) => a.days - b.days);
+  return upcoming[0];
+}
+
+
+
 
 export function Dashboard() {
   const destinations = useDestinations();
@@ -36,14 +49,64 @@ export function Dashboard() {
         (left ? destinationAffinity(left, dna.profile) : 0)
       );
     });
+  const upcoming = upcomingTrip(trips.itineraries);
+  const homeTrips = upcoming ? [upcoming.trip, ...trips.itineraries.filter(trip => String(trip.id) !== String(upcoming.trip.id))] : trips.itineraries;
   const ranked = rankDestinations(destinations.destinations, dna.profile);
   return (
-    <section className="page-content">
-      <Breadcrumbs current="Painel principal" />
+    <section className="page-content home-page">
       <HomeHero />
       <div className="home-itineraries">
         <section
-          className="collection-panel space-y-5"
+          className="collection-panel space-y-6"
+          aria-labelledby="my-trips-title"
+        >
+          <div className="page-header">
+            <div className="space-y-2">
+              <h2 id="my-trips-title" className="section-title">
+                Meus roteiros
+              </h2>
+            </div>
+            <Link
+              className="section-link"
+              to="/roteiros"
+            >
+              Ver todos →
+            </Link>
+          </div>
+          {trips.loading ? (
+            <CardSkeletons layout="home" label="Carregando roteiros" />
+          ) : trips.error ? (
+            <Feedback
+              kind="error"
+              title="Roteiros indisponíveis"
+              description={trips.error}
+              onRetry={trips.refetch}
+            />
+          ) : trips.itineraries.length ? (
+            <TravelCollection label="Meus roteiros" home>
+              {homeTrips.slice(0, 6).map((trip, index) => (
+                <HomeItineraryCard
+                  upcomingDays={index === 0 ? upcoming?.days : undefined}
+                  key={trip.id}
+                  itinerary={trip}
+                  destinations={destinations.destinations}
+                />
+              ))}
+            </TravelCollection>
+          ) : (
+            <Feedback
+              title="Sua próxima viagem pode começar agora"
+              description="Escolha um destino ou peça uma sugestão para criar seu primeiro roteiro."
+            >
+              <Button asChild variant="outline">
+                <Link to="/roteiros/criacao">Criar roteiro</Link>
+              </Button>
+            </Feedback>
+          )}
+        </section>
+        {(featured.loading || dna.loading || destinations.loading || featured.error || dna.error || recommended.length > 0 || ranked.length === 0) && (
+        <section
+          className="collection-panel space-y-6"
           aria-labelledby="recommended-trips-title"
         >
           <div className="page-header">
@@ -58,14 +121,14 @@ export function Dashboard() {
               </p>
             </div>
             <Link
-              className="text-sm font-medium text-primary hover:underline"
+              className="section-link"
               to="/recomendações"
             >
-              Ver todos
+              Ver todos →
             </Link>
           </div>
           {featured.loading || dna.loading || destinations.loading ? (
-            <CardSkeletons layout="collection" label="Carregando recomendações" />
+            <CardSkeletons layout="home" label="Carregando recomendações" />
           ) : featured.error || dna.error ? (
             <Feedback
               kind="error"
@@ -77,19 +140,14 @@ export function Dashboard() {
               }}
             />
           ) : recommended.length ? (
-            <TravelCollection label="Roteiros recomendados" single>
+            <TravelCollection label="Roteiros recomendados" home>
               {recommended.slice(0, 6).map((trip) => (
-                <ItineraryCard
+                <HomeItineraryCard
                   key={trip.id}
                   itinerary={trip}
                   destinations={destinations.destinations}
-                  recommendationReason={destinationRecommendationReason(itineraryDestination(trip, destinations.destinations) ?? { id: "unknown", name: "" }, dna.profile)}
                 />
               ))}
-            </TravelCollection>
-          ) : ranked.length ? (
-            <TravelCollection label="Destinos para seu jeito de viajar" single>
-              {ranked.slice(0, 6).map((destination) => <DestinationCard key={destination.id} destination={destination} recommendationReason={destinationRecommendationReason(destination, dna.profile)} />)}
             </TravelCollection>
           ) : (
             <Feedback
@@ -104,59 +162,10 @@ export function Dashboard() {
             </Feedback>
           )}
         </section>
-        <section
-          className="collection-panel space-y-5"
-          aria-labelledby="my-trips-title"
-        >
-          <div className="page-header">
-            <div className="space-y-2">
-              <h2 id="my-trips-title" className="section-title">
-                Meus roteiros
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Retome os planos que você já começou.
-              </p>
-            </div>
-            <Link
-              className="text-sm font-medium text-primary hover:underline"
-              to="/roteiros"
-            >
-              Ver todos
-            </Link>
-          </div>
-          {trips.loading ? (
-            <CardSkeletons layout="collection" label="Carregando roteiros" />
-          ) : trips.error ? (
-            <Feedback
-              kind="error"
-              title="Roteiros indisponíveis"
-              description={trips.error}
-              onRetry={trips.refetch}
-            />
-          ) : trips.itineraries.length ? (
-            <TravelCollection label="Meus roteiros" single>
-              {trips.itineraries.slice(0, 6).map((trip) => (
-                <ItineraryCard
-                  key={trip.id}
-                  itinerary={trip}
-                  destinations={destinations.destinations}
-                />
-              ))}
-            </TravelCollection>
-          ) : (
-            <Feedback
-              title="Sua próxima viagem pode começar agora"
-              description="Escolha um destino ou peça uma sugestão para criar seu primeiro roteiro."
-            >
-              <Button asChild>
-                <Link to="/roteiros/criacao">Criar roteiro</Link>
-              </Button>
-            </Feedback>
-          )}
-        </section>
+        )}
       </div>
-      <section className="reference-panel dna-choices-compact space-y-5" aria-labelledby="destinations-title">
-        <div className="page-header border-b border-border pb-4">
+      <section className="reference-panel dna-choices-compact space-y-6" aria-labelledby="destinations-title">
+        <div className="page-header">
           <div className="space-y-2">
             <h2 id="destinations-title" className="section-title">
               {dna.profile
@@ -169,12 +178,10 @@ export function Dashboard() {
                 : "Complete seu DNA no perfil para personalizar as recomendações."}
             </p>
           </div>
-          <Button variant="travel" asChild>
-            <Link to="/destinos">Explorar destinos</Link>
-          </Button>
+          <Link className="section-link" to="/destinos">Ver destinos</Link>
         </div>
         {destinations.loading ? (
-          <CardSkeletons />
+          <CardSkeletons layout="collection" />
         ) : destinations.error ? (
           <Feedback
             kind="error"
@@ -183,9 +190,9 @@ export function Dashboard() {
             onRetry={destinations.refetch}
           />
         ) : ranked.length ? (
-          <TravelCollection label="Escolhas alinhadas ao seu perfil">
+          <TravelCollection label="Escolhas alinhadas ao seu perfil" completeCards>
             {ranked.slice(0, 6).map((destination) => (
-              <DestinationCard key={destination.id} destination={destination} recommendationReason={destinationRecommendationReason(destination, dna.profile)} />
+              <DestinationCard compact key={destination.id} destination={destination} recommendationReason={destinationRecommendationReason(destination, dna.profile)} />
             ))}
           </TravelCollection>
         ) : (
@@ -193,7 +200,7 @@ export function Dashboard() {
             title="Sua próxima descoberta está por vir"
             description="Pesquise um destino para começar."
           >
-            <Button asChild>
+            <Button asChild variant="outline">
               <Link to="/roteiros/criacao">Descobrir destinos</Link>
             </Button>
           </Feedback>

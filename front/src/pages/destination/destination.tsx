@@ -1,3 +1,4 @@
+import { useToast } from "@/components/motion/toast-context";
 import { Link, useParams } from "react-router-dom";
 import { useDestinations } from "@/hooks/useDestinations";
 import DestinationInfo from "@/components/ui/info";
@@ -5,16 +6,22 @@ import PoiList from "@/components/ui/poi-list";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Feedback } from "@/components/ui/feedback";
 import { Button } from "@/components/ui/button";
+import { TagList } from "@/components/ui/tag-list";
 import { DestinationGallery } from "@/components/ui/destination-gallery";
 import { destinationCardData } from "@/features/destinations/destination-adapter";
 import { useMoney } from "@/contexts/currencyContext";
 import { useLocalFavorites } from "@/hooks/useLocalFavorites";
-import { useState } from "react";
-import { Heart } from "lucide-react";
-import { destinationCategories } from "@/lib/personalization";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Heart, ArrowUpRight, Star } from "lucide-react";
+
 export default function DestinationPage() {
-  const { money } = useMoney();
+  const { money, currency, convertedAmount } = useMoney();
   const favorites = useLocalFavorites();
+  const notify = useToast();
+  const latestFavorites = useRef(favorites);
+  const mounted = useRef(true);
+  useLayoutEffect(() => { latestFavorites.current = favorites; });
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const [saveError, setSaveError] = useState("");
   const { id } = useParams();
   const { destinations, loading, error, refetch } = useDestinations();
@@ -23,189 +30,86 @@ export default function DestinationPage() {
   );
   const card = destination && destinationCardData(destination);
   return (
-    <section className="page-content">
-      <Breadcrumbs current={destination?.name || "Detalhes do destino"} />
+    <section className="page-content destination-detail">
+      <Breadcrumbs current={destination?.name || "Detalhes do destino"} parent={{ label: "Destinos", to: "/destinos" }} />
       {loading ? (
-        <Feedback kind="loading" title="Carregando destino…" />
+        <div role="status" aria-busy="true" className="destination-loading">
+          <span className="sr-only">Carregando destino…</span>
+          <div className="h-8 w-1/3 skeleton-block" aria-hidden="true" />
+          <div className="destination-gallery-main skeleton-block" aria-hidden="true" />
+          <div className="h-24 skeleton-block" aria-hidden="true" />
+        </div>
       ) : error ? (
-        <Feedback
-          kind="error"
-          title="Não conseguimos carregar este destino"
-          description={error}
-          onRetry={refetch}
-        />
+        <Feedback kind="error" title="Não conseguimos carregar este destino" description={error} onRetry={refetch} />
       ) : !destination || !card ? (
-        <Feedback
-          title="Destino não encontrado"
-          description="Volte à exploração para escolher outro destino."
-        >
-          <Button asChild variant="outline">
-            <Link to="/explorar">Explorar destinos</Link>
-          </Button>
+        <Feedback title="Destino não encontrado" description="Volte à exploração para escolher outro destino.">
+          <Button asChild variant="outline"><Link to="/explorar">Explorar destinos</Link></Button>
         </Feedback>
       ) : (
-        <article className="reference-panel space-y-8">
-          <DestinationGallery destination={destination} cover={card.image} />
-          <header className="page-header">
-            <div className="space-y-3">
-              <h1 className="page-title">{destination.name}</h1>
-              <p className="text-muted-foreground">
-                {[destination.city, destination.country]
-                  .filter(Boolean)
-                  .join(", ")}
-              </p>
-              {card.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {card.tags.map((tag) => (
-                    <span key={tag} className="badge">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Button
-                variant="outline"
-                aria-pressed={favorites.has(destination.id)}
-                onClick={() => {
-                  try {
-                    favorites.toggle(destination.id);
-                    setSaveError("");
-                  } catch {
-                    setSaveError(
-                      "Não foi possível salvar. Verifique se o navegador permite armazenamento local.",
-                    );
-                  }
-                }}
-              >
-                <Heart
-                  aria-hidden="true"
-                  className={
-                    favorites.has(destination.id)
-                      ? "fill-current text-destructive"
-                      : ""
-                  }
-                />
-                {favorites.has(destination.id)
-                  ? "Destino favorito"
-                  : "Favoritar destino"}
-              </Button>
-              {saveError && (
-                <p role="alert" className="max-w-sm text-sm text-destructive">
-                  {saveError}
-                </p>
-              )}
+        <article className="destination-article">
+          <header className="destination-heading">
+            <h1 className="page-title">{destination.name}</h1>
+            <div className="destination-meta">
+              <p>{destination.country || "País não informado"}</p>
+              {card.rating != null && <p className="inline-flex items-center gap-2 font-mono text-xs" aria-label={`Avaliação ${card.rating.toLocaleString("pt-BR")} de 5`}><Star className="size-4" aria-hidden="true" />{card.rating.toLocaleString("pt-BR")} / 5</p>}
+              {card.tags.length > 0 && <TagList tags={card.tags} />}
             </div>
           </header>
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-border bg-background p-6">
-            <div>
-              <p className="font-display text-2xl font-semibold">
-                {money(card.budget, card.currency)}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {card.budgetLabel}
-              </p>
-            </div>
-            <Button
-              asChild
-              className="h-auto min-h-11 w-full whitespace-normal py-3 text-center sm:w-auto"
-            >
-              <Link to="/roteiros/criacao" state={{ destination }}>
-                Gerar roteiro para este destino
-              </Link>
-            </Button>
-          </div>
-          <section className="space-y-3">
-            <h2 className="section-title">Visão geral</h2>
-            <p className="leading-relaxed text-strong">
-              {destination.summary ||
-                destination.description ||
-                "Ainda não há uma descrição disponível para este destino."}
-            </p>
-          </section>
-          <DestinationInfo destination={destination} />
-          {destinationCategories(destination).length > 0 && (
-            <section className="space-y-3">
-              <h2 className="section-title">Experiências neste destino</h2>
-              <div className="flex flex-wrap gap-2">
-                {destinationCategories(destination).map((tag) => (
-                  <Link
-                    key={tag}
-                    className="badge hover:bg-secondary hover:text-primary"
-                    to={"/explorar?categoria=" + encodeURIComponent(tag)}
-                  >
-                    {tag}
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-          {destination.cost_profile &&
-            typeof destination.cost_profile === "object" && (
-              <section
-                className="space-y-5"
-                aria-labelledby="destination-costs"
-              >
-                <div className="space-y-2">
-                  <h2 id="destination-costs" className="section-title">
-                    Planeje seu orçamento
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    Estimativas por pessoa, por dia. Os preços podem variar
-                    conforme a época e suas escolhas.
-                  </p>
-                </div>
-                <dl className="grid gap-5 sm:grid-cols-3">
-                  {[
-                    ["Econômico", "daily_budget_low"],
-                    ["Intermediário", "daily_budget_mid"],
-                    ["Mais conforto", "daily_budget_high"],
-                  ].map(([label, key]) => (
-                    <div
-                      className="space-y-2 rounded-control bg-muted p-5"
-                      key={key}
-                    >
-                      <dt className="text-sm text-strong">{label}</dt>
-                      <dd className="font-display text-xl font-semibold">
-                        {money(
-                          destination.cost_profile &&
-                            typeof destination.cost_profile === "object" &&
-                            (typeof destination.cost_profile[key] ===
-                              "string" ||
-                              typeof destination.cost_profile[key] === "number")
-                            ? (destination.cost_profile[key] as string | number)
-                            : null,
-                          card.currency,
-                        )}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-                {typeof destination.cost_profile.notes === "string" && (
-                  <p className="max-w-[70ch] text-sm leading-6 text-muted-foreground">
-                    {destination.cost_profile.notes}
-                  </p>
-                )}
-                {typeof destination.cost_profile.source_url === "string" &&
-                  destination.cost_profile.source_url.startsWith(
-                    "https://",
-                  ) && (
-                    <a
-                      className="text-sm text-primary underline"
-                      href={destination.cost_profile.source_url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Consultar fonte dos valores
-                    </a>
-                  )}
+          <DestinationGallery destination={destination} cover={card.image} />
+          <div className="destination-columns">
+            <div className="destination-content">
+              <section className="space-y-4">
+                <h2 className="section-title">Visão geral</h2>
+                <p className="reading-copy text-strong">{destination.summary || destination.description || "Ainda não há uma descrição disponível para este destino."}</p>
               </section>
-            )}
-          <PoiList pois={destination.pois ?? []} />
-          <Button asChild variant="outline">
-            <Link to="/explorar">Voltar para explorar</Link>
-          </Button>
+              <DestinationInfo destination={destination} />
+              {!!destination.pois?.length && <PoiList pois={destination.pois} />}
+              <Link className="section-link" to="/explorar">Voltar para explorar</Link>
+            </div>
+            <aside className="destination-aside" aria-label="Estimativas e planejamento">
+              <div className="destination-planning">
+                <h2 className="section-title">Planeje sua viagem</h2>
+                <p className="text-xs text-muted-foreground">{destination.cost_profile && typeof destination.cost_profile === "object" ? "Estimativas por pessoa, por dia. Variam conforme a época e suas escolhas." : card.budgetLabel}</p>
+                {destination.cost_profile && typeof destination.cost_profile === "object" ? (
+                  <dl className="destination-price-bands">
+                    {[
+                      ["Econômico", "daily_budget_low"],
+                      ["Intermediário", "daily_budget_mid"],
+                      ["Mais conforto", "daily_budget_high"],
+                    ].map(([label, key]) => <div className="destination-price-band" data-featured={key === "daily_budget_mid"} key={key}>
+                      <dt>{label}</dt>
+                      <dd>{money(destination.cost_profile && typeof destination.cost_profile === "object" && (typeof destination.cost_profile[key] === "string" || typeof destination.cost_profile[key] === "number") ? destination.cost_profile[key] as string | number : null, card.currency)}</dd>
+                    </div>)}
+                  </dl>
+                ) : <p className="font-mono text-lg">{money(card.budget, card.currency)}</p>}
+                <p className="text-xs leading-5 text-muted-foreground">{currency !== card.currency && convertedAmount(card.budget, card.currency) != null ? `Convertido de ${card.currency}, aproximado. Exibição em ${currency}.` : `Moeda de origem: ${card.currency}.${currency !== card.currency ? " Valores sem cotação permanecem na moeda original." : ""}`}</p>
+                <div className="destination-cta">
+                  <Button asChild><Link to="/roteiros/criacao" state={{ destination }}>Gerar roteiro<ArrowUpRight aria-hidden="true" /></Link></Button>
+                  <Button variant="outline" aria-pressed={favorites.has(destination.id)} onClick={() => {
+                    try {
+                      const wasFavorite = favorites.has(destination.id);
+                      favorites.toggle(destination.id);
+                      notify({ title: wasFavorite ? "Destino removido dos favoritos neste navegador." : "Destino salvo nos favoritos neste navegador.", action: { label: "Desfazer", onClick: () => {
+                        if (!mounted.current) return;
+                        try { if (latestFavorites.current.has(destination.id) !== wasFavorite) latestFavorites.current.toggle(destination.id); }
+                        catch { notify({ title: "Não foi possível desfazer. Verifique o armazenamento do navegador." }); }
+                      } } });
+                      setSaveError("");
+                    } catch {
+                      setSaveError("Não foi possível salvar. Verifique se o navegador permite armazenamento local.");
+                    }
+                  }}>
+                    <Heart aria-hidden="true" className={favorites.has(destination.id) ? "favorite-heart fill-current" : "favorite-heart"} />
+                    {favorites.has(destination.id) ? "Remover dos favoritos" : "Favoritar"}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Favoritos de destinos são salvos neste navegador.</p>
+                {saveError && <p role="alert" className="text-sm">{saveError}</p>}
+                {destination.cost_profile && typeof destination.cost_profile === "object" && typeof destination.cost_profile.notes === "string" && <div className="source-note"><p className="text-xs font-medium">Nota da fonte · moeda original ({card.currency})</p><p className="text-xs leading-5 text-muted-foreground">{destination.cost_profile.notes}</p></div>}
+                {destination.cost_profile && typeof destination.cost_profile === "object" && typeof destination.cost_profile.source_url === "string" && destination.cost_profile.source_url.startsWith("https://") && <a className="section-link text-xs" href={destination.cost_profile.source_url} target="_blank" rel="noreferrer">Consultar fonte dos valores<ArrowUpRight className="size-4" aria-hidden="true" /></a>}
+              </div>
+            </aside>
+          </div>
         </article>
       )}
     </section>

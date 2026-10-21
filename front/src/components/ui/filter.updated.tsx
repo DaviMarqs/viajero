@@ -80,7 +80,7 @@ export default function Filter() {
   }
 
   const filterContent = (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-6 md:p-7">
+    <div className="rounded-lg border border-line bg-white p-6 md:p-7">
       <div className="mb-6 flex items-center justify-between gap-3">
         <p className="text-xs font-medium uppercase tracking-widest text-neutral-400">
           Filtros
@@ -89,16 +89,16 @@ export default function Filter() {
         <button
           type="button"
           onClick={clearFilters}
-          className="text-xs font-medium text-blue-600 hover:text-blue-700"
+          className="text-xs font-medium text-ink-muted hover:text-ink"
         >
           Limpar
         </button>
       </div>
 
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6">
         {FILTER_GROUPS.map((group, i) => (
           <div key={group.id}>
-            {i > 0 && <div className="mb-5 h-px bg-neutral-100" />}
+            {i > 0 && <div className="mb-5 h-px bg-canvas" />}
 
             <p className="mb-2.5 pb-2 text-sm font-medium text-neutral-800">
               {group.title}
@@ -115,15 +115,15 @@ export default function Filter() {
                     onClick={() => toggle(option.id)}
                     className={`flex w-full items-center gap-2.5 rounded-lg border px-2.5 py-1.5 text-left transition-colors ${
                       isChecked
-                        ? "border-blue-200 bg-blue-50"
-                        : "border-transparent hover:bg-neutral-50"
+                        ? "border-accent bg-surface"
+                        : "border-transparent hover:bg-canvas"
                     }`}
                   >
                     <span
                       className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors ${
                         isChecked
-                          ? "border-blue-600 bg-blue-600"
-                          : "border-neutral-300 bg-white"
+                          ? "border-accent bg-accent"
+                          : "border-line bg-white"
                       }`}
                     >
                       {isChecked && (
@@ -148,7 +148,7 @@ export default function Filter() {
                     <span
                       className={`text-sm ${
                         isChecked
-                          ? "font-medium text-blue-700"
+                          ? "font-medium text-ink"
                           : "text-neutral-700"
                       }`}
                     >
@@ -169,12 +169,12 @@ export default function Filter() {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="mb-3 flex w-full items-center justify-between rounded-2xl border border-neutral-200 bg-white px-5 py-4 md:hidden"
+        className="mb-3 flex w-full items-center justify-between rounded-lg border border-line bg-white px-6 py-4 md:hidden"
       >
         <span className="text-sm font-medium text-neutral-800">Filtros</span>
 
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-blue-600 px-2 py-0.5 text-xs font-medium text-white">
+          <span className="rounded-control bg-accent px-2 py-0.5 text-xs font-medium text-white">
             {selected.size}
           </span>
 

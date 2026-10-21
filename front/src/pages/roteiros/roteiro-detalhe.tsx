@@ -1,3 +1,5 @@
+import { TabStrip } from "@/components/motion/tab-strip";
+import { DayTabLabel } from "@/components/ui/day-tab-label";
 import { Feedback, PageSkeleton } from "@/components/ui/feedback";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,7 +11,6 @@ import { useParams } from "react-router-dom";
 import { apiRequest } from "@/lib/api";
 import type { ApiSuccessResponse } from "@/lib/api";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { DestinationImage } from "@/features/destinations/destination-card";
 import {
   itineraryPresentation,
   itineraryStatus,
@@ -132,7 +133,7 @@ export default function RoteiroDetalhePage() {
   if (!itinerary) {
     return (
       <section className="px-6 py-8 lg:px-10">
-        <div className="rounded-card border border-border bg-background px-6 py-5 text-sm text-muted-foreground">
+        <div className="rounded-card border border-border bg-background px-6 py-6 text-sm text-muted-foreground">
           Nenhum roteiro foi encontrado para esse identificador.
         </div>
       </section>
@@ -146,13 +147,13 @@ export default function RoteiroDetalhePage() {
   const changes = activeDraft ? draftChanges(itinerary, activeDraft) : null;
   const daily = dayInsights(days[selectedDay]);
   return (
-    <section className="page-content itinerary-detail">
-      <Breadcrumbs current={itinerary.title} />
+    <section className="page-content itinerary-detail" data-dirty={hasUnsavedChanges}>
+      <Breadcrumbs current={itinerary.title} parent={{ label: "Roteiros", to: "/roteiros" }} />
       <header className="page-header">
         <div className="space-y-3">
-          <h1 className="page-title">{itinerary.title}</h1>
+          <h1 className="page-title">Viagem · {itinerary.title}</h1>
           <p className="text-muted-foreground">
-            {[visual.location, visual.country].filter(Boolean).join(", ")}
+            {visual.country || "País não informado"} · {itinerary.duration_days ? `${itinerary.duration_days} dias` : "Duração a definir"} · {formatDate(itinerary.start_date)} — {formatDate(itinerary.end_date)}
           </p>
         </div>
         <div className="action-bar">
@@ -172,6 +173,7 @@ export default function RoteiroDetalhePage() {
                 draft={activeDraft}
                 onDraftChange={changeDraft}
                 onSavingChange={setSavingEdit}
+                toolbarContent={<><span role="status" className="text-xs text-muted-foreground">{changes?.changed ? "Alterações não salvas" : "Nenhuma alteração pendente"}</span><Button type="button" variant="ghost" disabled={savingEdit || !draftHistory.length} onClick={() => { const previous = draftHistory[draftHistory.length - 1]; if (previous) { setDraft(previous); setDraftHistory(history => history.slice(0, -1)); } }}><Undo2 aria-hidden="true" />Desfazer</Button></>}
                 onSaved={setItinerary}
               />
             )}
@@ -189,9 +191,8 @@ export default function RoteiroDetalhePage() {
             )}
         </div>
       </header>
-      {activeDraft && <section className="reference-panel space-y-4" aria-label="Modo de edição">
+      {activeDraft && <section className="edit-mode-panel space-y-4" aria-label="Modo de edição">
         <div><h2 className="text-lg">Modo de edição ativado</h2><p className="mt-1 text-sm text-muted-foreground">Arraste pela alça para reordenar. Remova atividades antes de salvar. Os horários serão recalculados pela duração das visitas, com 30 minutos entre atividades. A programação fica salva neste navegador.</p></div>
-        <div className="flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm font-medium">{changes?.changed ? `Alterações ainda não salvas${changes.removed ? ` · ${changes.removed} atividades removidas` : ""}${changes.reorderedDays ? ` · ${changes.reorderedDays} dias reordenados` : ""}` : "Nenhuma alteração pendente."}</p><Button type="button" variant="outline" disabled={savingEdit || !draftHistory.length} onClick={() => { const previous = draftHistory[draftHistory.length - 1]; if (previous) { setDraft(previous); setDraftHistory(history => history.slice(0, -1)); } }}><Undo2 aria-hidden="true" />Desfazer última alteração</Button></div>
         <fieldset disabled={savingEdit} className="grid gap-4 sm:grid-cols-3">
           <label className="form-label">Nome do roteiro<Input maxLength={160} value={activeDraft.title} onChange={e => changeDraft({...activeDraft, title:e.target.value})} /></label>
           <label className="form-label">Ida<Input type="date" value={activeDraft.start_date ?? ""} onChange={e => changeDraft({...activeDraft, start_date:e.target.value || null})} /></label>
@@ -200,13 +201,13 @@ export default function RoteiroDetalhePage() {
       </section>}
       <div className="itinerary-layout">
         <section className="space-y-6" aria-label="Programação da viagem">
-          <div className="day-tabs" role="tablist" aria-label="Dias do roteiro">
-            {days.map((day, index) => <button key={day.id} type="button" role="tab" tabIndex={selectedDay === index ? 0 : -1} id={`day-tab-${index}`} aria-controls={`day-panel-${index}`} aria-selected={selectedDay === index} onClick={() => setSelectedDay(index)} onKeyDown={event => { const next = event.key === "ArrowRight" ? (index + 1) % days.length : event.key === "ArrowLeft" ? (index + days.length - 1) % days.length : event.key === "Home" ? 0 : event.key === "End" ? days.length - 1 : null; if (next != null) { event.preventDefault(); setSelectedDay(next); event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`#day-tab-${next}`)?.focus(); } }}>{`Dia ${day.day_number}`}</button>)}
-          </div>
+          <TabStrip label="Dias do roteiro" selected={selectedDay}>
+            {days.map((day, index) => <button key={day.id} type="button" role="tab" tabIndex={selectedDay === index ? 0 : -1} id={`day-tab-${index}`} aria-controls={`day-panel-${index}`} aria-selected={selectedDay === index} onClick={() => setSelectedDay(index)} onKeyDown={event => { const next = event.key === "ArrowRight" ? (index + 1) % days.length : event.key === "ArrowLeft" ? (index + days.length - 1) % days.length : event.key === "Home" ? 0 : event.key === "End" ? days.length - 1 : null; if (next != null) { event.preventDefault(); setSelectedDay(next); event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`#day-tab-${next}`)?.focus(); } }}><DayTabLabel start={activeDraft?.start_date ?? itinerary.start_date} day={day.day_number} /></button>)}
+          </TabStrip>
           {days.length === 0 ? <Feedback title="Ainda não existem dias gerados para este roteiro." description={itinerary.generation_status === "generating" ? "A programação aparecerá aqui quando a geração terminar." : undefined} /> : days.map((day, index) => selectedDay === index ? <div key={day.id} role="tabpanel" id={`day-panel-${index}`} aria-labelledby={`day-tab-${index}`} hidden={selectedDay !== index} className="space-y-5">
             <h2 className="section-title">{day.title}</h2>
             {day.summary && <p className="text-sm leading-6 text-muted-foreground">{day.summary}</p>}
-            <dl className="day-overview"><div><dt>Atividades</dt><dd>{daily.activities}</dd></div><div><dt>Tempo de visitas{daily.missingDurations ? " informado" : ""}</dt><dd>{daily.visitMinutes ? `${Math.floor(daily.visitMinutes / 60)}h ${daily.visitMinutes % 60}min` : "Não informado"}</dd></div><div><dt>{daily.missingCosts ? "Subtotal conhecido" : "Custo estimado do dia"}</dt><dd>{daily.activities ? money(daily.knownCost, itinerary.currency_code || "BRL") : "Dia livre"}</dd></div></dl>
+            <dl className="day-overview"><div><dt>Atividades</dt><dd>{daily.activities}</dd></div><div><dt>Tempo de visitas{daily.missingDurations ? " informado" : ""}</dt><dd>{daily.visitMinutes ? `${Math.floor(daily.visitMinutes / 60)}h ${daily.visitMinutes % 60}min` : "Não informado"}</dd></div><div><dt>Custo conhecido do dia</dt><dd>{daily.activities ? daily.missingCosts === daily.activities ? "—" : money(daily.knownCost, itinerary.currency_code || "BRL") : "Dia livre"}</dd></div></dl>
             {(daily.missingCosts > 0 || daily.missingDurations > 0) && <p className="text-sm text-muted-foreground">{daily.missingCosts > 0 && `${daily.missingCosts} atividades sem custo informado. `}{daily.missingDurations > 0 && `${daily.missingDurations} atividades sem duração informada.`}</p>}
             {daily.activities > 1 && <p className="text-xs text-muted-foreground">O tempo de visitas não inclui deslocamentos. Intervalos da programação não representam uma estimativa de trajeto real.</p>}
             {activeDraft ? <fieldset disabled={savingEdit}><DayEditor day={day} destinationImage={visual.image} destinationName={visual.location} currency={itinerary.currency_code || "BRL"} update={next => changeDraft({...activeDraft, days: activeDraft.days?.map(item => item.id === next.id ? next : item)})} /></fieldset> : <ol className="space-y-5">{(day.events ?? []).map((event, eventIndex) => <ItineraryActivity key={event.id} event={event} index={eventIndex} currency={itinerary.currency_code || "BRL"} destinationImage={visual.image} destinationName={visual.location} />)}</ol>}
@@ -214,13 +215,10 @@ export default function RoteiroDetalhePage() {
           </div> : null)}
         </section>
         <aside className="itinerary-aside space-y-6">
-          <DestinationImage src={visual.image} name={visual.location} className="h-44 rounded-2xl" />
           <div className="budget-panel space-y-5">
             <h2 className="text-xl">Sua viagem</h2>
-            <p className="text-sm text-muted-foreground">{formatDate(itinerary.start_date)} — {formatDate(itinerary.end_date)}</p>
-            <div className="space-y-2"><p className="text-sm text-muted-foreground">Orçamento total</p><p className="text-2xl font-semibold tabular-nums">{money(itinerary.budget_total, itinerary.currency_code || "BRL")}</p></div>
-            <div className="space-y-2"><p className="text-sm text-muted-foreground">{daily.missingCosts ? "Subtotal conhecido do dia" : "Estimativa do dia"}</p><p className="text-xl font-medium tabular-nums">{daily.activities ? money(daily.knownCost, itinerary.currency_code || "BRL") : "Dia livre"}</p></div>
-            <p className="text-sm text-muted-foreground">{itinerary.duration_days ? `${itinerary.duration_days} dias` : "Duração a definir"} · {visual.location}</p>
+            <div className="space-y-2"><p className="text-sm text-muted-foreground">Custo conhecido das atividades</p><p className="text-2xl font-medium tabular-nums">{itinerary.budget_total == null || itinerary.budget_total === "" ? "—" : money(itinerary.budget_total, itinerary.currency_code || "BRL")}</p></div>
+            <p className="text-xs text-muted-foreground">Este valor não representa o orçamento completo da viagem. Custos ausentes não são tratados como zero.</p>
           </div>
           {itinerary.summary && <p className="text-sm leading-6 text-muted-foreground">{itinerary.summary}</p>}
         </aside>

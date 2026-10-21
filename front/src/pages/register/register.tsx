@@ -229,7 +229,7 @@ export default function Register() {
               </button>
             </div>
             {errors.confirmar && (
-              <p className="text-sm text-red-500">
+              <p className="text-sm text-ink-muted">
                 {errors.confirmar.message}
               </p>
             )}
@@ -239,7 +239,7 @@ export default function Register() {
             <input
               id="termos"
               type="checkbox"
-              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-foreground focus:ring-slate-400"
+              className="mt-0.5 h-4 w-4 rounded border-line text-foreground focus:ring-slate-400"
               {...register("termos")}
             />
             <span>
@@ -251,18 +251,18 @@ export default function Register() {
             </span>
           </label>
           {errors.termos && (
-            <p className="text-sm text-red-500">{errors.termos.message}
+            <p className="text-sm text-ink-muted">{errors.termos.message}
             </p>
           )}
 
           {submitError && (
-            <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div role="alert" className="rounded-lg border border-line bg-canvas px-4 py-3 text-sm text-ink-muted">
               {submitError}
             </div>
           )}
 
-          <Button type="submit" disabled={isSubmitting} size="lg" className="w-full">
-            {isSubmitting ? "Criando conta..." : "Criar conta"}
+          <Button type="submit" loading={isSubmitting} size="lg" className="w-full">
+            Criar conta
           </Button>
         </form>
 

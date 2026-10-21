@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
-import { Heart, LoaderCircle } from "lucide-react";
+import { Heart } from "lucide-react";
+import { useToast } from "@/components/motion/toast-context";
 import { Button } from "@/components/ui/button";
 import { useAsyncResource } from "@/hooks/useAsyncResource";
 import { apiRequest, type ApiSuccessResponse } from "@/lib/api";
@@ -29,7 +30,7 @@ export function FavoriteItineraryButton({
   const favorite = useAsyncResource(load, initialFavoriteId ?? null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const notify = useToast();
   async function save() {
     if (saving || favorite.loading) return;
     setSaving(true);
@@ -38,7 +39,13 @@ export function FavoriteItineraryButton({
       if (favorite.data !== null) {
         await apiRequest(`/api/favorites/${favorite.data}/`, { method: "DELETE" });
         favorite.setData(null);
-        setMessage("Roteiro removido dos favoritos.");
+        notify({ title: "Roteiro removido dos favoritos.", action: { label: "Desfazer", onClick: async () => {
+          try {
+            const restored = await apiRequest<ApiSuccessResponse<{ id: number | string }>>("/api/favorites/", { method: "POST", body: JSON.stringify({ itinerary: Number(itineraryId) }) });
+            if (restored.data?.id == null) throw new Error("N\u00e3o foi poss\u00edvel confirmar o favorito.");
+            favorite.setData(restored.data.id); notify({ title: "Roteiro adicionado aos favoritos." });
+          } catch (error) { notify({ title: error instanceof Error ? error.message : "N\u00e3o foi poss\u00edvel desfazer. Tente novamente." }); }
+        } } });
         onRemoved?.();
       } else {
         const response = await apiRequest<ApiSuccessResponse<{ id: number | string }>>("/api/favorites/", {
@@ -46,7 +53,11 @@ export function FavoriteItineraryButton({
         });
         if (response.data?.id == null) throw new Error("Não foi possível confirmar o favorito. Tente novamente.");
         favorite.setData(response.data.id);
-        setMessage("Roteiro adicionado aos favoritos.");
+        const savedId = response.data.id;
+        notify({ title: "Roteiro adicionado aos favoritos.", action: { label: "Desfazer", onClick: async () => {
+          try { await apiRequest(`/api/favorites/${savedId}/`, { method: "DELETE" }); favorite.setData(null); onRemoved?.(); notify({ title: "Roteiro removido dos favoritos." }); }
+          catch (error) { notify({ title: error instanceof Error ? error.message : "N\u00e3o foi poss\u00edvel desfazer. Tente novamente." }); }
+        } } });
       }
     } catch (err) {
       setError(
@@ -61,29 +72,20 @@ export function FavoriteItineraryButton({
       <Button
         variant="outline"
         size={compact ? "icon" : "default"}
-        disabled={saving || favorite.loading}
+        loading={saving}
+        disabled={favorite.loading}
         onClick={favorite.error ? favorite.refetch : save}
         aria-pressed={favorite.data !== null}
         aria-label={favorite.data !== null ? "Desfavoritar roteiro" : "Favoritar roteiro"}
       >
-        {saving ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <Heart
-          aria-hidden="true"
-          className={favorite.data !== null ? "fill-current text-destructive" : ""}
-        />}
-        {!compact && (favorite.data !== null
-          ? saving ? "Removendo…" : "Desfavoritar roteiro"
-          : saving
-            ? "Salvando…"
-            : favorite.error
-              ? "Tentar carregar favoritos"
-              : "Favoritar roteiro")}
+        <Heart aria-hidden="true" className={favorite.data !== null ? "favorite-heart fill-current" : "favorite-heart"} />
+        {!compact && (favorite.error ? "Tentar carregar favoritos" : favorite.data !== null ? "Desfavoritar roteiro" : "Favoritar roteiro")}
       </Button>
       {error && (
         <p role="alert" className="max-w-64 text-sm text-destructive">
           {error}
         </p>
       )}
-      <span role="status" className="sr-only">{message}</span>
     </div>
   );
 }

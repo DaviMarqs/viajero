@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useToast } from "@/components/motion/toast-context";
+import { useReducedMotion } from "@/components/motion/use-reduced-motion";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import {
   DndContext,
+  DragOverlay,
   KeyboardSensor,
   MeasuringStrategy,
   PointerSensor,
@@ -49,6 +52,7 @@ function EventRow({
   move: (offset: number) => void;
   remove: () => void;
 }) {
+  const reduced = useReducedMotion();
   const {
     attributes,
     listeners,
@@ -56,20 +60,20 @@ function EventRow({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: String(event.id) });
+  } = useSortable({ id: String(event.id), transition: reduced ? null : { duration: 200, easing: "cubic-bezier(0.16, 1, 0.3, 1)" } });
   return (
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={
-        "inline-event-editor space-y-4 rounded-2xl border border-border bg-white p-5 " +
+        "inline-event-editor space-y-4 " +
         (isDragging ? "event-dragging" : "")
       }
     >
       <div className="flex items-center gap-2">
         <button
           type="button"
-          className="flex size-11 shrink-0 touch-none items-center justify-center rounded-control text-muted-foreground hover:bg-secondary"
+          className="activity-drag-handle flex size-11 shrink-0 touch-none items-center justify-center rounded-control text-muted-foreground hover:bg-secondary"
           {...attributes}
           {...listeners}
           aria-label={`Reordenar ${event.title}`}
@@ -77,7 +81,7 @@ function EventRow({
           <GripVertical aria-hidden="true" />
         </button>
         <span className="min-w-0 flex-1 text-sm font-medium">
-          {event.title}
+          Atividade {index + 1}
         </span>
         <div className="flex shrink-0">
           <Button
@@ -145,6 +149,14 @@ export function DayEditor({
   day: ItineraryDay;
   update: (day: ItineraryDay) => void;
 }) {
+  const notify = useToast();
+  const latest = useRef({ day, update });
+  const mounted = useRef(true);
+  useLayoutEffect(() => { latest.current = { day, update }; }, [day, update]);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const reduced = useReducedMotion();
+  const dragged = day.events.find(event => String(event.id) === activeId);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, {
@@ -172,7 +184,9 @@ export function DayEditor({
         sensors={sensors}
         measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
         collisionDetection={closestCenter}
-        onDragEnd={reorder}
+        onDragStart={({ active }) => setActiveId(String(active.id))}
+        onDragCancel={() => setActiveId(null)}
+        onDragEnd={event => { setActiveId(null); reorder(event); }}
         accessibility={{
           screenReaderInstructions: {
             draggable:
@@ -201,12 +215,18 @@ export function DayEditor({
                 destinationImage={destinationImage} destinationName={destinationName} currency={currency}
                 index={index}
                 total={day.events.length}
-                remove={() =>
-                  apply({
-                    ...day,
-                    events: day.events.filter((item) => item.id !== event.id),
-                  })
-                }
+                remove={() => {
+                  apply({ ...day, events: day.events.filter(item => item.id !== event.id) });
+                  notify({ title: "Atividade removida do rascunho.", action: { label: "Desfazer", onClick: () => {
+                    if (!mounted.current) { notify({ title: "A edição deste dia foi encerrada." }); return; }
+                    const current = latest.current.day;
+                    if (current.events.some(item => item.id === event.id)) return;
+                    const events = [...current.events];
+                    events.splice(Math.min(index, events.length), 0, event);
+                    const costs = events.map(item => item.estimated_cost == null ? NaN : Number(item.estimated_cost));
+                    latest.current.update({ ...current, events, estimated_cost: costs.every(Number.isFinite) ? costs.reduce((sum, cost) => sum + cost, 0) : current.estimated_cost });
+                  } } });
+                }}
                 move={(offset) =>
                   apply({
                     ...day,
@@ -217,6 +237,7 @@ export function DayEditor({
             ))}
           </ol>
         </SortableContext>
+        <DragOverlay dropAnimation={reduced ? null : { duration: 200, easing: "cubic-bezier(0.16, 1, 0.3, 1)" }}>{dragged && <div className="activity-drag-overlay" aria-hidden="true"><ItineraryActivity as="div" event={dragged} index={0} currency={currency} destinationName={destinationName} /></div>}</DragOverlay>
       </DndContext>
       {!day.events.length && (
         <p className="text-sm text-muted-foreground">
@@ -228,13 +249,17 @@ export function DayEditor({
   );
 }
 
-export function ItineraryEditor({ itinerary, original, draft, onDraftChange, onSavingChange, onSaved }: {
+export function ItineraryEditor({ itinerary, original, draft, onDraftChange, onSavingChange, onSaved, toolbarContent }: {
   itinerary: Itinerary; original: Itinerary; draft: Itinerary | null;
   onDraftChange: (draft: Itinerary | null) => void;
   onSavingChange: (saving: boolean) => void;
   onSaved: (itinerary: Itinerary) => void;
+  toolbarContent?: ReactNode;
 }) {
   const { user } = useAuth();
+  const notify = useToast();
+  const [confirmed, setConfirmed] = useState(false);
+  useEffect(() => { if (!confirmed) return; const timer = window.setTimeout(() => setConfirmed(false), 600); return () => window.clearTimeout(timer); }, [confirmed]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -281,6 +306,8 @@ export function ItineraryEditor({ itinerary, original, draft, onDraftChange, onS
         throw new Error(
           "O serviço não retornou o roteiro atualizado. Recarregue antes de tentar novamente.",
         );
+      setConfirmed(true);
+      notify({ title: "Programação salva neste navegador. Nome e datas atualizados na conta." });
       onSaved({ ...response.data, is_owner: true, days });
       onDraftChange(null);
       setMessage(`Alterações salvas. ${changedTimes ? `${changedTimes} ${changedTimes === 1 ? "atividade teve o horário recalculado" : "atividades tiveram os horários recalculados"}. ` : ""}A programação foi salva neste navegador.`);
@@ -303,11 +330,12 @@ export function ItineraryEditor({ itinerary, original, draft, onDraftChange, onS
       onSavingChange(false);
     }
   }
-  return <div className="action-control">
-    {draft ? <div className="flex flex-wrap gap-2">
-      <Button type="button" variant="outline" disabled={saving} onClick={() => { onDraftChange(null); setError(""); }}>Cancelar edição</Button>
-      <Button type="button" disabled={saving} onClick={() => void save()}>{saving ? "Salvando…" : "Salvar alterações"}</Button>
-    </div> : <Button type="button" onClick={() => { onDraftChange(structuredClone(itinerary)); setError(""); setMessage(""); }}><Pencil aria-hidden="true" />Editar roteiro</Button>}
+  return <div className="action-control itinerary-editor-actions">
+    {draft ? <div className="flex flex-wrap items-center gap-2">
+      {toolbarContent}
+      <Button type="button" variant="outline" disabled={saving} onClick={() => { onDraftChange(null); setError(""); }}>Cancelar</Button>
+      <Button type="button" loading={saving} onClick={() => void save()}>Salvar</Button>
+    </div> : <Button type="button" success={confirmed} onClick={() => { onDraftChange(structuredClone(itinerary)); setError(""); setMessage(""); }}><Pencil aria-hidden="true" />Editar roteiro</Button>}
     {error && <p role="alert" className="action-message text-sm text-destructive">{error}</p>}
     {message && <p role="status" className="action-message text-sm text-success">{message}</p>}
   </div>;
