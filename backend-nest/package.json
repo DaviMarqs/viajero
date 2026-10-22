@@ -9,6 +9,7 @@
     "start:dev": "nest start --watch",
     "lint": "eslint \"src/**/*.ts\"",
     "smoke": "node scripts/smoke-contract.mjs",
+    "backfill:hero-images": "ts-node src/cli/backfill-hero-images.ts",
     "test": "jest",
     "test:cov": "jest --coverage"
   },

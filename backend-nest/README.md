@@ -1,6 +1,6 @@
 # Viajero Backend NestJS
 
-Backend NestJS criado como migração funcional do backend Django/DRF existente. O projeto Django original permanece intacto em `../backend`.
+Backend principal do Viajero, usado pelo front. Nasceu como migração funcional do backend Django/DRF (`../backend`) e hoje cobre todos os recursos dele, inclusive a IA: geração de roteiro com LLM (Groq/Gemini), descoberta de destinos com Firecrawl + LLM e sugestão de destino pelo perfil. O Django continua dono do schema (migrations e seed).
 
 ## Requisitos
 
@@ -44,8 +44,37 @@ JWT_ACCESS_MINUTES=60
 JWT_REFRESH_DAYS=7
 PORT=8001
 CORS_ALLOW_ALL_ORIGINS=true
-DEFAULT_LLM_PROVIDER=mock
 ```
+
+IA (todas opcionais; o `.env.example` traz os padrões):
+
+| Variável | Padrão | Uso |
+|---|---|---|
+| `DEFAULT_LLM_PROVIDER` | `groq` | Provedor da geração de roteiro: `groq`, `gemini` ou `mock`. O outro provedor com chave entra como reserva |
+| `GROQ_API_KEY` | vazio | Chave do Groq. Sem ela (e sem Gemini) o roteiro sai do gerador mock |
+| `GROQ_MODEL` | `openai/gpt-oss-120b` | Modelo do Groq. O antigo `llama-3.3-70b-versatile` foi removido pelo Groq |
+| `GROQ_REASONING_EFFORT` | `low` para gpt-oss | `off` não envia o parâmetro (modelos que não aceitam) |
+| `GROQ_TIMEOUT` / `GROQ_ITINERARY_TIMEOUT` | 20 / 40 s | Timeout das chamadas curtas e da geração de roteiro |
+| `GROQ_MAX_TOKENS` | 8192 | Limite de resposta padrão (o roteiro calcula o seu pela duração) |
+| `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_TIMEOUT`, `GEMINI_ITINERARY_TIMEOUT`, `GEMINI_MAX_TOKENS` | vazio, `gemini-2.5-flash-lite`, 20, 40, 8192 | Mesmo papel para o Gemini |
+| `FIRECRAWL_API_KEY` | vazio | Liga o Firecrawl na descoberta de destinos |
+| `FIRECRAWL_SEARCH_LIMIT` | 2 | URLs buscadas por destino |
+| `FIRECRAWL_SEARCH_TIMEOUT` / `FIRECRAWL_SCRAPE_TIMEOUT` | 15 / 25 s | Timeouts do Firecrawl (o scrape com extração leva ~13 s) |
+| `FIRECRAWL_DISCOVERY_BUDGET` | 45 s | Tempo máximo gasto no Firecrawl por descoberta |
+| `FIRECRAWL_DISCOVERY_FAILURE_TTL` | 60 s | Cache negativo: não repete descoberta que acabou de falhar |
+
+## IA
+
+Tudo em `src/modules/ai/llm` (provedores) e `src/modules/destinations/discovery` (destinos). Os provedores falam com as APIs REST via `fetch`, sem SDK.
+
+- **Geração de roteiro** (`POST /api/itineraries/:id/generate`): monta o prompt com o DNA do usuário, os parâmetros da viagem (`trip_preferences` do roteiro) e os 30 POIs mais bem avaliados do destino; pede texto em português, horários `HH:MM` e custos numéricos. A resposta é normalizada (POI de outro destino perde o vínculo, eventos ordenados por horário, tamanhos das colunas) e os custos são reescalados para a faixa de orçamento, como no Django. Resposta inválida ou com dias faltando ganha uma nova tentativa com o motivo no prompt; timeout, cota ou credencial passam para o próximo provedor. Falha final: 503 (limite/timeout da IA) ou 500, e o roteiro fica `failed`.
+- **Busca de destino** (`GET /api/destinations/search?q=`): banco local primeiro (aceita nomes em português). Sem resultado, o resolver de IA normaliza o termo e recusa o que não é lugar (400 com `errors.q`); depois tenta o nome canônico no banco e, por fim, descobre o destino: Firecrawl (busca + scrape com extração) e LLM em paralelo, merge (Firecrawl tem prioridade), POIs/tags/custos gravados e foto da Wikipedia (desambiguada pela região, ex.: "Formiga (Minas Gerais)"). Imagens do Firecrawl só entram se a URL responder como imagem. Circuit breaker e cache negativo ficam em memória.
+- **Sugestão** (`POST /api/destinations/suggest`): o LLM escolhe um destino pelo perfil, priorizando o Brasil e evitando destinos que o usuário já tem roteiro; o destino é buscado ou descoberto. Sem chave, ou se a IA falhar, usa a heurística local por DNA/interesses.
+- **Ingestão manual** (`POST /api/firecrawl/ingest`, admin): `{ destination_id, source_urls }`.
+
+Sem nenhuma chave, tudo continua funcionando offline: roteiro mock, busca cria destino básico e sugestão heurística.
+
+`npm run backfill:hero-images -- [--force] [--limit N] [--delay S]` preenche `hero_image_url` vazio pela Wikipedia (equivalente ao comando `backfill_hero_images` do Django).
 
 ## Convivência com o schema do Django
 
@@ -101,15 +130,20 @@ POST   /api/favorites
 GET    /api/shared-links
 POST   /api/shared-links
 GET    /api/llm-models
+GET    /api/llm-models/:id
 GET    /api/llm-jobs
+GET    /api/llm-jobs/:id
+GET    /api/prompt-templates          (admin)
+GET    /api/prompt-templates/:id      (admin)
+POST   /api/firecrawl/ingest          (admin)
 GET    /api/audit-logs
 ```
 
-O Nest aceita rotas com ou sem barra final (padrão do Express), preservando chamadas do front como `/api/auth/login/`. A coleção `../insomnia-viajero.json` usa `base_url = http://127.0.0.1:8000` (Django); troque para `http://localhost:8001` para usar o Nest.
+O Nest aceita rotas com ou sem barra final (padrão do Express), preservando chamadas do front como `/api/auth/login/`. A coleção `../insomnia-viajero.json` usa `base_url = http://localhost:8001` (Nest).
 
 ## Roteiros e avaliações
 
-- `POST /api/itineraries` aceita só `{ destination, title }`: duração, orçamento e moeda vêm das preferências do usuário (duração padrão 5 dias), como no Django.
+- `POST /api/itineraries` recebe `{ destination, title, trip_preferences, ... }` (payload do front). `trip_preferences` são os parâmetros desta viagem e são obrigatórios para gerar; sem eles, duração, orçamento e moeda vêm das preferências do usuário (duração padrão 5 dias), como no Django.
 - Um roteiro é **público** quando está pronto e tem ao menos uma avaliação (ou `metadata.is_template = true`). O dono avalia o próprio roteiro pronto; qualquer usuário logado pode abrir e avaliar roteiros públicos (`GET /api/itineraries/:id` devolve `is_owner`). Uma avaliação por usuário, editável e excluível; toda mudança recalcula `ReviewStat`.
 - `GET /api/reviews` é público e expõe só `{ id, display_name, avatar_url }` do autor.
 - `top-rated` lista só roteiros prontos e avaliados, pela média.
@@ -162,6 +196,7 @@ Este projeto não cria migrations automaticamente porque foi desenhado para ler 
 
 ## Limitações conhecidas da migração
 
-- Sem LLM real: a geração de roteiro (mock) e a sugestão de destino (heurística pelo DNA/interesses) são determinísticas.
-- A descoberta de destino sem resultado local cria um destino básico (país "Desconhecido", sem POIs); o enriquecimento completo continua no Django.
+- A geração de roteiro é síncrona: o `POST .../generate` só responde quando o roteiro fica pronto (5 a 15 s com o Groq).
+- O plano gratuito do Groq limita tokens por minuto; gerações seguidas podem cair em 503 até a cota renovar (chamadas com `retry-after` curto são repetidas sozinhas).
+- Circuit breaker e cache negativo do Firecrawl ficam em memória (zeram ao reiniciar).
 - Sem refresh token: o access token expira em `JWT_ACCESS_MINUTES` e o front volta para o login.

@@ -31,8 +31,8 @@ Navegador ──► Front React/Vite (5173) ──► API NestJS (8001) ──�
 | Parte | Pasta | Porta | Para que serve |
 |---|---|---|---|
 | PostgreSQL 16 | Docker | 5432 | Banco único do projeto |
-| Django + DRF | `backend/` | 8000 (opcional) | **Dono do schema**: cria as tabelas (migrations) e carrega os dados iniciais (seed). Também tem a API antiga com IA real (Gemini, Groq, Firecrawl) |
-| NestJS | `backend-nest/` | 8001 | API que o front usa |
+| Django + DRF | `backend/` | 8000 (opcional) | **Dono do schema**: cria as tabelas (migrations) e carrega os dados iniciais (seed). A API Django é legado |
+| NestJS | `backend-nest/` | 8001 | API principal, usada pelo front. Inclui a IA (Groq/Gemini) e o Firecrawl |
 | React + Vite | `front/` | 5173 | Interface |
 
 O NestJS **não cria tabelas**. Sempre aplique as migrations do Django antes de subir o Nest.
@@ -108,7 +108,7 @@ uv run manage.py loaddata seed_data.json
 No Windows (PowerShell), troque `cp .env.example .env` por `Copy-Item .env.example .env`.
 
 - O `loaddata` deve terminar com `Installed 32 object(s) from 1 fixture(s)`: 4 destinos (Lisbon, Tokyo, Rio de Janeiro e Buenos Aires), 16 pontos de interesse, tags e custos. O seed não cria usuários; o cadastro é feito pelo app.
-- As chaves de IA do `.env` (Gemini, Groq, Firecrawl) **não são necessárias** para rodar o app: o Nest gera roteiros sem IA externa. Elas só servem para a API Django (passo 10). Cada dev usa a própria chave, e chave nunca vai para o git.
+- As chaves de IA do `backend/.env` não são usadas pelo app: a IA roda no Nest, que lê as chaves do próprio `backend-nest/.env` (passo 5).
 - Opcional: `uv run manage.py createsuperuser` cria um admin (Django admin em `http://127.0.0.1:8000/admin` e acesso a `GET /api/audit-logs`).
 
 ## 5. API NestJS
@@ -119,6 +119,17 @@ npm ci
 cp .env.example .env
 npm run start:dev
 ```
+
+### Chaves de IA (recomendado)
+
+No `backend-nest/.env`, preencha pelo menos a `GROQ_API_KEY` (gratuita em https://console.groq.com/keys). Com ela, o Nest:
+
+- gera o roteiro com IA, em português, com horários e custos dentro do orçamento da viagem;
+- reconhece o destino digitado (ex.: "formiga" vira Formiga, MG; "asdfgh" é recusado com aviso);
+- descobre destinos que não estão no banco (resumo, melhor época, pontos de interesse, custos e foto da Wikipedia);
+- sugere um destino pelo DNA do viajante ("Gostaria de uma sugestão").
+
+Opcionais: `GEMINI_API_KEY` (reserva do Groq, ou provedor principal com `DEFAULT_LLM_PROVIDER=gemini`) e `FIRECRAWL_API_KEY` (dados de guias turísticos na descoberta de destinos). Sem nenhuma chave o app continua funcionando: o roteiro sai do gerador determinístico (textos em inglês) e a busca cria um destino básico. Cada dev usa a própria chave, e chave nunca vai para o git. Reinicie o Nest depois de mudar o `.env`.
 
 Pronto quando o terminal mostrar `Nest application successfully started`. A API fica em `http://localhost:8001`. Deixe esse terminal aberto.
 
@@ -155,14 +166,16 @@ Em `front/`, `npm test` cobre câmbio, personalização, persistência da progra
 
 1. **Cadastro:** "Criar uma conta nova" (senha com pelo menos 8 caracteres).
 2. **Perfil de viajante:** responda o onboarding e conclua.
-3. **Criar roteiro:** na Home, "Criar novo roteiro" → preencha as preferências → "Já sei para onde vou viajar" → escolha um destino da lista (ex.: Lisbon) → "Gerar roteiro para este destino".
+3. **Criar roteiro:** na Home, "Criar novo roteiro" → "Já sei para onde ir" (ou "Gostaria de uma sugestão") → busque e selecione um destino (ex.: Lisboa, ou um que não está no banco, como Gramado) → "Configurar esta viagem" (orçamento, companhia, período, hospedagem, deslocamento, cuidados e interesses) → "Revisar minha viagem" → "Confirmar e gerar roteiro".
 4. **Avaliar:** no detalhe do roteiro, "Avaliar roteiro" → escolha a nota → "Publicar avaliação". O roteiro passa a aparecer em "Roteiros mais bem avaliados" na Home.
 5. **Perfil:** em "Perfil", edite o nome e troque a foto. A barra lateral atualiza na hora.
 
 O que é esperado, e não é bug:
 
-- O roteiro gerado pelo Nest é determinístico e tem textos em inglês ("Day 1: Lisbon"). A geração com IA real só existe na API Django.
-- Os destinos do seed estão em inglês. Buscar um nome que não existe no banco (ex.: "Lisboa") cria um destino básico (país "Desconhecido", sem pontos de interesse), e o roteiro dele sai sem atividades.
+- Com a chave do Groq, gerar um roteiro leva de 5 a 15 segundos. Sem chave, o roteiro sai do gerador determinístico, com textos em inglês ("Day 1: Lisbon").
+- Buscar um destino que não está no banco leva de 20 a 40 segundos na primeira vez (IA + Firecrawl); depois ele fica salvo e aparece na hora. Sem chaves, a busca cria um destino básico (país "Desconhecido", sem pontos de interesse).
+- Os destinos do seed estão em inglês no banco ("Lisbon"), mas a busca e a interface aceitam o nome em português ("Lisboa").
+- O plano gratuito do Groq limita os tokens por minuto. Gerar vários roteiros seguidos pode devolver "O servico de IA atingiu o limite de uso"; espere um minuto e tente de novo.
 - A sessão dura 60 minutos (`JWT_ACCESS_MINUTES`). Depois disso o app volta para o login com o aviso "Sua sessão expirou".
 
 ## 8. Dia a dia
@@ -190,7 +203,7 @@ Depois de um `git pull`:
 | `front/` | `npm run lint` e `npm run build` | Lint, tipos e build de produção |
 | `backend-nest/` | `npm run smoke` | Contrato HTTP usado pelo front, ponta a ponta (cadastro, perfil, avatar, roteiros, avaliações), com a API rodando |
 
-O `smoke` **grava dados** a cada execução: usuários `smoke-*@viajero.dev`, roteiros e avaliações. Para não sujar o seu banco, rode contra um banco descartável:
+Com chave de IA no `.env`, o `smoke` chama a IA de verdade (gasta cota e leva cerca de 1 minuto). O `smoke` **grava dados** a cada execução: usuários `smoke-*@viajero.dev`, roteiros e avaliações. Para não sujar o seu banco, rode contra um banco descartável:
 
 ```bash
 # banco temporário na porta 55432
@@ -214,16 +227,18 @@ No PowerShell, defina as variáveis antes do comando: `$env:DATABASE_URL="postgr
 
 O resultado esperado termina com `Smoke OK`.
 
-## 10. (Opcional) API Django com IA real
+## 10. (Opcional) API Django legada
 
-A API Django continua disponível para os recursos de IA (geração com Gemini/Groq e descoberta de destinos com Firecrawl) e para a coleção do Insomnia (`insomnia-viajero.json`, que usa `base_url = http://127.0.0.1:8000`).
+Todos os recursos, inclusive a IA, estão no NestJS. A coleção do Insomnia (`insomnia-viajero.json`) usa `base_url = http://localhost:8001`. O Django continua sendo o dono do schema (passo 4), mas a API dele não é mais necessária:
 
 ```bash
 cd backend
 uv run manage.py runserver
 ```
 
-Para usar IA real, preencha no `backend/.env` a sua chave (`GEMINI_API_KEY` ou `GROQ_API_KEY`) e troque `DEFAULT_LLM_PROVIDER`. O front é mantido contra o NestJS; não aponte o front para a API Django.
+O modelo padrão do Groq no Django (`llama-3.3-70b-versatile`) foi removido pelo Groq; a IA do Django só volta a funcionar trocando `GROQ_MODEL` no `backend/.env`. O front é mantido contra o NestJS; não aponte o front para a API Django.
+
+Destinos sem foto podem ser completados pela Wikipedia com `npm run backfill:hero-images` dentro de `backend-nest/` (equivalente ao `backfill_hero_images` do Django; `--force` sobrescreve todos, `--limit N` limita).
 
 ## 11. Zerar o banco (apaga tudo)
 
@@ -248,6 +263,8 @@ Depois repita os passos 3 e 4. Para apagar também as fotos de perfil enviadas, 
 | Volta para o login com "Sua sessão expirou" | Token expirou (60 min) | Entre de novo. Para sessões mais longas em dev, aumente `JWT_ACCESS_MINUTES` em `backend-nest/.env` |
 | `uv: command not found` | Terminal aberto antes da instalação | Feche e abra o terminal |
 | Vite reclama da versão do Node | Node antigo | Instale o Node 20.19+ ou 22.12+ |
-| Roteiro gerado sem atividades | Destino criado pela busca, sem pontos de interesse | Use os destinos do seed (passo 7) |
+| Roteiro com textos em inglês ("Day 1: ...") | Nest sem chave de IA | Preencha `GROQ_API_KEY` em `backend-nest/.env` e reinicie o Nest |
+| Roteiro gerado sem atividades | Sem chave de IA, destino criado pela busca sem pontos de interesse | Configure a chave de IA ou use os destinos do seed (passo 7) |
+| "O servico de IA atingiu o limite de uso" | Limite de tokens por minuto do plano gratuito do Groq | Espere um minuto e gere de novo |
 
 Mais detalhes de cada parte: `backend-nest/README.md` (endpoints, convivência com o schema do Django, uploads) e `front/README.md`.

@@ -25,12 +25,11 @@ cd front && npm ci && npm run dev                                           # ou
 
 | Pasta | O que é |
 |---|---|
-| `backend/` | Django + DRF: dono do schema (migrations e seed) e API com IA real (opcional) |
-| `backend-nest/` | API NestJS usada pelo front |
+| `backend/` | Django + DRF: dono do schema (migrations e seed). A API Django é legado |
+| `backend-nest/` | API principal (NestJS) usada pelo front, com a IA: roteiros com Groq/Gemini, descoberta de destinos com Firecrawl e sugestão por perfil |
 | `front/` | React + Vite |
 
 ## Notas
 
-- **Variaveis de ambiente completas:** `FIRECRAWL_API_KEY`, `FIRECRAWL_API_URL`, `DEFAULT_LLM_PROVIDER`, `DEFAULT_LLM_MODEL`, `LLM_API_KEY`, `CORS_ALLOWED_ORIGINS`.
-- **Migracoes:** Rode `uv run manage.py makemigrations` apenas se voce alterar modelos.
-- **Provedor de LLM:** Substitua o gerador simulado em `backend/apps/ai/services.py` por um adaptador real assim que o provedor for escolhido.
+- **IA:** preencha `GROQ_API_KEY` (e, se quiser, `GEMINI_API_KEY` e `FIRECRAWL_API_KEY`) em `backend-nest/.env`. Sem chaves o app funciona com gerador determinístico. Detalhes em [backend-nest/README.md](./backend-nest/README.md#ia).
+- **Migrações:** rode `uv run manage.py makemigrations` apenas se você alterar modelos.

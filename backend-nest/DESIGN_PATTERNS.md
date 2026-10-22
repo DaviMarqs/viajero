@@ -15,7 +15,7 @@ flowchart TD
   Facades --> Services
   Services --> Factory[ItineraryGeneratorFactory]
   Services --> Decorator[AuditedServiceDecorator]
-  Factory --> Generator[MockItineraryGenerator]
+  Factory --> Generator[LlmItineraryGenerator / MockItineraryGenerator]
   Generator --> Composite[ItineraryComposite]
   Services --> Adapter[DjangoPasswordAdapter]
   Services --> TypeORM[TypeORM Repositories]
@@ -339,11 +339,11 @@ Factory centraliza a criação ou escolha de implementações.
 
 ### 2. Problema encontrado no projeto
 
-O Django escolhe gerador de roteiro conforme provider (`mock`, `gemini`). O Nest precisa manter esse ponto de extensão.
+O Django escolhe o gerador de roteiro conforme o provider (`mock`, `gemini`, `groq`). O Nest precisa da mesma escolha, com o outro provedor configurado como reserva.
 
 ### 3. Solução adotada
 
-`ItineraryGeneratorFactory` lê `DEFAULT_LLM_PROVIDER` e retorna um `BaseItineraryGenerator`.
+`ItineraryGeneratorFactory` pede ao `LlmService` a cadeia de provedores de `DEFAULT_LLM_PROVIDER` (só os que têm chave) e retorna um `BaseItineraryGenerator`: `LlmItineraryGenerator` quando há provedor, `MockItineraryGenerator` quando não há. `GroqProvider` e `GeminiProvider` são adapters das APIs HTTP para a interface `LlmProvider`.
 
 ### 4. Onde foi implementado
 
@@ -356,24 +356,27 @@ Usado em `src/modules/ai/ai.service.ts`.
 ```mermaid
 flowchart TD
   Ai[AiService.runJob] --> Factory[ItineraryGeneratorFactory.create]
-  Factory --> Config[ConfigService DEFAULT_LLM_PROVIDER]
-  Factory --> Mock[MockItineraryGenerator]
-  Mock --> Result[GeneratedItinerary]
+  Factory --> Llm[LlmService.itineraryChain]
+  Llm --> Config[ConfigService DEFAULT_LLM_PROVIDER + chaves]
+  Factory -->|com provedor| Ai2[LlmItineraryGenerator]
+  Factory -->|sem chave| Mock[MockItineraryGenerator]
+  Ai2 --> Providers[GroqProvider / GeminiProvider]
+  Ai2 --> Result[GeneratedItinerary]
+  Mock --> Result
 ```
 
 ### 6. Trecho de código
 
 ```ts
 create(): BaseItineraryGenerator {
-  const provider = this.config.get<string>('DEFAULT_LLM_PROVIDER', 'mock');
-  if (provider === 'mock') return new MockItineraryGenerator();
-  return new MockItineraryGenerator();
+  const providers = this.llm.itineraryChain();
+  return providers.length > 0 ? new LlmItineraryGenerator(this.llm, providers) : new MockItineraryGenerator();
 }
 ```
 
 ### 7. Impacto
 
-Isola a decisão de provider e prepara inclusão futura de Gemini/Groq sem mudar `AiService`.
+Isola a decisão de provider: Groq e Gemini entraram sem mudar `AiService`, e o mock continua cobrindo o uso sem chave.
 
 ### 8. Vantagens
 

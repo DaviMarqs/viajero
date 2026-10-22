@@ -1,4 +1,4 @@
-import { ArgumentsHost, InternalServerErrorException, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ArgumentsHost, BadRequestException, InternalServerErrorException, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ApiExceptionFilter, resolveErrorMessage } from '../api-exception.filter';
 
 function hostFor(response: { status: jest.Mock; json: jest.Mock }): ArgumentsHost {
@@ -58,5 +58,11 @@ describe('ApiExceptionFilter', () => {
   it('5xx com mensagem de dominio chega a UI sem detalhes', () => {
     const { body } = run(new InternalServerErrorException('Nao foi possivel gerar o roteiro. Tente novamente.'));
     expect(body).toEqual({ success: false, message: 'Nao foi possivel gerar o roteiro. Tente novamente.', errors: {} });
+  });
+
+  it('usa o mapa errors quando o dominio informa erros por campo', () => {
+    const { status, body } = run(new BadRequestException({ message: 'Termo invalido.', errors: { q: ['nao parece um destino'] } }));
+    expect(status).toBe(400);
+    expect(body).toEqual({ success: false, message: 'Termo invalido.', errors: { q: ['nao parece um destino'] } });
   });
 });

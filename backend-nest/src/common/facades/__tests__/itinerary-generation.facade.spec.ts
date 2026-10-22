@@ -1,4 +1,5 @@
-import { InternalServerErrorException, Logger } from '@nestjs/common';
+import { InternalServerErrorException, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { LlmQuotaError } from '../../../modules/ai/llm/llm.errors';
 import { ItineraryGenerationFacade } from '../itinerary-generation.facade';
 import { AiService } from '../../../modules/ai/ai.service';
 import { Itinerary } from '../../../modules/itineraries/entities';
@@ -29,5 +30,14 @@ describe('ItineraryGenerationFacade', () => {
 
     await expect(facade.generate({ id: 3 } as Itinerary, 1)).resolves.toBe(job);
     expect(ai.markJobFailed).not.toHaveBeenCalled();
+  });
+
+  it('cota da IA estourada vira 503 com mensagem clara', async () => {
+    const ai = { createJob: jest.fn().mockResolvedValue({ id: 7 }), runJob: jest.fn().mockRejectedValue(new LlmQuotaError('429')), markJobFailed: jest.fn() };
+    const attempt = new ItineraryGenerationFacade(ai as unknown as AiService).generate({ id: 3 } as Itinerary, 1);
+
+    await expect(attempt).rejects.toThrow(ServiceUnavailableException);
+    await expect(attempt).rejects.toThrow('O servico de IA atingiu o limite de uso. Tente novamente em alguns minutos.');
+    expect(ai.markJobFailed).toHaveBeenCalledWith(7, 3, '429');
   });
 });

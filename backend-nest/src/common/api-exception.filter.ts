@@ -27,6 +27,13 @@ export function resolveErrorMessage(status: number, raw: unknown): string {
   return FRAMEWORK_MESSAGES.some((pattern) => pattern.test(message)) ? fallback : message;
 }
 
+/** `throw new BadRequestException({ message, errors: { campo: [...] } })` devolve so o mapa de erros por campo. */
+export function resolveErrorDetails(raw: unknown): unknown {
+  if (typeof raw !== 'object' || raw === null) return { detail: raw };
+  const errors = (raw as { errors?: unknown }).errors;
+  return typeof errors === 'object' && errors !== null ? errors : raw;
+}
+
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(ApiExceptionFilter.name);
@@ -46,7 +53,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
     response.status(status).json({
       success: false,
       message: resolveErrorMessage(status, raw),
-      errors: status >= 500 ? {} : typeof raw === 'object' && raw !== null ? raw : { detail: raw },
+      errors: status >= 500 ? {} : resolveErrorDetails(raw),
     });
   }
 }

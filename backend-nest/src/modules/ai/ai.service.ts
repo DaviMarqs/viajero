@@ -7,6 +7,7 @@ import { TravelerDnaProfile, UserTripPreference } from '../profiles/entities';
 import { PointOfInterest } from '../destinations/entities';
 import { ItineraryGeneratorFactory } from '../../common/factories/itinerary-generator.factory';
 import { requireTripParameters } from '../itineraries/trip-generation-context';
+import { applyBudgetPrecision } from './itinerary/itinerary-costs';
 
 @Injectable()
 export class AiService {
@@ -24,6 +25,25 @@ export class AiService {
 
   listModels(): Promise<LlmModel[]> {
     return this.models.find({ where: { is_active: true }, relations: { provider: true } });
+  }
+
+  findModel(id: number): Promise<LlmModel | null> {
+    return this.models.findOne({ where: { id, is_active: true }, relations: { provider: true } });
+  }
+
+  findJob(id: number, userId: number): Promise<LlmJob | null> {
+    return this.jobs.findOne({
+      where: { id, user: { id: userId } },
+      relations: { destination: true, itinerary: true, llm_model: true, logs: true },
+    });
+  }
+
+  listPromptTemplates(): Promise<PromptTemplate[]> {
+    return this.templates.find({ where: { is_active: true }, order: { key: 'ASC' } });
+  }
+
+  findPromptTemplate(id: number): Promise<PromptTemplate | null> {
+    return this.templates.findOne({ where: { id, is_active: true } });
   }
 
   listJobs(userId: number): Promise<LlmJob[]> {
@@ -75,13 +95,14 @@ export class AiService {
       budget_min: String(parameters.budget_min), budget_max: String(parameters.budget_max), metadata: parameters.metadata ?? {},
     });
     const pois = await this.pois.find({ where: { destination: { id: itinerary.destination.id } }, order: { rating: 'DESC', name: 'ASC' } });
-    const result = this.generatorFactory.create().generate({
+    const generated = await this.generatorFactory.create().generate({
       itinerary,
       profile,
       preferences,
       pois,
       promptTemplate: job.prompt_template,
     });
+    const result = applyBudgetPrecision(generated, preferences);
 
     // Tudo ou nada: falha no meio nao deixa o roteiro sem dias.
     await this.jobs.manager.transaction(async (manager) => {
@@ -115,7 +136,7 @@ export class AiService {
             day_number: dayIndex + 1,
             title: dayData.title,
             summary: dayData.summary,
-            estimated_cost: dayData.events.reduce((total, event) => total + Number(event.estimated_cost), 0).toFixed(2),
+            estimated_cost: dayData.estimated_cost ?? dayData.events.reduce((total, event) => total + Number(event.estimated_cost), 0).toFixed(2),
           }),
         );
         for (const event of dayData.events) {

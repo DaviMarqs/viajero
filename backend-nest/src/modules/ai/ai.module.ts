@@ -9,6 +9,7 @@ import { PointOfInterest } from '../destinations/entities';
 import { ItineraryGeneratorFactory } from '../../common/factories/itinerary-generator.factory';
 import { ItineraryGenerationFacade } from '../../common/facades/itinerary-generation.facade';
 import { ApiResponseBuilder } from '../../common/builders/api-response.builder';
+import { LlmModule } from './llm/llm.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ApiResponseBuilder } from '../../common/builders/api-response.builder';
       UserTripPreference,
       PointOfInterest,
     ]),
+    LlmModule,
   ],
   providers: [AiService, ItineraryGeneratorFactory, ItineraryGenerationFacade, ApiResponseBuilder],
   controllers: [AiController],

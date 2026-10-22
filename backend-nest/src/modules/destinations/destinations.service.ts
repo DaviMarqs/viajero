@@ -29,6 +29,10 @@ export class DestinationsService {
     return destination;
   }
 
+  findBySlug(slug: string): Promise<Destination | null> {
+    return this.destinations.findOne({ where: { slug }, relations: { cost_profile: true, pois: { tags: true } } });
+  }
+
   async search(input: { q?: string; country?: string; city?: string }): Promise<Destination[]> {
     // Search original names and Portuguese aliases without accents; never create duplicate cities for a translated query.
     let results = await this.destinations.find({

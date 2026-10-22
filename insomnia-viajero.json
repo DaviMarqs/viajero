@@ -17,7 +17,7 @@
       "parentId": "wrk_viajero",
       "name": "Base Environment",
       "data": {
-        "base_url": "http://127.0.0.1:8000",
+        "base_url": "http://localhost:8001",
         "jwt": "",
         "user_id": "",
         "destination_id": "",
@@ -504,13 +504,14 @@
       "name": "Create (POST)",
       "method": "POST",
       "url": "{{ base_url }}/api/itineraries/",
+      "description": "Mesmo payload do front. `trip_preferences` são os parâmetros desta viagem (companionship: solo|couple|family|friends; hotel_level: budget|mid|luxury; transportation_style: public|mixed|private; interests não vazio) e são obrigatórios para gerar o roteiro depois.",
       "headers": [
         { "name": "Authorization", "value": "Bearer {{ jwt }}" },
         { "name": "Content-Type", "value": "application/json" }
       ],
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"destination\": {{ destination_id }},\n  \"title\": \"Weekend in Lisbon\",\n  \"summary\": \"Short trip with highlights.\",\n  \"start_date\": \"2026-06-10\",\n  \"end_date\": \"2026-06-12\",\n  \"duration_days\": 3,\n  \"budget_total\": 800,\n  \"currency_code\": \"BRL\"\n}"
+        "text": "{\n  \"destination\": {{ destination_id }},\n  \"title\": \"Weekend in Lisbon\",\n  \"start_date\": \"2026-11-10\",\n  \"end_date\": \"2026-11-12\",\n  \"duration_days\": 3,\n  \"currency_code\": \"BRL\",\n  \"trip_preferences\": {\n    \"budget_min\": 2000,\n    \"budget_max\": 5000,\n    \"currency_code\": \"BRL\",\n    \"companionship\": \"couple\",\n    \"preferred_trip_length_days\": 3,\n    \"travel_month\": \"November\",\n    \"hotel_level\": \"mid\",\n    \"transportation_style\": \"public\",\n    \"dietary_preferences\": [],\n    \"accessibility_needs\": [],\n    \"interests\": [\"culture\", \"food\"],\n    \"metadata\": { \"start_date\": \"2026-11-10\", \"end_date\": \"2026-11-12\" }\n  }\n}"
       }
     },
     {
@@ -561,7 +562,7 @@
       "headers": [
         { "name": "Authorization", "value": "Bearer {{ jwt }}" }
       ],
-      "description": "Dispara geração síncrona do roteiro via IA. Usa GeminiItineraryGenerator quando DEFAULT_LLM_PROVIDER=gemini e GEMINI_API_KEY está setado; caso contrário, cai no MockItineraryGenerator. O serviço lê TravelerDNAProfile + UserTripPreference do usuário, top 30 POIs do destino ranqueados por rating, monta prompt e chama Gemini com GEMINI_ITINERARY_TIMEOUT (default 40s). Cria ItineraryDay + ItineraryDailyEvent com FK para POIs válidos (Gemini referenciar poi_id inválido → vira freestyle). Resposta 202 com generation_status='ready'. Em falha, 503 e status='failed' (veja LLMJob.error_message via /api/llm-jobs/)."
+      "description": "Gera o roteiro com IA de forma síncrona e responde 202 com generation_status=ready. Provedor por DEFAULT_LLM_PROVIDER (groq ou gemini; o outro, se tiver chave, entra como reserva). Sem chave, usa o gerador mock determinístico. Usa o DNA do usuário, os trip_preferences do roteiro e os 30 POIs mais bem avaliados do destino; eventos com poi_id inválido perdem o vínculo. Custos são reescalados para a faixa de orçamento. Em falha: 503 (limite/timeout da IA) ou 500, e o roteiro fica failed (detalhe em /api/llm-jobs/)."
     },
     {
       "_id": "req_itineraries_days_list",
@@ -871,6 +872,7 @@
       "name": "Firecrawl Ingest (POST)",
       "method": "POST",
       "url": "{{ base_url }}/api/firecrawl/ingest/",
+      "description": "Somente admin (is_staff). Faz scrape das URLs com o Firecrawl e grava resumo, custos e POIs no destino. 503 se FIRECRAWL_API_KEY não estiver configurada.",
       "headers": [
         { "name": "Authorization", "value": "Bearer {{ jwt }}" },
         { "name": "Content-Type", "value": "application/json" }
@@ -892,7 +894,7 @@
         { "name": "country", "value": "" },
         { "name": "city", "value": "" }
       ],
-      "description": "Busca pública de destinos para a home (AllowAny). Filtros opcionais: q (texto), country, city. Cache-aside: se a busca local não retornar nada e q for informado, dispara DestinationDiscoveryService.discover sincronamente, que roda Firecrawl e Gemini em paralelo (ThreadPoolExecutor), funde resultados (Firecrawl factual vence em conflito; Gemini complementa lacunas) e persiste. Audit event: destination.discovered com metadata.sources={firecrawl,gemini}. Resposta inclui metadata.sources indicando quem contribuiu e POIs do Gemini ficam com metadata.source='gemini'."
+      "description": "Busca pública de destinos. Sem resultado local e com q informado: o resolver de IA normaliza o termo (400 se não for um lugar), tenta o nome canônico no banco e, se ainda não existir, descobre o destino com Firecrawl + LLM em paralelo (resumo, época, fuso, POIs, tags, custos e foto da Wikipedia). Audit: destination.discovered com metadata.sources={firecrawl,gemini,groq}. Sem nenhuma chave configurada, cria um destino básico."
     },
     {
       "_id": "req_destinations_suggest",
@@ -906,7 +908,7 @@
         { "name": "Content-Type", "value": "application/json" }
       ],
       "body": { "mimeType": "application/json", "text": "{}" },
-      "description": "Sugere um destino para o usuário autenticado SEM ele digitar nada. DestinationSuggestionService (Groq) usa o TravelerDNAProfile + UserTripPreference para escolher um destino real; depois materializa via _local_search e, se não existir, via DestinationDiscoveryService.discover. Retorna o Destination serializado no envelope padrão. Audit event: destination.suggested. Responde 503 se o LLM não sugerir ou a descoberta falhar. Sem corpo de requisição."
+      "description": "Sugere um destino pelo DNA e preferências do usuário (IA, priorizando o Brasil e evitando destinos que ele já tem roteiro); o destino é buscado no banco ou descoberto. Sem chave de IA, ou se ela falhar, usa a heurística local por interesses."
     },
     {
       "_id": "req_itineraries_templates",

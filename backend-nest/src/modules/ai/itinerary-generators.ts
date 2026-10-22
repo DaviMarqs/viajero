@@ -3,34 +3,77 @@ import { PointOfInterest } from '../destinations/entities';
 import { TravelerDnaProfile, UserTripPreference } from '../profiles/entities';
 import { PromptTemplate } from './entities';
 import { ItineraryComposite, ItineraryDayComposite, ItineraryEventLeaf } from '../itineraries/itinerary-composite';
+import { LlmProvider } from './llm/llm-provider';
+import { LlmService } from './llm/llm.service';
+import { ITINERARY_SCHEMA, buildItineraryContext, buildItineraryPrompt } from './itinerary/itinerary-prompt';
+import { normalizeItineraryPayload } from './itinerary/itinerary-normalizer';
 
 export interface GeneratedItinerary {
   title: string;
   summary: string;
   currency_code: string;
   estimated_cost: string;
-  days: Array<{ title: string; summary: string; events: Array<{ title: string; description: string; estimated_cost: string; order_index: number; poi_id?: number; start_time?: string; end_time?: string }> }>;
+  days: Array<{
+    title: string;
+    summary: string;
+    estimated_cost?: string;
+    events: Array<{ title: string; description: string; estimated_cost: string; order_index: number; poi_id?: number; start_time?: string; end_time?: string }>;
+  }>;
   metadata: Record<string, unknown>;
 }
 
+export interface ItineraryGenerationInput {
+  itinerary: Itinerary;
+  profile: TravelerDnaProfile | null;
+  preferences: UserTripPreference | null;
+  pois: PointOfInterest[];
+  promptTemplate: PromptTemplate | null;
+}
+
 export abstract class BaseItineraryGenerator {
-  abstract generate(input: {
-    itinerary: Itinerary;
-    profile: TravelerDnaProfile | null;
-    preferences: UserTripPreference | null;
-    pois: PointOfInterest[];
-    promptTemplate: PromptTemplate | null;
-  }): GeneratedItinerary;
+  abstract generate(input: ItineraryGenerationInput): GeneratedItinerary | Promise<GeneratedItinerary>;
+}
+
+/** Gera o roteiro com o LLM (Groq/Gemini), tentando os provedores na ordem recebida. */
+export class LlmItineraryGenerator extends BaseItineraryGenerator {
+  constructor(private readonly llm: LlmService, private readonly providers: LlmProvider[]) {
+    super();
+  }
+
+  async generate(input: ItineraryGenerationInput): Promise<GeneratedItinerary> {
+    const context = buildItineraryContext(input.itinerary, input.profile, input.preferences, input.pois);
+    const validPoiIds = new Set(input.pois.map((poi) => Number(poi.id)));
+    const days = input.itinerary.duration_days;
+    const { value, provider } = await this.llm.requestJson(this.providers, {
+      label: `roteiro ${input.itinerary.id}`,
+      prompt: buildItineraryPrompt(context, input.promptTemplate),
+      schema: ITINERARY_SCHEMA,
+      long: true,
+      // ~600 tokens por dia de resposta; viagens longas tambem ganham mais tempo.
+      maxOutputTokens: Math.min(32_768, 2_048 + days * 900),
+      extraTimeoutMs: Math.max(0, days - 5) * 4_000,
+      parse: (payload, attempt) =>
+        normalizeItineraryPayload(payload, {
+          fallbackTitle: input.itinerary.title || `Roteiro ${input.itinerary.destination.name}`,
+          currencyCode: input.itinerary.currency_code,
+          durationDays: days,
+          validPoiIds,
+          // Na ultima tentativa aceita um roteiro incompleto em vez de falhar a geracao toda.
+          strict: !attempt.final,
+        }),
+    });
+    value.metadata = {
+      generator: provider.key,
+      model: provider.model,
+      template_key: input.promptTemplate?.key ?? null,
+      poi_count: input.pois.length,
+    };
+    return value;
+  }
 }
 
 export class MockItineraryGenerator extends BaseItineraryGenerator {
-  generate(input: {
-    itinerary: Itinerary;
-    profile: TravelerDnaProfile | null;
-    preferences: UserTripPreference | null;
-    pois: PointOfInterest[];
-    promptTemplate: PromptTemplate | null;
-  }): GeneratedItinerary {
+  generate(input: ItineraryGenerationInput): GeneratedItinerary {
     const selectedPois = input.pois.slice(0, Math.max(input.itinerary.duration_days * 3, 1));
     const composite = new ItineraryComposite(input.itinerary.title || `${input.itinerary.destination.name} Adventure`);
     const days: GeneratedItinerary['days'] = [];

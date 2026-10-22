@@ -119,7 +119,16 @@ async function main() {
   check(suggest.status === 200 && Number(suggest.payload?.data?.id) > 0 && suggest.payload?.message?.startsWith('Destino sugerido'), 'sugestao de destino', suggest.payload?.message);
 
   console.log('\n# Roteiro (fluxo do front)');
-  const created = await call('POST', '/api/itineraries/', { token, json: { destination: target.id, title: target.name } });
+  // Mesmo payload do front (features/itineraries/generation-service.ts): parametros da viagem vao junto.
+  const tripPreferences = {
+    budget_min: 2000, budget_max: 6000, currency_code: 'BRL', companionship: 'couple', preferred_trip_length_days: 4, travel_month: 'November',
+    hotel_level: 'mid', transportation_style: 'public', dietary_preferences: [], accessibility_needs: [], interests: ['culture', 'food'],
+    metadata: { start_date: '2026-11-10', end_date: '2026-11-13' },
+  };
+  const created = await call('POST', '/api/itineraries/', {
+    token,
+    json: { destination: target.id, title: target.name, trip_preferences: tripPreferences, duration_days: 4, currency_code: 'BRL', start_date: '2026-11-10', end_date: '2026-11-13' },
+  });
   const itinerary = created.payload?.data;
   const itineraryId = itinerary?.id;
   check(created.status === 201 && itinerary?.duration_days === 4 && itinerary?.budget_total === '4000.00', 'criacao com payload do front usa preferencias', created.payload);
