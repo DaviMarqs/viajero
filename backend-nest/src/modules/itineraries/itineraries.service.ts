@@ -100,7 +100,12 @@ export class ItinerariesService {
       throw new BadRequestException('A data final nao pode ser anterior a data inicial.');
     }
     const changes: QueryDeepPartialEntity<Itinerary> = {};
-    if (dto.title !== undefined) changes.title = dto.title.trim() || itinerary.title;
+    if (dto.title !== undefined) {
+      const title = dto.title.trim() || itinerary.title;
+      changes.title = title;
+      // Marca o nome escolhido pelo usuario para a regeneracao nao sobrescrever.
+      if (title !== itinerary.title) changes.metadata = { ...(itinerary.metadata ?? {}), title_customized: true };
+    }
     if (dto.summary !== undefined) changes.summary = dto.summary;
     if (dto.start_date !== undefined) changes.start_date = startDate;
     if (dto.end_date !== undefined) changes.end_date = endDate;

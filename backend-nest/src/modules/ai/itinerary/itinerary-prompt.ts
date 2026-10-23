@@ -151,10 +151,13 @@ export function buildItineraryPrompt(context: ItineraryContext, template: Pick<P
   const budgetMin = prefs ? parseCost(prefs.budget_min) : 0;
   const budgetMax = prefs ? parseCost(prefs.budget_max) : 0;
 
+  // Com faixa da viagem, ela manda: o budget_total do roteiro pode ser o custo da geracao anterior
+  // e ancoraria a regeneracao no resultado antigo.
+  const hasRange = budgetMin > 0 || budgetMax > 0;
+  const useBudgetTotal = budgetTotal > 0 && !hasRange;
   let prefsHint = '';
   let budgetRule = '';
   if (prefs) {
-    const hasRange = budgetMin > 0 || budgetMax > 0;
     prefsHint =
       (hasRange ? ` Orcamento entre ${prefs.budget_min} e ${prefs.budget_max} ${prefs.currency_code}.` : '') +
       ` Interesses: ${prefs.interests.join(', ') || 'nao informados'}.` +
@@ -169,7 +172,7 @@ export function buildItineraryPrompt(context: ItineraryContext, template: Pick<P
         `${prefs.budget_min} e ${prefs.budget_max} ${prefs.currency_code}.`;
     }
   }
-  if (!budgetRule && budgetTotal > 0) {
+  if (!budgetRule && useBudgetTotal) {
     budgetRule = ` O CUSTO TOTAL (soma de todos os eventos) deve ficar proximo de ${context.budget_total} ${currency}.`;
   }
 
@@ -183,7 +186,7 @@ export function buildItineraryPrompt(context: ItineraryContext, template: Pick<P
   let intro =
     'Voce e um planejador de viagens. ' +
     `Crie um roteiro de EXATAMENTE ${context.duration_days} dias para ${context.destination.name} (${context.destination.country}).` +
-    (budgetTotal > 0 ? ` Orcamento total: ${context.budget_total} ${currency}.` : '') +
+    (useBudgetTotal ? ` Orcamento total: ${context.budget_total} ${currency}.` : '') +
     period +
     prefsHint +
     " Prefira eventos que referenciem POIs existentes via 'poi_id'. " +
@@ -200,8 +203,8 @@ export function buildItineraryPrompt(context: ItineraryContext, template: Pick<P
     "O 'title' de cada dia deve ser curto e descrever o tema do dia, sem repetir 'Dia N'.";
   if (template?.template) intro = `${intro}\n\nTemplate adicional:\n${template.template}`;
 
-  // Mesmo motivo do gate acima: "budget_total": "0.00" no contexto tambem ancora o LLM em custos zerados.
+  // Mesmos motivos: "budget_total": "0.00" ancora custos zerados e o custo antigo ancora a regeneracao.
   const contextForPrompt: Partial<ItineraryContext> = { ...context };
-  if (budgetTotal <= 0) delete contextForPrompt.budget_total;
+  if (!useBudgetTotal) delete contextForPrompt.budget_total;
   return `${intro}\n\nContexto:\n${JSON.stringify(contextForPrompt)}`;
 }

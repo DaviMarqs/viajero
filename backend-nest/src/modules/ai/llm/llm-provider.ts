@@ -13,18 +13,31 @@ export interface LlmCallOptions {
   extraTimeoutMs?: number;
 }
 
-/** Maior espera aceita para repetir uma chamada que bateu no rate limit (header retry-after). */
+/** Espera total aceita para repetir chamadas que bateram no rate limit. */
 const MAX_RATE_LIMIT_WAIT_MS = 30_000;
+const MAX_RATE_LIMIT_ATTEMPTS = 3;
 
-/** Em HTTP 429 com retry-after curto, espera e repete uma vez; senao devolve a resposta original. */
-export async function sendWithRateLimitRetry(send: () => Promise<Response>): Promise<Response> {
-  const response = await send();
-  if (response.status !== 429) return response;
-  const header = response.headers.get('retry-after');
-  const seconds = header === null || header.trim() === '' ? NaN : Number(header);
-  if (!Number.isFinite(seconds) || seconds < 0 || seconds * 1000 > MAX_RATE_LIMIT_WAIT_MS) return response;
-  await new Promise((resolve) => setTimeout(resolve, Math.ceil(seconds * 1000) + 250));
-  return send();
+/** Segundos a esperar: header retry-after ou o "try again in 1m2.5s" que o Groq manda no corpo. */
+export function rateLimitWaitMs(retryAfter: string | null, body: string): number | null {
+  const header = retryAfter?.trim() ? Number(retryAfter) : NaN;
+  if (Number.isFinite(header) && header >= 0) return Math.ceil(header * 1000) + 250;
+  const match = /try again in (?:(\d+)m)?([\d.]+)s/i.exec(body);
+  if (!match) return null;
+  const seconds = Number(match[1] ?? 0) * 60 + Number(match[2]);
+  return Number.isFinite(seconds) ? Math.ceil(seconds * 1000) + 250 : null;
+}
+
+/** Em HTTP 429 com espera curta, aguarda e repete (ate 3 tentativas e 30 s); senao devolve a resposta. */
+export async function sendWithRateLimitRetry(send: () => Promise<Response>, sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))): Promise<Response> {
+  let waited = 0;
+  for (let attempt = 1; ; attempt += 1) {
+    const response = await send();
+    if (response.status !== 429 || attempt >= MAX_RATE_LIMIT_ATTEMPTS) return response;
+    const waitMs = rateLimitWaitMs(response.headers.get('retry-after'), await response.clone().text().catch(() => ''));
+    if (waitMs === null || waited + waitMs > MAX_RATE_LIMIT_WAIT_MS) return response;
+    await sleep(waitMs);
+    waited += waitMs;
+  }
 }
 
 /** Contrato de um provedor de LLM: so envia o prompt e devolve o JSON parseado. */

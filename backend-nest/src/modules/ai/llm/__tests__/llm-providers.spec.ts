@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { GroqProvider } from '../groq.provider';
 import { GeminiProvider } from '../gemini.provider';
 import { LlmAuthError, LlmQuotaError, LlmResponseError, LlmTimeoutError } from '../llm.errors';
-import { LlmProvider } from '../llm-provider';
+import { LlmProvider, rateLimitWaitMs, sendWithRateLimitRetry } from '../llm-provider';
 import { requestLlmJson } from '../llm.service';
 
 const config = { apiKey: 'key', model: 'model-x', baseUrl: 'https://llm.test', timeoutMs: 1000, longTimeoutMs: 2000, maxTokens: 4096, reasoningEffort: 'low' };
@@ -51,6 +51,28 @@ describe('GroqProvider', () => {
     const fetchFn = jest.fn();
     await expect(new GroqProvider({ ...config, apiKey: '' }, fetchFn).generateJson('p', {})).rejects.toBeInstanceOf(LlmAuthError);
     expect(fetchFn).not.toHaveBeenCalled();
+  });
+});
+
+describe('rate limit', () => {
+  it('le o retry-after ou o "try again in" do corpo do Groq', () => {
+    expect(rateLimitWaitMs('2', '')).toBe(2250);
+    expect(rateLimitWaitMs(null, 'Please try again in 3.24s. Need more tokens?')).toBe(3490);
+    expect(rateLimitWaitMs(null, 'Please try again in 1m2.5s')).toBe(62750);
+    expect(rateLimitWaitMs(null, 'limit')).toBeNull();
+  });
+
+  it('repete ate 3 vezes sem passar de 30 s de espera', async () => {
+    const limited = () => new Response('Please try again in 4s', { status: 429 });
+    const sleep = jest.fn().mockResolvedValue(undefined);
+    const send = jest.fn().mockImplementation(() => Promise.resolve(limited()));
+    const response = await sendWithRateLimitRetry(send, sleep);
+    expect(response.status).toBe(429);
+    expect(send).toHaveBeenCalledTimes(3);
+    expect(await response.text()).toContain('try again');
+    const slow = jest.fn().mockImplementation(() => Promise.resolve(new Response('Please try again in 1m', { status: 429 })));
+    await sendWithRateLimitRetry(slow, sleep);
+    expect(slow).toHaveBeenCalledTimes(1);
   });
 });
 

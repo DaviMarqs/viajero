@@ -562,7 +562,7 @@
       "headers": [
         { "name": "Authorization", "value": "Bearer {{ jwt }}" }
       ],
-      "description": "Gera o roteiro com IA de forma síncrona e responde 202 com generation_status=ready. Provedor por DEFAULT_LLM_PROVIDER (groq ou gemini; o outro, se tiver chave, entra como reserva). Sem chave, usa o gerador mock determinístico. Usa o DNA do usuário, os trip_preferences do roteiro e os 30 POIs mais bem avaliados do destino; eventos com poi_id inválido perdem o vínculo. Custos são reescalados para a faixa de orçamento. Em falha: 503 (limite/timeout da IA) ou 500, e o roteiro fica failed (detalhe em /api/llm-jobs/)."
+      "description": "Gera o roteiro com IA de forma síncrona e responde 202 com generation_status=ready. Provedor por DEFAULT_LLM_PROVIDER (groq ou gemini; o outro, se tiver chave, entra como reserva). Sem chave, usa o gerador mock determinístico. Usa o DNA do usuário, os trip_preferences do roteiro e os 30 POIs mais bem avaliados do destino; eventos com poi_id inválido perdem o vínculo. Custos são reescalados para a faixa de orçamento. Chamar de novo regenera: mantém datas e o nome renomeado pelo usuário. Em falha: 503 (limite/timeout da IA) ou 500; o roteiro só fica failed se ainda não tinha programação (detalhe em /api/llm-jobs/)."
     },
     {
       "_id": "req_itineraries_days_list",

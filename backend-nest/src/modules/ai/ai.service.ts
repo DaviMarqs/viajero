@@ -8,6 +8,7 @@ import { PointOfInterest } from '../destinations/entities';
 import { ItineraryGeneratorFactory } from '../../common/factories/itinerary-generator.factory';
 import { requireTripParameters } from '../itineraries/trip-generation-context';
 import { applyBudgetPrecision } from './itinerary/itinerary-costs';
+import { titleAfterGeneration } from '../itineraries/itinerary-rules';
 
 @Injectable()
 export class AiService {
@@ -106,7 +107,7 @@ export class AiService {
 
     // Tudo ou nada: falha no meio nao deixa o roteiro sem dias.
     await this.jobs.manager.transaction(async (manager) => {
-      itinerary.title = result.title;
+      itinerary.title = titleAfterGeneration(itinerary, result.title);
       itinerary.summary = result.summary;
       itinerary.budget_total = result.estimated_cost;
       itinerary.currency_code = result.currency_code;
@@ -165,7 +166,9 @@ export class AiService {
 
   async markJobFailed(jobId: number, itineraryId: number, reason: string): Promise<void> {
     await this.jobs.update({ id: jobId }, { status: 'failed', error_message: reason });
-    await this.itineraries.update({ id: itineraryId }, { generation_status: 'failed' });
+    // Regeneracao que falha nao apaga nada (a troca de dias e transacional): o roteiro volta a ficar pronto.
+    const hasProgram = await this.itineraries.manager.exists(ItineraryDay, { where: { itinerary: { id: itineraryId } } });
+    await this.itineraries.update({ id: itineraryId }, { generation_status: hasProgram ? 'ready' : 'failed' });
     await this.logs.save(this.logs.create({ llm_job: { id: jobId } as LlmJob, level: 'error', message: 'Job failed.', payload: { error: reason } }));
   }
 }

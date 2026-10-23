@@ -77,6 +77,15 @@ describe('buildItineraryPrompt', () => {
     expect(prompt).toContain('Template adicional:\nSeja criativo.');
     expect(prompt).not.toContain('budget_total');
   });
+
+  it('na regeneracao a faixa da viagem manda, nao o custo da geracao anterior', () => {
+    const regenerated = buildItineraryContext({ ...baseItinerary, budget_total: '5200.00' } as never, null, tripParameters as never, []);
+    const prompt = buildItineraryPrompt(regenerated, null);
+    expect(prompt).not.toContain('5200');
+    expect(prompt).toContain('entre 1000 e 3000 BRL');
+    const withoutRange = buildItineraryContext({ ...baseItinerary, budget_total: '800.00' } as never, null, null, []);
+    expect(buildItineraryPrompt(withoutRange, null)).toContain('Orcamento total: 800.00 BRL');
+  });
 });
 
 describe('normalizeItineraryPayload', () => {

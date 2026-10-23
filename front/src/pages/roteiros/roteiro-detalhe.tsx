@@ -28,6 +28,7 @@ import {
 } from "@/features/itineraries/itinerary-editing";
 import { ItineraryActivity } from "@/features/itineraries/itinerary-activity";
 import { FavoriteItineraryButton } from "@/features/itineraries/favorite-itinerary-button";
+import { RegenerateItineraryButton } from "@/features/itineraries/regenerate-itinerary-button";
 import { dayInsights, draftChanges } from "@/features/itineraries/itinerary-insights";
 
 type ItineraryResponse = ApiSuccessResponse<Itinerary>;
@@ -175,6 +176,20 @@ export default function RoteiroDetalhePage() {
                 onSavingChange={setSavingEdit}
                 toolbarContent={<><span role="status" className="text-xs text-muted-foreground">{changes?.changed ? "Alterações não salvas" : "Nenhuma alteração pendente"}</span><Button type="button" variant="ghost" disabled={savingEdit || !draftHistory.length} onClick={() => { const previous = draftHistory[draftHistory.length - 1]; if (previous) { setDraft(previous); setDraftHistory(history => history.slice(0, -1)); } }}><Undo2 aria-hidden="true" />Desfazer</Button></>}
                 onSaved={setItinerary}
+              />
+            )}
+          {itinerary.is_owner &&
+            !activeDraft &&
+            (itinerary.generation_status === "ready" || itinerary.generation_status === "failed") && (
+              <RegenerateItineraryButton
+                itinerary={itinerary}
+                localProgramKey={localProgramKey(user?.id, itinerary.id)}
+                onRegenerated={(next) => {
+                  setOriginal(next);
+                  setItinerary(next);
+                  changeDraft(null);
+                  setSelectedDay(0);
+                }}
               />
             )}
           <FavoriteItineraryButton itineraryId={itinerary.id} />

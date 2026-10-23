@@ -159,6 +159,7 @@ Abra `http://localhost:5173`. O front já aponta para `http://localhost:8001`. S
 - Favoritos está na navegação. Destinos favoritos são salvos por conta no armazenamento deste navegador; roteiros favoritos usam a API existente.
 - Perfil → Moeda de exibição salva `preferred_currency` na API. Valores de destinos e roteiros são convertidos aproximadamente com taxas do Frankfurter (`https://frankfurter.dev/`). A cotação consultada aparece na interface. Sem cotação, permanece o valor na moeda original; o orçamento de origem não é alterado.
 - Editar roteiro salva nome, resumo e datas na API. Edição, remoção e reordenação de atividades são salvas por conta e roteiro neste navegador, pois a API ainda não oferece mutação de eventos. Arrastar, teclado (espaço/setas/espaço) e botões de subir/descer são suportados. Reordenar não altera horários; as estimativas originais são preservadas.
+- No detalhe do roteiro, "Gerar novamente" pede uma nova programação à IA, com confirmação. O nome escolhido pelo usuário e as datas são mantidos; as edições de atividades salvas no navegador são descartadas. Se a geração falhar, a programação anterior continua valendo.
 - O formulário de avaliação da viagem do proprietário aparece após o fim da data de volta. Avaliações usam a API existente. Confirmações são diálogos renderizados com controle de foco.
 - As microinterações usam CSS e respeitam redução de movimento; a reordenação usa dnd-kit. GSAP não é necessária para estes efeitos.
 

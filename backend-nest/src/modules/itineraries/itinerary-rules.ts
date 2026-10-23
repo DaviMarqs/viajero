@@ -58,3 +58,8 @@ export function canViewItinerary(itinerary: ItineraryVisibility, isOwner: boolea
 export function canReviewItinerary(itinerary: ItineraryVisibility, isOwner: boolean): boolean {
   return itinerary.generation_status === 'ready' && canViewItinerary(itinerary, isOwner);
 }
+
+/** Nome renomeado pelo usuario (PATCH) sobrevive a regeneracao; senao vale o nome criado pela IA. */
+export function titleAfterGeneration(itinerary: { title: string; metadata?: Record<string, unknown> | null }, generatedTitle: string): string {
+  return itinerary.metadata?.title_customized === true && itinerary.title.trim() ? itinerary.title : generatedTitle;
+}

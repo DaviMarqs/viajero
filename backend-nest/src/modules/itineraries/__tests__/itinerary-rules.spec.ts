@@ -1,4 +1,4 @@
-import { canReviewItinerary, canViewItinerary, isPublicItinerary, resolveItineraryDefaults } from '../itinerary-rules';
+import { canReviewItinerary, canViewItinerary, isPublicItinerary, resolveItineraryDefaults, titleAfterGeneration } from '../itinerary-rules';
 
 const preferences = { preferred_trip_length_days: 4, budget_min: '2000.00', budget_max: '6000.00', currency_code: 'EUR' };
 
@@ -55,5 +55,13 @@ describe('visibilidade de roteiros', () => {
     expect(canReviewItinerary(ready, true)).toBe(true);
     expect(canReviewItinerary(ready, false)).toBe(false);
     expect(canReviewItinerary({ ...ready, review_stats: { review_count: 2 } }, false)).toBe(true);
+  });
+});
+
+describe('titleAfterGeneration', () => {
+  it('mantem o nome renomeado pelo usuario e usa o da IA nos demais casos', () => {
+    expect(titleAfterGeneration({ title: 'Lua de mel', metadata: { title_customized: true } }, 'Roteiro de 3 dias em Lisboa')).toBe('Lua de mel');
+    expect(titleAfterGeneration({ title: 'Lisbon', metadata: {} }, 'Roteiro de 3 dias em Lisboa')).toBe('Roteiro de 3 dias em Lisboa');
+    expect(titleAfterGeneration({ title: 'Lisbon', metadata: null }, 'Roteiro de 3 dias em Lisboa')).toBe('Roteiro de 3 dias em Lisboa');
   });
 });
