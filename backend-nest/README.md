@@ -15,23 +15,14 @@ Guia completo do projeto (banco, migrations, API, front e problemas comuns): [`.
 
 O Nest usa o **mesmo banco** do Django: o schema vem das migrations do Django (`../backend`) e o Nest não altera a estrutura (`synchronize: false`).
 
-1. Schema e seed pelo Django (requer `uv`):
-
-```bash
-cd backend
-uv sync
-DATABASE_URL=postgresql://postgres:1414@localhost:5432/viajero uv run manage.py migrate
-DATABASE_URL=postgresql://postgres:1414@localhost:5432/viajero uv run manage.py loaddata seed_data.json
-```
-
-2. Backend Nest:
-
 ```bash
 cd backend-nest
-npm install
+npm ci
 cp .env.example .env
 npm run start:dev
 ```
+
+O `start:dev` (`scripts/dev.mjs`) deixa o banco pronto antes de subir o Nest em watch: se o PostgreSQL do `DATABASE_URL` não responde, sobe o serviço `db` do `../docker-compose.yml` (container `viajero-pg`); aplica as migrations do Django com `uv` e carrega o seed num banco vazio. `npm run start:watch` sobe só o Nest. Para rodar banco, API e front no Docker: `docker compose up --build` na raiz.
 
 A API sobe em `http://localhost:8001`. O front (`../front`) já aponta para essa URL por padrão (`VITE_API_URL`).
 

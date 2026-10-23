@@ -14,12 +14,18 @@ O Viajero é um projeto criado do zero (_greenfield_) com um backend em Django p
 
 O passo a passo completo (pré-requisitos, banco, API, front, primeiro uso, testes e problemas comuns) está em **[RODAR_LOCALMENTE.md](./RODAR_LOCALMENTE.md)**.
 
-Resumo, com Docker, Node 20.19+ e `uv` instalados:
+**Tudo no Docker (um comando, na raiz):**
 
 ```bash
-docker run -d --name viajero-pg -e POSTGRES_PASSWORD=1414 -e POSTGRES_DB=viajero -p 5432:5432 -v viajero-pgdata:/var/lib/postgresql/data postgres:16
-cd backend && uv sync && cp .env.example .env && uv run manage.py migrate && uv run manage.py loaddata seed_data.json
-cd ../backend-nest && npm ci && cp .env.example .env && npm run start:dev   # API em http://localhost:8001
+docker compose up --build    # app em http://localhost:5173, API em http://localhost:8001
+```
+
+Sobe o PostgreSQL, cria as tabelas e o seed (Django), a API Nest e o front. Para a IA, crie antes o `backend-nest/.env` a partir do `.env.example` e preencha `GROQ_API_KEY`.
+
+**Para desenvolver (recarga automática)**, com Docker, Node 20.19+ e `uv` instalados:
+
+```bash
+cd backend-nest && npm ci && cp .env.example .env && npm run start:dev   # liga o banco, aplica migrations/seed e sobe a API
 cd front && npm ci && npm run dev                                           # outro terminal; app em http://localhost:5173
 ```
 

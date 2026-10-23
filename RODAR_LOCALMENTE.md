@@ -20,6 +20,22 @@ O serviço PostgreSQL deve estar em execução. Não recarregue o seed em um ban
 
 > O front novo e o `backend-nest` estão na branch `new-front` até o merge. Depois de clonar, rode `git checkout new-front`.
 
+## Jeito mais rápido: tudo no Docker
+
+Com o Docker instalado, na raiz do repositório:
+
+```bash
+docker compose up --build
+```
+
+Esse comando sobe quatro serviços em ordem: o PostgreSQL (`viajero-pg`), o `migrate` (Django cria ou atualiza as tabelas e carrega o seed só se o banco estiver vazio, depois encerra), a API Nest (`http://localhost:8001`) e o front (`http://localhost:5173`). Não precisa de Node nem de `uv` na máquina. A primeira vez demora alguns minutos baixando as imagens.
+
+- **IA:** antes de subir, crie o `backend-nest/.env` a partir do `backend-nest/.env.example` e preencha `GROQ_API_KEY` (passo 5). O Docker lê esse arquivo; sem ele tudo funciona com o gerador mock.
+- **Depois de `git pull` ou de mudar código:** rode o mesmo comando. O `--build` refaz as imagens; não há recarga automática dentro do Docker. Para desenvolver, prefira o passo a passo abaixo.
+- **Em segundo plano:** `docker compose up --build -d`. Logs: `docker compose logs -f api`. Parar: `docker compose down` (os dados continuam no volume `viajero-pgdata`).
+- **Já tinha o container `viajero-pg` criado com `docker run`** (versões antigas deste guia)? Remova uma vez com `docker rm -f viajero-pg`; os dados ficam no volume e o compose usa o mesmo volume.
+- **Porta 5432 ocupada** por um PostgreSQL da máquina? `DB_PORT=55432 docker compose up --build` (no PowerShell: `$env:DB_PORT="55432"; docker compose up --build`).
+
 ## Visão geral
 
 ```
@@ -78,8 +94,10 @@ git checkout new-front
 
 ## 3. Banco de dados (PostgreSQL no Docker)
 
+> O `npm run start:dev` do passo 5 já faz este passo e o 4 sozinho quando o banco não responde. Eles ficam aqui para quem quer subir à mão.
+
 ```bash
-docker run -d --name viajero-pg -e POSTGRES_PASSWORD=1414 -e POSTGRES_DB=viajero -p 5432:5432 -v viajero-pgdata:/var/lib/postgresql/data postgres:16
+docker compose up -d db
 ```
 
 Usuário `postgres`, senha `1414` e banco `viajero` são os valores que os `.env.example` dos dois backends já usam, então não precisa mudar nada. O volume `viajero-pgdata` guarda os dados mesmo se o container for recriado.
@@ -90,8 +108,8 @@ Conferir se o banco está pronto (deve responder `accepting connections`):
 docker exec viajero-pg pg_isready -U postgres -d viajero
 ```
 
-- **Container `viajero-pg` já existe?** Rode só `docker start viajero-pg`.
-- **Porta 5432 ocupada** (PostgreSQL instalado na máquina)? Troque para `-p 55432:5432` e ajuste o `DATABASE_URL` nos dois `.env` (passos 4 e 5) para `postgresql://postgres:1414@localhost:55432/viajero`.
+- **Container `viajero-pg` antigo, criado com `docker run`?** Rode `docker start viajero-pg`, ou remova com `docker rm -f viajero-pg` (os dados ficam no volume) para usar o compose.
+- **Porta 5432 ocupada** (PostgreSQL instalado na máquina)? Rode `DB_PORT=55432 docker compose up -d db` e ajuste o `DATABASE_URL` nos dois `.env` (passos 4 e 5) para `postgresql://postgres:1414@localhost:55432/viajero`.
 - **Sem Docker?** Crie o banco `viajero` no seu PostgreSQL 16 e ajuste usuário/senha no `DATABASE_URL` dos dois `.env`.
 
 ## 4. Tabelas e dados iniciais (Django)
@@ -130,6 +148,14 @@ No `backend-nest/.env`, preencha pelo menos a `GROQ_API_KEY` (gratuita em https:
 - sugere um destino pelo DNA do viajante ("Gostaria de uma sugestão").
 
 Opcionais: `GEMINI_API_KEY` (reserva do Groq, ou provedor principal com `DEFAULT_LLM_PROVIDER=gemini`) e `FIRECRAWL_API_KEY` (dados de guias turísticos na descoberta de destinos). Sem nenhuma chave o app continua funcionando: o roteiro sai do gerador determinístico (textos em inglês) e a busca cria um destino básico. Cada dev usa a própria chave, e chave nunca vai para o git. Reinicie o Nest depois de mudar o `.env`.
+
+O `start:dev` confere tudo antes de subir a API:
+
+1. se o PostgreSQL do `DATABASE_URL` não responde, sobe o banco do `docker-compose.yml` (container `viajero-pg`); com PostgreSQL instalado na máquina e respondendo, o Docker não é usado;
+2. aplica as migrations do Django (via `uv`) e carrega o seed se o banco estiver vazio;
+3. inicia o Nest com recarga automática.
+
+O banco continua ligado depois que você para a API. `npm run start:watch` sobe só o Nest, sem essas conferências.
 
 Pronto quando o terminal mostrar `Nest application successfully started`. A API fica em `http://localhost:8001`. Deixe esse terminal aberto.
 
@@ -184,15 +210,16 @@ O que é esperado, e não é bug:
 Ordem para subir tudo:
 
 ```bash
-docker start viajero-pg
-cd backend-nest && npm run start:dev    # terminal 1
+cd backend-nest && npm run start:dev    # terminal 1: liga o banco se precisar e sobe a API
 cd front && npm run dev                 # terminal 2
 ```
+
+Ou tudo no Docker: `docker compose up --build` na raiz.
 
 Depois de um `git pull`:
 
 - Mudou `package-lock.json`? Rode `npm ci` na pasta correspondente (`backend-nest/` ou `front/`).
-- Mudou alguma migration do Django (`backend/apps/*/migrations/`)? Rode `cd backend && uv run manage.py migrate`.
+- Mudou alguma migration do Django (`backend/apps/*/migrations/`)? O `npm run start:dev` (e o `docker compose up`) aplica sozinho.
 - Mudou `backend/pyproject.toml` ou `backend/uv.lock`? Rode `cd backend && uv sync`.
 
 ## 9. Testes e verificação
