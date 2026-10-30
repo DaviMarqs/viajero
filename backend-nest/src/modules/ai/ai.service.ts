@@ -9,6 +9,7 @@ import { ItineraryGeneratorFactory } from '../../common/factories/itinerary-gene
 import { requireTripParameters } from '../itineraries/trip-generation-context';
 import { applyBudgetPrecision } from './itinerary/itinerary-costs';
 import { titleAfterGeneration } from '../itineraries/itinerary-rules';
+import { withoutProgramHistory } from '../itineraries/itinerary-program';
 
 @Injectable()
 export class AiService {
@@ -118,6 +119,8 @@ export class AiService {
         trip_preferences: parameters,
         ...result.metadata,
       };
+      // Os eventos sao todos trocados: o historico do desfazer (#50) deixa de valer.
+      itinerary.metadata = withoutProgramHistory(itinerary.metadata);
       await manager.save(itinerary);
 
       // As FKs do Django sao NO ACTION: eventos saem antes dos dias.

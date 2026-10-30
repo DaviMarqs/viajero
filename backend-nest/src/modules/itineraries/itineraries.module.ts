@@ -9,6 +9,8 @@ import { ItinerariesController } from './itineraries.controller';
 import { FavoritesController } from './favorites.controller';
 import { ReviewsController } from './reviews.controller';
 import { SharedLinksController } from './shared-links.controller';
+import { ItineraryProgramController } from './itinerary-program.controller';
+import { ItineraryProgramService } from './itinerary-program.service';
 import { ApiResponseBuilder } from '../../common/builders/api-response.builder';
 import { AuditModule } from '../audit/audit.module';
 import { AiModule } from '../ai/ai.module';
@@ -29,8 +31,8 @@ import { AiModule } from '../ai/ai.module';
     AuditModule,
     AiModule,
   ],
-  providers: [ItinerariesService, ReviewsService, ApiResponseBuilder],
-  controllers: [ItinerariesController, FavoritesController, ReviewsController, SharedLinksController],
+  providers: [ItinerariesService, ReviewsService, ItineraryProgramService, ApiResponseBuilder],
+  controllers: [ItinerariesController, ItineraryProgramController, FavoritesController, ReviewsController, SharedLinksController],
   exports: [ItinerariesService, TypeOrmModule],
 })
 export class ItinerariesModule {}
