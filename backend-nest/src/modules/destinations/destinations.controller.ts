@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Put, Query, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { DestinationsService } from './destinations.service';
 import { DestinationDiscoveryFacade } from './destination-discovery.facade';
@@ -8,6 +8,9 @@ import { ApiResponseBuilder } from '../../common/builders/api-response.builder';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
+import { StaffGuard } from '../auth/staff.guard';
+import { ReplaceDestinationDto, UpdateDestinationDto } from './dto/destination-write.dto';
+import { ListRequest, ListRequestContext } from '../../common/query/list-request.decorator';
 
 interface MaybeAuthRequest extends Request {
   user?: AuthenticatedUser;
@@ -23,8 +26,8 @@ export class DestinationsController {
   ) {}
 
   @Get()
-  async list() {
-    const destinations = await this.destinations.list();
+  async list(@ListRequest() request: ListRequestContext) {
+    const destinations = await this.destinations.listWithQuery(request);
     return this.response.withMessage('Lista carregada com sucesso.').build(destinations);
   }
 
@@ -55,5 +58,27 @@ export class DestinationsController {
   async retrieve(@Param('id', ParseIntPipe) id: number) {
     const destination = await this.destinations.findOne(id);
     return this.response.withMessage('Registro carregado com sucesso.').build(destination);
+  }
+
+  // Escrita por id so para staff (o Django aceitava qualquer usuario autenticado).
+  @Put(':id')
+  @UseGuards(JwtAuthGuard, StaffGuard)
+  async replace(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseIntPipe) id: number, @Body() dto: ReplaceDestinationDto) {
+    const destination = await this.destinations.updateDestination(id, dto, user.id);
+    return this.response.withMessage('Registro atualizado com sucesso.').build(destination);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, StaffGuard)
+  async update(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseIntPipe) id: number, @Body() dto: UpdateDestinationDto) {
+    const destination = await this.destinations.updateDestination(id, dto, user.id);
+    return this.response.withMessage('Registro atualizado com sucesso.').build(destination);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, StaffGuard)
+  async remove(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseIntPipe) id: number) {
+    await this.destinations.removeDestination(id, user.id);
+    return this.response.withMessage('Registro removido com sucesso.').build(null);
   }
 }
