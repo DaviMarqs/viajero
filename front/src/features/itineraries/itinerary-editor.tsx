@@ -1,6 +1,5 @@
-import { useToast } from "@/components/motion/toast-context";
 import { useReducedMotion } from "@/components/motion/use-reduced-motion";
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useId, useRef, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -14,14 +13,16 @@ import {
 } from "@dnd-kit/core";
 import {
   SortableContext,
-  arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowDown, ArrowUp, GripVertical, Pencil, Trash2 } from "lucide-react";
+import { DropdownMenu } from "radix-ui";
+import { ArrowDown, ArrowUp, CalendarArrowDown, CloudAlert, CloudCheck, GripVertical, LoaderCircle, Pencil, Trash2, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DayTabLabel } from "@/components/ui/day-tab-label";
 import { ItineraryActivity } from "./itinerary-activity";
 import {
   Dialog,
@@ -32,16 +33,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useAuth } from "@/contexts/authContext";
-import { apiRequest, type ApiSuccessResponse } from "@/lib/api";
-import { localProgramKey, saveLocalProgram } from "./itinerary-editing";
+import { tripEndDate } from "./program-sync";
+import type { ProgramSaveStatus } from "./use-itinerary-program";
 import type { Itinerary, ItineraryDay, ItineraryEvent } from "@/types/travel";
+
+function DayOption({ day, start }: { day: number; start?: string | null }) {
+  return start ? <>Dia {day} · <DayTabLabel start={start} day={day} /></> : <DayTabLabel day={day} />;
+}
 
 function EventRow({
   event,
   index,
   total,
-  move,
+  days,
+  startDate,
+  shift,
+  moveTo,
   remove,
   destinationImage, destinationName, currency,
 }: {
@@ -49,7 +56,11 @@ function EventRow({
   event: ItineraryEvent;
   index: number;
   total: number;
-  move: (offset: number) => void;
+  /** Outros dias para onde a atividade pode ir. */
+  days: ItineraryDay[];
+  startDate?: string | null;
+  shift: (offset: number) => void;
+  moveTo: (dayNumber: number) => void;
   remove: () => void;
 }) {
   const reduced = useReducedMotion();
@@ -90,7 +101,7 @@ function EventRow({
             variant="ghost"
             disabled={index === 0}
             aria-label={`Mover ${event.title} para cima`}
-            onClick={() => move(-1)}
+            onClick={() => shift(-1)}
           >
             <ArrowUp aria-hidden="true" />
           </Button>
@@ -100,25 +111,40 @@ function EventRow({
             variant="ghost"
             disabled={index === total - 1}
             aria-label={`Mover ${event.title} para baixo`}
-            onClick={() => move(1)}
+            onClick={() => shift(1)}
           >
             <ArrowDown aria-hidden="true" />
           </Button>
         </div>
       </div>
       <div className="flex flex-wrap gap-2 pl-2">
+        {days.length > 0 && <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <Button type="button" variant="ghost">
+              <CalendarArrowDown aria-hidden="true" />
+              Mover para o dia…<span className="sr-only"> ({event.title})</span>
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content align="start" sideOffset={8} className="currency-dropdown day-move-menu" aria-label={`Escolher o dia para ${event.title}`}>
+              {days.map(day => <DropdownMenu.Item key={day.id} className="currency-option" onSelect={() => moveTo(day.day_number)}>
+                <DayOption day={day.day_number} start={startDate} />
+              </DropdownMenu.Item>)}
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>}
         <Dialog>
           <DialogTrigger asChild>
             <Button type="button" variant="ghost" className="text-destructive">
               <Trash2 aria-hidden="true" />
-              Remover
+              Remover<span className="sr-only"> {event.title}</span>
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogTitle>Remover esta atividade?</DialogTitle>
             <DialogDescription>
-              {event.title} será removida da programação ao salvar as
-              alterações.
+              {event.title} sairá da programação e os horários do dia serão
+              recalculados. Você pode desfazer logo em seguida.
             </DialogDescription>
             <DialogFooter>
               <DialogClose asChild>
@@ -140,33 +166,37 @@ function EventRow({
   );
 }
 
+/** Lista editável de um dia: arrastar ou setas reordenam; o menu leva a atividade para o fim de outro dia. */
 export function DayEditor({
   day,
-  update,
+  days,
+  startDate,
+  onReorder,
+  onMove,
+  onRemove,
   destinationImage, destinationName, currency,
 }: {
   destinationImage?: string; destinationName: string; currency: string;
   day: ItineraryDay;
-  update: (day: ItineraryDay) => void;
+  days: ItineraryDay[];
+  startDate?: string | null;
+  onReorder: (from: number, to: number) => void;
+  onMove: (event: ItineraryEvent, dayNumber: number) => void;
+  onRemove: (event: ItineraryEvent) => void;
 }) {
-  const notify = useToast();
-  const latest = useRef({ day, update });
-  const mounted = useRef(true);
-  useLayoutEffect(() => { latest.current = { day, update }; }, [day, update]);
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const listRef = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
   const dragged = day.events.find(event => String(event.id) === activeId);
+  // A atividade movida ou removida sai da lista junto com o botão que tinha o foco: o foco vai para o dia.
+  const keepFocus = () => window.setTimeout(() => listRef.current?.focus(), 0);
+  const otherDays = days.filter(item => item.day_number !== day.day_number);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
-  function apply(next: ItineraryDay) {
-    const costs = next.events.map(event => event.estimated_cost == null ? NaN : Number(event.estimated_cost));
-    update({...next, estimated_cost: costs.every(Number.isFinite) ? costs.reduce((sum, cost) => sum + cost, 0) : next.estimated_cost});
-  }
   function reorder(event: DragEndEvent) {
     if (!event.over || event.active.id === event.over.id) return;
     const from = day.events.findIndex(
@@ -175,11 +205,10 @@ export function DayEditor({
     const to = day.events.findIndex(
       (item) => String(item.id) === event.over?.id,
     );
-    if (from >= 0 && to >= 0)
-      apply({ ...day, events: arrayMove(day.events, from, to) });
+    if (from >= 0 && to >= 0) onReorder(from, to);
   }
   return (
-    <section className="space-y-3">
+    <section ref={listRef} tabIndex={-1} aria-label={`Atividades do dia ${day.day_number}`} className="space-y-3">
       <DndContext
         sensors={sensors}
         measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
@@ -215,24 +244,11 @@ export function DayEditor({
                 destinationImage={destinationImage} destinationName={destinationName} currency={currency}
                 index={index}
                 total={day.events.length}
-                remove={() => {
-                  apply({ ...day, events: day.events.filter(item => item.id !== event.id) });
-                  notify({ title: "Atividade removida do rascunho.", action: { label: "Desfazer", onClick: () => {
-                    if (!mounted.current) { notify({ title: "A edição deste dia foi encerrada." }); return; }
-                    const current = latest.current.day;
-                    if (current.events.some(item => item.id === event.id)) return;
-                    const events = [...current.events];
-                    events.splice(Math.min(index, events.length), 0, event);
-                    const costs = events.map(item => item.estimated_cost == null ? NaN : Number(item.estimated_cost));
-                    latest.current.update({ ...current, events, estimated_cost: costs.every(Number.isFinite) ? costs.reduce((sum, cost) => sum + cost, 0) : current.estimated_cost });
-                  } } });
-                }}
-                move={(offset) =>
-                  apply({
-                    ...day,
-                    events: arrayMove(day.events, index, index + offset),
-                  })
-                }
+                days={otherDays}
+                startDate={startDate}
+                remove={() => { onRemove(event); keepFocus(); }}
+                moveTo={(dayNumber) => { onMove(event, dayNumber); keepFocus(); }}
+                shift={(offset) => onReorder(index, index + offset)}
               />
             ))}
           </ol>
@@ -241,102 +257,91 @@ export function DayEditor({
       </DndContext>
       {!day.events.length && (
         <p className="text-sm text-muted-foreground">
-          Este dia está livre. Salve ou cancele para recuperar a programação
-          anterior.
+          Este dia está livre. Traga uma atividade de outro dia pelo menu
+          “Mover para o dia…” ou use Desfazer.
         </p>
       )}
     </section>
   );
 }
 
-export function ItineraryEditor({ itinerary, original, draft, onDraftChange, onSavingChange, onSaved, toolbarContent }: {
-  itinerary: Itinerary; original: Itinerary; draft: Itinerary | null;
-  onDraftChange: (draft: Itinerary | null) => void;
-  onSavingChange: (saving: boolean) => void;
-  onSaved: (itinerary: Itinerary) => void;
-  toolbarContent?: ReactNode;
+/** Nome com salvamento automático e ida editável; a volta acompanha a duração do roteiro. */
+export function ItineraryDetailsEditor({ itinerary, titleDraft, disabled, onTitleChange, onStartDateCommit }: {
+  itinerary: Itinerary;
+  titleDraft: string | null;
+  disabled?: boolean;
+  onTitleChange: (value: string) => void;
+  onStartDateCommit: (value: string) => void;
 }) {
-  const { user } = useAuth();
-  const notify = useToast();
-  const [confirmed, setConfirmed] = useState(false);
-  useEffect(() => { if (!confirmed) return; const timer = window.setTimeout(() => setConfirmed(false), 600); return () => window.clearTimeout(timer); }, [confirmed]);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  async function save() {
-    if (!draft) return;
-    if (saving) return;
-    if (!draft.title.trim()) {
-      setError("Dê um nome ao roteiro.");
-      return;
-    }
-    if (
-      draft.start_date &&
-      draft.end_date &&
-      draft.end_date < draft.start_date
-    ) {
-      setError("A data de volta deve ser igual ou posterior à data de ida.");
-      return;
-    }
-    setSaving(true);
-    onSavingChange(true);
-    setError("");
-    const key = localProgramKey(user?.id, itinerary.id);
-    let previous: string | null = null;
-    let localSaved = false;
-    try {
-      previous = localStorage.getItem(key);
-      const days = saveLocalProgram(original, draft.days ?? [], key);
-      const previousTimes = new Map((itinerary.days ?? []).flatMap(day => day.events).map(event => [String(event.id), event]));
-      const changedTimes = days.flatMap(day => day.events).filter(event => { const previous = previousTimes.get(String(event.id)); return previous && (previous.start_time?.slice(0, 5) !== event.start_time || previous.end_time?.slice(0, 5) !== event.end_time); }).length;
-      localSaved = true;
-      const response = await apiRequest<ApiSuccessResponse<Itinerary>>(
-        `/api/itineraries/${itinerary.id}/`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({
-            title: draft.title.trim(),
-            summary: draft.summary ?? "",
-            start_date: draft.start_date || null,
-            end_date: draft.end_date || null,
-          }),
-        },
-      );
-      if (!response.data)
-        throw new Error(
-          "O serviço não retornou o roteiro atualizado. Recarregue antes de tentar novamente.",
-        );
-      setConfirmed(true);
-      notify({ title: "Programação salva neste navegador. Nome e datas atualizados na conta." });
-      onSaved({ ...response.data, is_owner: true, days });
-      onDraftChange(null);
-      setMessage(`Alterações salvas. ${changedTimes ? `${changedTimes} ${changedTimes === 1 ? "atividade teve o horário recalculado" : "atividades tiveram os horários recalculados"}. ` : ""}A programação foi salva neste navegador.`);
-    } catch (err) {
-      if (localSaved) {
-        try {
-          if (previous === null) localStorage.removeItem(key);
-          else localStorage.setItem(key, previous);
-        } catch {
-          /* Keep the save error visible. */
-        }
-      }
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Não foi possível salvar. Tente novamente.",
-      );
-    } finally {
-      setSaving(false);
-      onSavingChange(false);
-    }
+  const id = useId();
+  const [startDraft, setStartDraft] = useState<string | null>(null);
+  const title = titleDraft ?? itinerary.title;
+  const start = startDraft ?? itinerary.start_date ?? "";
+  const end = tripEndDate(start, itinerary.duration_days) ?? (startDraft == null ? itinerary.end_date ?? "" : "");
+  const duration = Number(itinerary.duration_days);
+  function commitStart() {
+    if (startDraft == null) return;
+    // Datas pela metade (ano sendo digitado) não são enviadas.
+    if (startDraft === "" || (startDraft >= "1900-01-01" && tripEndDate(startDraft, itinerary.duration_days))) onStartDateCommit(startDraft);
+    setStartDraft(null);
   }
+  return (
+    <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-3">
+      <label className="form-label">
+        Nome do roteiro
+        <Input maxLength={160} value={title} aria-invalid={!title.trim() || undefined} aria-describedby={`${id}-title`} onChange={event => onTitleChange(event.target.value)} />
+        <span id={`${id}-title`} className={title.trim() ? "field-support" : "field-support text-destructive"}>
+          {title.trim() ? "Salvo automaticamente enquanto você digita." : "Dê um nome ao roteiro."}
+        </span>
+      </label>
+      <label className="form-label">
+        Ida
+        <Input type="date" value={start} onChange={event => setStartDraft(event.target.value)} onBlur={commitStart} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); commitStart(); } }} />
+      </label>
+      <label className="form-label">
+        Volta
+        <Input type="date" value={end} readOnly className="bg-muted text-muted-foreground" aria-describedby={`${id}-end`} />
+        <span id={`${id}-end`} className="field-support">
+          {Number.isInteger(duration) && duration > 0 ? `Calculada pela duração de ${duration} ${duration === 1 ? "dia" : "dias"}.` : "Calculada pela duração da viagem."}
+        </span>
+      </label>
+    </fieldset>
+  );
+}
+
+function SaveStatus({ status, error }: { status: ProgramSaveStatus; error: string | null }) {
+  const failed = status === "error" || status === "rejected";
+  const Icon = status === "saving" ? LoaderCircle : failed ? CloudAlert : CloudCheck;
+  return (
+    <p role="status" className={"flex items-center gap-2 text-xs " + (failed ? "text-destructive" : "text-muted-foreground")}>
+      <Icon className={status === "saving" ? "motion-spinner size-4" : "size-4"} aria-hidden="true" />
+      {status === "saving" ? "Salvando…" : status === "error" ? "Erro ao salvar" : status === "rejected" ? error ?? "Erro ao salvar" : "Todas as alterações salvas"}
+    </p>
+  );
+}
+
+/** Barra do modo de edição: status do salvamento automático, Desfazer e Concluir edição. */
+export function ItineraryEditToolbar({ editing, status, error, canRetry, canUndo, undoing, onEdit, onFinish, onUndo, onRetry }: {
+  editing: boolean;
+  status: ProgramSaveStatus;
+  error: string | null;
+  canRetry: boolean;
+  canUndo: boolean;
+  undoing: boolean;
+  onEdit: () => void;
+  onFinish: () => void;
+  onUndo: () => void;
+  onRetry: () => void;
+}) {
+  const showStatus = editing || status === "saving" || status === "error" || status === "rejected";
   return <div className="action-control itinerary-editor-actions">
-    {draft ? <div className="flex flex-wrap items-center gap-2">
-      {toolbarContent}
-      <Button type="button" variant="outline" disabled={saving} onClick={() => { onDraftChange(null); setError(""); }}>Cancelar</Button>
-      <Button type="button" loading={saving} onClick={() => void save()}>Salvar</Button>
-    </div> : <Button type="button" success={confirmed} onClick={() => { onDraftChange(structuredClone(itinerary)); setError(""); setMessage(""); }}><Pencil aria-hidden="true" />Editar roteiro</Button>}
-    {error && <p role="alert" className="action-message text-sm text-destructive">{error}</p>}
-    {message && <p role="status" className="action-message text-sm text-success">{message}</p>}
+    <div className="flex flex-wrap items-center gap-2">
+      {showStatus && <SaveStatus status={status} error={error} />}
+      {canRetry && <Button type="button" variant="outline" onClick={onRetry}>Tentar de novo</Button>}
+      {editing ? <>
+        <Button type="button" variant="ghost" disabled={!canUndo} loading={undoing} onClick={onUndo}><Undo2 aria-hidden="true" />Desfazer</Button>
+        <Button type="button" onClick={onFinish}>Concluir edição</Button>
+      </> : <Button type="button" onClick={onEdit}><Pencil aria-hidden="true" />Editar roteiro</Button>}
+    </div>
   </div>;
 }

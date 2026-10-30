@@ -6,24 +6,32 @@ import { tripDuration, parseTripDate, selectTripRange } from "../src/lib/trip-da
 import { readPlanningDraft, savePlanningDraft, clearPlanningDraft, planningDraftKey } from "../src/lib/planning-draft.ts";
 import { filterDestinations } from "../src/lib/destination-filters.ts";
 import { destinationRecommendationReason } from "../src/lib/personalization.ts";
-import { dayInsights, draftChanges } from "../src/features/itineraries/itinerary-insights.ts";
+import { dayInsights } from "../src/features/itineraries/itinerary-insights.ts";
 import { convertAmount } from "../src/lib/currency.ts";
 import {
   destinationCategories,
   rankDestinations,
 } from "../src/lib/personalization.ts";
+import { tripHasEnded } from "../src/features/itineraries/itinerary-editing.ts";
 import {
-  localProgramKey,
-  readLocalProgram,
-  saveLocalProgram,
-  tripHasEnded,
-} from "../src/features/itineraries/itinerary-editing.ts";
+  applyProgram,
+  clearLegacyPrograms,
+  createSaveQueue,
+  moveEvent,
+  programHistorySize,
+  programLayout,
+  removeEvent,
+  reorderEvent,
+  tripEndDate,
+} from "../src/features/itineraries/program-sync.ts";
 
 const storage = new Map();
 globalThis.localStorage = {
   getItem: (key) => storage.get(key) ?? null,
   setItem: (key, value) => storage.set(key, value),
   removeItem: (key) => storage.delete(key),
+  get length() { return storage.size; },
+  key: (index) => [...storage.keys()][index] ?? null,
 };
 beforeEach(() => storage.clear());
 test("calendar counts inclusive dates across month, leap year and daylight saving boundaries", () => {
@@ -79,14 +87,6 @@ const trip = {
     },
   ],
 };
-test("draft change summary tracks removals and reordering, and undo restores the baseline", () => {
-  const reordered = { ...trip, days: [{ ...trip.days[0], events: [...trip.days[0].events].reverse() }] };
-  assert.equal(draftChanges(trip, reordered).reorderedDays, 1);
-  const removed = { ...trip, days: [{ ...trip.days[0], events: [trip.days[0].events[1]] }] };
-  assert.equal(draftChanges(trip, removed).removed, 1);
-  assert.equal(draftChanges(trip, structuredClone(trip)).changed, false);
-  assert.equal(trip.days[0].events.length, 2);
-});
 test("Portuguese destination search preserves English aliases and identity", () => {
   const destination = localizedDestination({ id: 55, name: "Tokyo", city: "Tokyo", country: "Japan" });
   assert.equal(destination.id, 55);
@@ -144,32 +144,116 @@ test("categories come from real POI tags and DNA changes the recommendation orde
     2,
   );
 });
-test("removal and reordering survive reload without mutating the original itinerary", () => {
-  const key = localProgramKey(1, trip.id);
-  const days = [{ ...trip.days[0], events: [trip.days[0].events[1]] }];
-  saveLocalProgram(trip, days, key);
-  const restored = readLocalProgram(trip, key);
-  assert.deepEqual(
-    restored.days[0].events.map((event) => event.id),
-    [12],
-  );
-  assert.equal(restored.days[0].events[0].order_index, 0);
-  assert.equal(trip.days[0].events.length, 2);
-  assert.equal(
-    readLocalProgram(trip, localProgramKey(2, trip.id)).days[0].events.length,
-    2,
-  );
+// Programação como vem do backend-nest: ids bigint em string, horários HH:MM:SS e custos decimais.
+const program = {
+  id: "7",
+  title: "Lisboa",
+  duration_days: 2,
+  budget_total: "75.50",
+  metadata: { program_history: [{ title: "Lisboa" }] },
+  days: [
+    { id: "10", day_number: 1, title: "Centro", estimated_cost: "60.00", events: [
+      { id: "1", title: "Museu", estimated_cost: "10.00", start_time: "09:00:00", end_time: "10:00:00" },
+      { id: "2", title: "Mirante", estimated_cost: "20.00", start_time: "10:30:00", end_time: "12:30:00" },
+      { id: "3", title: "Feira", estimated_cost: "30.00", start_time: "13:00:00", end_time: "14:00:00" },
+    ] },
+    { id: "20", day_number: 2, title: "Praia", estimated_cost: "15.50", events: [
+      { id: "4", title: "Praia", estimated_cost: "15.50", start_time: "10:00:00", end_time: "11:30:00" },
+    ] },
+  ],
+};
+const ids = (days) => days.map(day => day.events.map(event => String(event.id)));
+test("program layout sends every day with numeric event ids in screen order", () => {
+  assert.deepEqual(programLayout(program.days), { days: [{ day_number: 1, event_ids: [1, 2, 3] }, { day_number: 2, event_ids: [4] }] });
 });
-test("regeneration and corrupt storage do not restore an obsolete program", () => {
-  const key = localProgramKey(1, trip.id);
-  saveLocalProgram(trip, [], key);
-  const regenerated = {
-    ...trip,
-    days: [{ ...trip.days[0], events: [{ id: 99, title: "Nova atividade" }] }],
-  };
-  assert.equal(readLocalProgram(regenerated, key).days[0].events[0].id, 99);
-  localStorage.setItem(key, "broken JSON");
-  assert.equal(readLocalProgram(trip, key), trip);
+test("reorder, move and remove return new days without mutating the server state", () => {
+  assert.deepEqual(ids(reorderEvent(program.days, 1, 2, 0)), [["3", "1", "2"], ["4"]]);
+  assert.deepEqual(ids(reorderEvent(program.days, 1, 0, 9)), [["1", "2", "3"], ["4"]], "out of range keeps the day");
+  assert.deepEqual(ids(moveEvent(program.days, "2", 2)), [["1", "3"], ["4", "2"]]);
+  assert.equal(moveEvent(program.days, 2, 1), program.days, "same day keeps the program");
+  assert.equal(moveEvent(program.days, 2, 9), program.days, "unknown day keeps the program");
+  assert.deepEqual(ids(removeEvent(program.days, 1)), [["2", "3"], ["4"]]);
+  assert.deepEqual(ids(program.days), [["1", "2", "3"], ["4"]]);
+});
+test("optimistic program recalculates times, day costs and total like the server", () => {
+  const moved = applyProgram(program, moveEvent(program.days, "2", 2));
+  assert.deepEqual(moved.days.map(day => day.events.map(event => [event.title, event.start_time, event.end_time])), [
+    [["Museu", "09:00", "10:00"], ["Feira", "10:30", "11:30"]],
+    [["Praia", "10:00", "11:30"], ["Mirante", "12:00", "14:00"]],
+  ]);
+  assert.deepEqual(moved.days.map(day => day.estimated_cost), [40, 35.5]);
+  assert.equal(moved.budget_total, "75.50");
+  const removed = applyProgram(program, removeEvent(program.days, "3"));
+  assert.equal(removed.budget_total, "45.50");
+  assert.equal(program.budget_total, "75.50");
+});
+test("an activity that would end after midnight is refused before anything is sent", () => {
+  const late = { ...program, days: [program.days[0], { ...program.days[1], events: [{ id: "4", title: "Show", estimated_cost: "1", start_time: "22:00:00", end_time: "23:30:00" }] }] };
+  assert.throws(() => applyProgram(late, moveEvent(late.days, "2", 2)), /dia 2 passariam da meia-noite/);
+});
+test("undo is available while the server keeps a history", () => {
+  assert.equal(programHistorySize(program), 1);
+  assert.equal(programHistorySize({ ...program, metadata: {} }), 0);
+  assert.equal(programHistorySize(null), 0);
+});
+test("return date follows the start date and the trip duration", () => {
+  assert.equal(tripEndDate("2026-11-10", 4), "2026-11-13");
+  assert.equal(tripEndDate("2028-02-28", "3"), "2028-03-01");
+  assert.equal(tripEndDate("2026-11-10", 1), "2026-11-10");
+  assert.equal(tripEndDate("2026-02-30", 2), null);
+  assert.equal(tripEndDate("", 2), null);
+  assert.equal(tripEndDate("2026-11-10", 0), null);
+});
+test("legacy browser programs are deleted, other keys stay", () => {
+  localStorage.setItem("viajero.1.itinerary.7.program", "{}");
+  localStorage.setItem("viajero.guest.itinerary.8.program", "{}");
+  localStorage.setItem("viajero.1.favorites.itineraries", "[]");
+  localStorage.setItem("viajero.access_token", "token");
+  assert.equal(clearLegacyPrograms(localStorage), 2);
+  assert.deepEqual([...storage.keys()].sort(), ["viajero.1.favorites.itineraries", "viajero.access_token"]);
+  assert.equal(clearLegacyPrograms({ get length() { throw new Error("blocked"); } }), 0);
+});
+const deferred = () => { let resolve, reject; const promise = new Promise((ok, fail) => { resolve = ok; reject = fail; }); return { promise, resolve, reject }; };
+test("save queue sends one action at a time, in order, and only the newest response replaces the screen", async () => {
+  const settled = [];
+  let started = 0;
+  const queue = createSaveQueue({ onStart: () => { started += 1; }, onSettled: (outcome, latest) => settled.push([outcome.ok ? outcome.value : "erro", latest]) });
+  const first = deferred(), second = deferred();
+  const calls = [];
+  void queue.push(() => { calls.push("primeira"); return first.promise; });
+  void queue.push(() => { calls.push("segunda"); return second.promise; });
+  await Promise.resolve();
+  assert.deepEqual(calls, ["primeira"], "the second PUT waits for the first");
+  assert.equal(queue.size(), 2);
+  first.resolve("v1");
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.deepEqual(calls, ["primeira", "segunda"]);
+  second.resolve("v2");
+  await queue.drain();
+  assert.deepEqual(settled, [["v1", false], ["v2", true]]);
+  assert.equal(started, 2);
+  assert.equal(queue.size(), 0);
+});
+test("a failed action does not block the next one and can be retried", async () => {
+  const settled = [];
+  const queue = createSaveQueue({ onSettled: (outcome, latest) => settled.push([outcome, latest]) });
+  let attempts = 0;
+  const flaky = async () => { attempts += 1; if (attempts === 1) throw new Error("offline"); return "salvo"; };
+  void queue.push(flaky);
+  void queue.push(async () => "depois");
+  await queue.drain();
+  assert.equal(settled[0][0].ok, false);
+  assert.equal(settled[0][1], false);
+  assert.deepEqual(settled[1], [{ ok: true, value: "depois" }, true]);
+  await queue.push(settled[0][0].task);
+  assert.deepEqual(settled[2], [{ ok: true, value: "salvo" }, true]);
+});
+test("a throwing handler does not stop the queue", async () => {
+  let calls = 0;
+  const queue = createSaveQueue({ onSettled: () => { calls += 1; if (calls === 1) throw new Error("handler"); } });
+  await queue.push(async () => 1).catch(() => undefined);
+  await queue.push(async () => 2);
+  assert.equal(calls, 2);
 });
 test("trip review becomes available after the full return day, never before", () => {
   assert.equal(

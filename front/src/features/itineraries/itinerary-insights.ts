@@ -1,4 +1,4 @@
-import type { Itinerary, ItineraryDay, ItineraryEvent } from "@/types/travel";
+import type { ItineraryDay, ItineraryEvent } from "@/types/travel";
 
 function timeMinutes(value?: string | null): number | null {
   if (!value || !/^\d{2}:\d{2}(:\d{2})?$/.test(value)) return null;
@@ -16,16 +16,4 @@ export function dayInsights(day?: ItineraryDay) {
   const durations = events.map(activityDuration);
   const knownCosts = events.filter(event => event.estimated_cost != null && event.estimated_cost !== "" && Number.isFinite(Number(event.estimated_cost)));
   return { activities: events.length, visitMinutes: durations.reduce((sum, value) => sum + (value?.minutes ?? 0), 0), missingDurations: durations.filter(value => !value).length, knownCost: knownCosts.reduce((sum, event) => sum + Number(event.estimated_cost), 0), missingCosts: events.length - knownCosts.length };
-}
-export function draftChanges(original: Itinerary, draft: Itinerary) {
-  const source = new Map((original.days ?? []).map(day => [String(day.id), day]));
-  let removed = 0, reorderedDays = 0;
-  for (const day of draft.days ?? []) {
-    const previous = source.get(String(day.id))?.events ?? [];
-    const ids = new Set(day.events.map(event => String(event.id)));
-    removed += previous.filter(event => !ids.has(String(event.id))).length;
-    if (previous.filter(event => ids.has(String(event.id))).map(event => String(event.id)).join(",") !== day.events.map(event => String(event.id)).join(",")) reorderedDays++;
-  }
-  const detailsChanged = original.title !== draft.title || original.start_date !== draft.start_date || original.end_date !== draft.end_date;
-  return { removed, reorderedDays, detailsChanged, changed: removed > 0 || reorderedDays > 0 || detailsChanged };
 }
