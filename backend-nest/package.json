@@ -10,6 +10,10 @@
     "start:watch": "nest start --watch",
     "lint": "eslint \"src/**/*.ts\"",
     "smoke": "node scripts/smoke-contract.mjs",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts",
+    "migration:show": "typeorm-ts-node-commonjs migration:show -d src/database/data-source.ts",
+    "migration:create": "typeorm-ts-node-commonjs migration:create",
     "backfill:hero-images": "ts-node src/cli/backfill-hero-images.ts",
     "test": "jest",
     "test:cov": "jest --coverage"
