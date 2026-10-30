@@ -5,6 +5,7 @@ import { Destination } from '../destinations/entities';
 import { UserTripPreference } from '../profiles/entities';
 import { ItinerariesService } from './itineraries.service';
 import { ReviewsService } from './reviews.service';
+import { ItinerariesCrudService } from './itineraries-crud.service';
 import { ItinerariesController } from './itineraries.controller';
 import { FavoritesController } from './favorites.controller';
 import { ReviewsController } from './reviews.controller';
@@ -29,7 +30,7 @@ import { AiModule } from '../ai/ai.module';
     AuditModule,
     AiModule,
   ],
-  providers: [ItinerariesService, ReviewsService, ApiResponseBuilder],
+  providers: [ItinerariesService, ReviewsService, ItinerariesCrudService, ApiResponseBuilder],
   controllers: [ItinerariesController, FavoritesController, ReviewsController, SharedLinksController],
   exports: [ItinerariesService, TypeOrmModule],
 })
