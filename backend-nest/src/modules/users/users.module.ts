@@ -6,9 +6,10 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { DjangoPasswordAdapter } from '../../common/adapters/django-password.adapter';
 import { ApiResponseBuilder } from '../../common/builders/api-response.builder';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, RefreshToken])],
+  imports: [TypeOrmModule.forFeature([User, RefreshToken]), AuditModule],
   providers: [UsersService, DjangoPasswordAdapter, ApiResponseBuilder],
   controllers: [UsersController],
   exports: [UsersService, DjangoPasswordAdapter, TypeOrmModule],
