@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TravelerDnaProfile, UserTripPreference } from './entities';
@@ -80,11 +80,64 @@ export class ProfilesService {
     return saved;
   }
 
+  // Rotas por id (POST na raiz e GET/PUT/PATCH/DELETE /:id), como o OwnedSingletonViewSet do Django: so o dono.
+
+  async createDna(userId: number, dto: UpdateTravelerDnaDto): Promise<TravelerDnaProfile> {
+    if (await this.getDna(userId)) throw new ConflictException('Voce ja tem um perfil de viajante. Atualize o perfil existente.');
+    return this.upsertDna(userId, dto);
+  }
+
+  async findOwnedDna(userId: number, id: number): Promise<TravelerDnaProfile> {
+    const profile = await this.dnaProfiles.findOne({ where: { id, user: { id: userId } } });
+    if (!profile) throw new NotFoundException('Perfil de viajante nao encontrado.');
+    return profile;
+  }
+
+  async updateOwnedDna(userId: number, id: number, dto: UpdateTravelerDnaDto): Promise<TravelerDnaProfile> {
+    await this.findOwnedDna(userId, id);
+    return this.upsertDna(userId, dto);
+  }
+
+  async removeOwnedDna(userId: number, id: number): Promise<void> {
+    const profile = await this.findOwnedDna(userId, id);
+    await this.dnaProfiles.delete({ id: profile.id });
+    await this.markProfileIncomplete(userId);
+    await this.audit.log({ event_type: 'traveler-dna.deleted', actor_id: userId, content_type: 'TravelerDnaProfile', object_id: String(profile.id) });
+  }
+
+  async createTripPreference(userId: number, dto: UpdateTripPreferenceDto): Promise<UserTripPreference> {
+    if (await this.getTripPreference(userId)) throw new ConflictException('Voce ja tem preferencias de viagem. Atualize as preferencias existentes.');
+    return this.upsertTripPreference(userId, dto);
+  }
+
+  async findOwnedTripPreference(userId: number, id: number): Promise<UserTripPreference> {
+    const preference = await this.tripPreferences.findOne({ where: { id, user: { id: userId } } });
+    if (!preference) throw new NotFoundException('Preferencias de viagem nao encontradas.');
+    return preference;
+  }
+
+  async updateOwnedTripPreference(userId: number, id: number, dto: UpdateTripPreferenceDto): Promise<UserTripPreference> {
+    await this.findOwnedTripPreference(userId, id);
+    return this.upsertTripPreference(userId, dto);
+  }
+
+  async removeOwnedTripPreference(userId: number, id: number): Promise<void> {
+    const preference = await this.findOwnedTripPreference(userId, id);
+    await this.tripPreferences.delete({ id: preference.id });
+    await this.markProfileIncomplete(userId);
+    await this.audit.log({ event_type: 'trip-preferences.deleted', actor_id: userId, content_type: 'UserTripPreference', object_id: String(preference.id) });
+  }
+
   /** O front mostra "Perfil incompleto" ate o usuario ter DNA e preferencias. */
   private async syncProfileCompletion(userId: number): Promise<void> {
     const [dna, preference] = await Promise.all([this.getDna(userId), this.getTripPreference(userId)]);
     if (dna && preference) {
       await this.users.update({ id: userId, is_profile_complete: false }, { is_profile_complete: true });
     }
+  }
+
+  /** Sem DNA ou sem preferencias o perfil volta a ficar incompleto. */
+  private async markProfileIncomplete(userId: number): Promise<void> {
+    await this.users.update({ id: userId, is_profile_complete: true }, { is_profile_complete: false });
   }
 }
