@@ -2,13 +2,13 @@ import { AlertCircle, Compass, Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "./button";
 
-export function Feedback({ title, description, kind = "empty", onRetry, children }: {
+export function Feedback({ title, description, kind = "empty", onRetry, children, className = "" }: {
   title: string; description?: string; kind?: "empty" | "error" | "loading";
-  onRetry?: () => void; children?: ReactNode;
+  onRetry?: () => void; children?: ReactNode; className?: string;
 }) {
   const Icon = kind === "error" ? AlertCircle : kind === "loading" ? Loader2 : Compass;
-  return <div className="feedback" role={kind === "error" ? "alert" : "status"} aria-busy={kind === "loading"}>
-    <Icon aria-hidden="true" className={`size-6 text-muted-foreground ${kind === "loading" ? "animate-spin" : ""}`} />
+  return <div className={`feedback ${className}`} role={kind === "error" ? "alert" : "status"} aria-busy={kind === "loading"}>
+    <Icon aria-hidden="true" className={`feedback-icon ${kind === "loading" ? "animate-spin" : ""}`} />
     <div className="space-y-2">
       <p className="font-medium">{title}
       </p>{description && <p className="max-w-lg text-sm text-muted-foreground">{description}

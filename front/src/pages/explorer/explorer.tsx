@@ -1,10 +1,9 @@
 import { matchesDestinationQuery } from "@/lib/destination-language";
 import { TravelCollection } from "@/components/ui/travel-collection";
-import { DestinationImage } from "@/features/destinations/destination-card";
 import { useItineraries } from "@/hooks/useItineraries";
 import ItineraryCard from "@/pages/roteiros/itinerary-card";
 import { Link, useSearchParams } from "react-router-dom";
-import { Search, Sparkles } from "lucide-react";
+import { Search, Sparkles, Compass, Trees, Landmark, Utensils, ShoppingBag, Mountain, Moon, Waves, Leaf, Users, Palette, Crown, type LucideIcon } from "lucide-react";
 import { useDestinations } from "@/hooks/useDestinations";
 import { DestinationCard } from "@/features/destinations/destination-card";
 import { destinationCardData } from "@/features/destinations/destination-adapter";
@@ -16,11 +15,16 @@ import { useAuth } from "@/contexts/authContext";
 import { useTravelerDNAProfile } from "@/hooks/useTravelerDNAProfile";
 import {
   destinationCategories,
-  travelTagLabel,
   destinationAffinity,
   rankDestinations,
 } from "@/lib/personalization";
 import { useMoney } from "@/contexts/currencyContext";
+
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  natureza: Trees, historia: Landmark, cultura: Palette, gastronomia: Utensils,
+  compras: ShoppingBag, aventura: Mountain, "vida noturna": Moon,
+  praia: Waves, relaxamento: Leaf, familia: Users, luxo: Crown,
+};
 
 export default function Explorer({
   recommendations = false,
@@ -87,10 +91,8 @@ export default function Explorer({
     <section className="reference-panel space-y-6">
       <div className="page-header"><div className="space-y-2"><h2 className="section-title">Explorar por categorias</h2><p className="text-sm text-muted-foreground">Encontre o destino perfeito para seu gosto.</p></div><Button variant="travel" onClick={() => update("categoria", "")}>Ver todas</Button></div>
       <div className="category-collection"><TravelCollection label="Categorias">{categories.map(tag => {
-        const destination = destinations.find(item => destinationCategories(item).includes(tag));
-        const photoPoi = destination?.pois?.find(poi => poi.tags?.some(item => travelTagLabel(item.name) === tag) && typeof poi.metadata?.image_url === "string");
-        const photo = typeof photoPoi?.metadata?.image_url === "string" ? photoPoi.metadata.image_url : destination ? destinationCardData(destination).image : undefined;
-        return <button type="button" className="category-tile" key={tag} aria-pressed={category === tag} onClick={() => update("categoria", category === tag ? "" : tag)}><DestinationImage src={photo} name={tag} className="category-photo" /><span>{tag}</span></button>;
+        const Icon = CATEGORY_ICONS[tag.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase()] ?? Compass;
+        return <button type="button" className="category-tile" key={tag} aria-pressed={category === tag} onClick={() => update("categoria", category === tag ? "" : tag)}><span className="category-icon"><Icon aria-hidden="true" /></span><span>{tag}</span></button>;
       })}</TravelCollection></div>
       <div className="grid items-end gap-4 explore-filters">
         <label className="form-label" htmlFor="explore-search">Buscar destinos<div className="relative"><Search aria-hidden="true" className="absolute left-3 top-3 size-5 text-muted-foreground" /><Input id="explore-search" type="search" placeholder="Cidade ou país" value={query} onChange={event => update("q", event.target.value)} className="pl-10" /></div></label>

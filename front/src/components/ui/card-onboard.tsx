@@ -59,7 +59,7 @@ export default function CardOnboard({
           "option-check flex h-8 w-8 shrink-0 items-center justify-center rounded-full border",
           selected
             ? "border-ring bg-primary text-white"
-            : "invisible border-transparent",
+            : "border-input bg-white",
         )}
         aria-hidden
       >

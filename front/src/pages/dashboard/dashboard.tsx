@@ -95,11 +95,12 @@ export function Dashboard() {
             </TravelCollection>
           ) : (
             <Feedback
-              title="Sua próxima viagem pode começar agora"
-              description="Escolha um destino ou peça uma sugestão para criar seu primeiro roteiro."
+              className="itineraries-empty"
+              title="Você ainda não tem roteiros"
+              description="Escolha um destino e crie seu primeiro roteiro. Suas viagens planejadas aparecerão aqui."
             >
-              <Button asChild variant="outline">
-                <Link to="/roteiros/criacao">Criar roteiro</Link>
+              <Button asChild>
+                <Link to="/roteiros/criacao">Criar meu primeiro roteiro</Link>
               </Button>
             </Feedback>
           )}

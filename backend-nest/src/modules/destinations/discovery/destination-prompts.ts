@@ -205,6 +205,11 @@ export function suggestionPrompt(
     if (preferences.preferred_trip_length_days) traits.push(`duracao: ${preferences.preferred_trip_length_days} dias`);
     if (preferences.interests?.length) traits.push(`interesses declarados: ${preferences.interests.join(', ')}`);
     if (preferences.hotel_level) traits.push(`hospedagem: ${preferences.hotel_level}`);
+    if (preferences.transportation_style) traits.push(`transporte: ${preferences.transportation_style}`);
+    if (preferences.dietary_preferences?.length) traits.push(`alimentacao: ${preferences.dietary_preferences.join(', ')}`);
+    if (preferences.accessibility_needs?.length) traits.push(`acessibilidade: ${preferences.accessibility_needs.join(', ')}`);
+    if (preferences.metadata?.start_date) traits.push(`ida: ${preferences.metadata.start_date}`);
+    if (preferences.metadata?.end_date) traits.push(`volta: ${preferences.metadata.end_date}`);
   }
   const avoid = alreadyUsed.length
     ? `\n\nO usuario ja tem roteiro para estes destinos, entao NAO os escolha de novo; sugira um destino DIFERENTE: ${alreadyUsed.join(', ')}.`
@@ -213,6 +218,7 @@ export function suggestionPrompt(
     'Voce e um consultor de viagens. Escolha UM unico destino real e conhecido que combine com o perfil do viajante abaixo. ' +
     "PRIORIZE destinos no Brasil: salvo se o perfil pedir claramente uma viagem internacional, o destino deve ser brasileiro (country='Brasil'). " +
     'Considere o orcamento e a epoca quando informados. ' +
+    'Priorize as preferencias desta viagem quando diferirem do perfil geral do viajante. ' +
     'Devolva o nome do destino, pais e cidade (quando aplicavel) e uma justificativa curta em portugues.\n\n' +
     `Perfil do viajante: ${traits.length ? traits.join('; ') : 'perfil ainda nao informado'}.${avoid}`
   );

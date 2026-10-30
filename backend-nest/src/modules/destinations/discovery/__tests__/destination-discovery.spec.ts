@@ -49,6 +49,14 @@ describe('enricher', () => {
 });
 
 describe('sugestao', () => {
+  it('inclui cuidados, transporte e datas específicos da viagem no prompt', () => {
+    const prompt = suggestionPrompt(null, {
+      budget_min: '1000', budget_max: '3000', currency_code: 'BRL',
+      transportation_style: 'public', dietary_preferences: ['vegan'],
+      accessibility_needs: ['mobility'], metadata: { start_date: '2027-01-10', end_date: '2027-01-15' },
+    } as never, []);
+    for (const value of ['public', 'vegan', 'mobility', '2027-01-10', '2027-01-15']) expect(prompt).toContain(value);
+  });
   it('evita destinos que o usuario ja usou e exige nome', () => {
     expect(suggestionPrompt(null, null, ['Lisbon'])).toContain('sugira um destino DIFERENTE: Lisbon.');
     expect(() => parseSuggestion({ destination_name: ' ' })).toThrow(LlmResponseError);

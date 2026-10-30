@@ -4,6 +4,7 @@ import { DestinationsService } from './destinations.service';
 import { DestinationDiscoveryFacade } from './destination-discovery.facade';
 import { DestinationSuggestionService } from './destination-suggestion.service';
 import { CreateDestinationDto } from './dto/create-destination.dto';
+import { SuggestDestinationDto } from './dto/suggest-destination.dto';
 import { ApiResponseBuilder } from '../../common/builders/api-response.builder';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -39,8 +40,8 @@ export class DestinationsController {
   @Post('suggest')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async suggest(@CurrentUser() user: AuthenticatedUser) {
-    const destination = await this.suggestions.suggest(user.id);
+  async suggest(@CurrentUser() user: AuthenticatedUser, @Body() dto: SuggestDestinationDto) {
+    const destination = await this.suggestions.suggest(user.id, dto.trip_preferences);
     return this.response.withMessage(`Destino sugerido com base no seu perfil: ${destination.name}.`).build(destination);
   }
 

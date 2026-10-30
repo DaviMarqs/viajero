@@ -1,6 +1,7 @@
 import { localizedDestination } from "./destination-language";
 import { apiFetch, unwrapListResponse } from "./api";
 import type { Destination } from "../types/travel";
+import type { TripPreferenceUpsertInput } from "./profiles";
 
 type DestinationsPayload = Destination[] | { results?: Destination[]; data?: Destination[]; items?: Destination[]; };
 
@@ -11,9 +12,10 @@ export async function fetchDestinations(signal?: AbortSignal) {
   return unwrapListResponse(payload).map(localizedDestination);
 }
 
-export async function suggestDestination() {
+export async function suggestDestination(preferences?: TripPreferenceUpsertInput, signal?: AbortSignal) {
   const payload = await apiFetch<{ data?: Destination; }>("/api/destinations/suggest/", {
-    method: "POST",
+    method: "POST", signal,
+    ...(preferences ? { body: JSON.stringify({ trip_preferences: preferences }) } : {}),
   });
   return payload?.data ?? null;
 }

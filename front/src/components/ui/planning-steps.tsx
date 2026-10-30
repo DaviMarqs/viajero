@@ -31,7 +31,7 @@ export function PlanningSteps({ steps, currentIndex, fieldValues, tagValues, car
   }
   const navigation = <nav aria-label="Etapas da configuração">{steps.map((step, index) => <button type="button" key={step.key} className="planning-step" data-step-index={index} data-stepper={stepperId} aria-current={index === currentIndex ? "step" : undefined} disabled={index >= currentIndex} onClick={() => { selectedStep.current = true; onSelect(index); setOpen(false); }}><span className="planning-step-number">{index < currentIndex ? <Check size={16} strokeWidth={1.5} /> : index + 1}</span><span><span className="planning-step-label">{step.label}</span>{index <= currentIndex && <span className={`planning-step-value planning-data`}>{summary(step)}</span>}</span></button>)}</nav>;
   return <div ref={container} className="planning-navigation-wrap">
-    <aside className="planning-sidebar"><h2>{title}</h2>{navigation}</aside>
+    <aside className="planning-sidebar"><h2>{title}</h2><p className="planning-step-count">Etapa {currentIndex + 1} de {steps.length}</p><progress className="planning-completion" value={currentIndex + 1} max={steps.length} aria-label={`Etapa ${currentIndex + 1} de ${steps.length}`} />{navigation}</aside>
     <Sheet open={open} onOpenChange={setOpen} title={title} onCloseAutoFocus={event => { if (selectedStep.current) { event.preventDefault(); selectedStep.current = false; } }} trigger={<button type="button" className="planning-mobile-progress"><span>{steps[currentIndex].label} · {currentIndex + 1} de {steps.length}</span><ChevronDown size={16} /><span className="planning-segments" aria-hidden>{steps.map((step, index) => <i key={step.key} data-complete={index <= currentIndex} />)}</span></button>}>{navigation}</Sheet>
   </div>;
 }

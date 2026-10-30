@@ -9,6 +9,9 @@ import { Itinerary } from '../itineraries/entities';
 import { AuditService } from '../audit/audit.service';
 import { DestinationAiService } from './discovery/destination-ai.service';
 import { DestinationDiscoveryService } from './discovery/destination-discovery.service';
+import { UserTripPreference } from '../profiles/entities';
+import { GenerationTripPreferenceDto } from '../itineraries/dto/generation-trip-preference.dto';
+import { requireTripParameters } from '../itineraries/trip-generation-context';
 
 @Injectable()
 export class DestinationSuggestionService {
@@ -25,10 +28,13 @@ export class DestinationSuggestionService {
    * Com chave de LLM, a IA escolhe o destino pelo perfil (paridade com o Django) e ele e buscado
    * no banco ou descoberto. Sem chave, ou se a IA falhar, cai na heuristica local por DNA/interesses.
    */
-  async suggest(userId: number): Promise<Destination> {
+  async suggest(userId: number, tripParameters?: GenerationTripPreferenceDto): Promise<Destination> {
+    const trip = tripParameters ? requireTripParameters(tripParameters) : undefined;
     const [profile, preferences, used] = await Promise.all([
       this.profiles.getDna(userId),
-      this.profiles.getTripPreference(userId),
+      trip ? Promise.resolve(Object.assign(new UserTripPreference(), trip, {
+        budget_min: String(trip.budget_min), budget_max: String(trip.budget_max),
+      })) : this.profiles.getTripPreference(userId),
       this.itineraries.find({ select: { id: true, destination: { id: true, name: true } }, where: { user: { id: userId } }, relations: { destination: true } }),
     ]);
 

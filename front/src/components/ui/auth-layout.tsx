@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import travelPhoto from '@/assets/trip-example.jpg';
 
 export function AuthLayout({ title, description, children, storySide = 'left' }: {
   title: string; description: string; children: ReactNode; storySide?: 'left' | 'right';
@@ -7,7 +8,8 @@ export function AuthLayout({ title, description, children, storySide = 'left' }:
   return <div className="auth-layout">
     <section className={`auth-story ${storySide === 'right' ? 'lg:order-2' : ''}`} aria-label="Viajero">
       <Link to="/login" className="auth-brand">Viajero</Link>
-      <div className="space-y-4"><h2>{title}</h2><p>{description}</p></div>
+      <img src={travelPhoto} alt="Barcos coloridos junto a uma praia de águas transparentes" className="auth-photo" width={500} height={270} />
+      <div className="auth-story-copy"><h2>{title}</h2><p>{description}</p></div>
     </section>
     <section className={`auth-form-panel ${storySide === 'right' ? 'lg:order-1' : ''}`}>{children}</section>
   </div>;

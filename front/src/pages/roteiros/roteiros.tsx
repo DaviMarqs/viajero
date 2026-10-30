@@ -20,12 +20,12 @@ export default function Roteiros() {
             Retome seus planos e acompanhe cada etapa da viagem.
           </p>
         </div>
-        <Button asChild size="lg">
+        {(loading || error || itineraries.length > 0) && <Button asChild size="lg">
           <Link to="/roteiros/criacao">
             <Plus aria-hidden="true" />
             Criar novo roteiro
           </Link>
-        </Button>
+        </Button>}
       </header>
       {loading ? (
         <CardSkeletons label="Carregando roteiros" />
@@ -38,11 +38,12 @@ export default function Roteiros() {
         />
       ) : itineraries.length === 0 ? (
         <Feedback
+          className="itineraries-empty"
           title="Nenhum roteiro criado ainda"
-          description="Conte suas preferências e planeje sua primeira viagem."
+          description="Comece pelo destino e pelas suas preferências. Seu primeiro roteiro ficará salvo aqui para você consultar e continuar planejando."
         >
-          <Button asChild variant="outline">
-            <Link to="/roteiros/criacao">Criar roteiro</Link>
+          <Button asChild>
+            <Link to="/roteiros/criacao"><Plus aria-hidden="true" />Criar meu primeiro roteiro</Link>
           </Button>
         </Feedback>
       ) : (

@@ -37,5 +37,6 @@ cd front && npm ci && npm run dev                                           # ou
 
 ## Notas
 
+- **Evolução sem IA:** [proposta de enriquecimento de destinos e planejamento de roteiros com dados abertos](<./docs/Plano para enriquecimento da IA.md>), com fontes, preços verificáveis, proximidade e plano incremental. Documento de proposta, ainda não implementado.
 - **IA:** preencha `GROQ_API_KEY` (e, se quiser, `GEMINI_API_KEY` e `FIRECRAWL_API_KEY`) em `backend-nest/.env`. Sem chaves o app funciona com gerador determinístico. Detalhes em [backend-nest/README.md](./backend-nest/README.md#ia).
 - **Migrações:** rode `uv run manage.py makemigrations` apenas se você alterar modelos.

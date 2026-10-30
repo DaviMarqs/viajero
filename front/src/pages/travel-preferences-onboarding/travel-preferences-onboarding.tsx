@@ -215,19 +215,10 @@ export default function TravelPreferencesOnboarding() {
 
     setSubmitError(null);
     try {
-      const savedPreferences = await save(payload);
-      const preferencesId = savedPreferences?.id;
-      savePlanningDraft(user?.id, { destination, tripPreferences: payload, snapshot: { currentIndex, fieldValues, tagValues, cardSelections } });
-
-      navigate(
-        preferencesId
-          ? `/roteiros/criacao?preferences_id=${preferencesId}`
-          : "/roteiros/criacao",
-        {
-          replace: true,
-          state: { preferencesId, destination, tripPreferences: payload },
-        },
-      );
+      await save(payload);
+      const reviewedDestination = passedState?.stepKey ? destination : undefined;
+      savePlanningDraft(user?.id, { destination: reviewedDestination, tripPreferences: payload, snapshot: { currentIndex, fieldValues, tagValues, cardSelections } });
+      navigate("/roteiros/criacao", { replace: true, state: { destination: reviewedDestination, tripPreferences: payload } });
     } catch (error) {
       if (error instanceof Error) {
         setSubmitError(error.message);
@@ -294,7 +285,7 @@ export default function TravelPreferencesOnboarding() {
       <PlanningSteps steps={TRAVEL_PREFERENCES_STEPS} currentIndex={currentIndex} fieldValues={fieldValues} tagValues={tagValues} cardSelections={cardSelections} onSelect={setCurrentStep} />
       <section className="planning-content"><div className="planning-scroll min-h-0 overflow-y-auto" tabIndex={0} aria-label="Conteúdo da etapa">
         {draftNotice && !draftNotice.startsWith("Preenchemos") && <div role="status" className="planning-draft-notice"><span>{draftNotice}</span>{restored?.snapshot && <Button variant="ghost" onClick={() => { clearPlanningDraft(user?.id); setSnapshot({ currentIndex: 0, fieldValues: {}, tagValues: {}, cardSelections: {} }); setDraftNotice(""); }}>Descartar rascunho</Button>}</div>}
-        <StepTransition step={currentIndex}><header className="planning-heading"><p className="text-xs text-muted-foreground">{currentStep.label} · Etapa {currentIndex + 1} de {TRAVEL_PREFERENCES_STEPS.length}</p><h2 ref={headingRef} tabIndex={-1}>{planningQuestion(currentStep.key, currentStep.title)}</h2><p className="text-sm text-muted-foreground">{currentStep.key === "timing" ? "Escolha como tratar as datas desta viagem." : currentStep.key === "budget" ? "Defina uma faixa de gasto para esta viagem." : currentStep.key === "needs" ? "Indique os cuidados que a viagem precisa considerar." : currentStep.sub}</p></header>
+        <StepTransition step={currentIndex}><header className="planning-heading"><p className="text-xs text-muted-foreground">{currentStep.label} · Etapa {currentIndex + 1} de {TRAVEL_PREFERENCES_STEPS.length}</p><h1 ref={headingRef} tabIndex={-1}>{planningQuestion(currentStep.key, currentStep.title)}</h1><p className="text-sm text-muted-foreground">{currentStep.key === "timing" ? "Escolha como tratar as datas desta viagem." : currentStep.key === "budget" ? "Defina uma faixa de gasto para esta viagem." : currentStep.key === "needs" ? "Indique os cuidados que a viagem precisa considerar." : currentStep.sub}</p></header>
         <div className={`planning-controls planning-step-card ${currentStep.key === "timing" ? "planning-period-card" : ""}`}><OnboardingStepFields currentStep={visibleStep} selectedCards={selectedCards} fieldValues={fieldValues} tagValues={tagValues} onToggleCard={toggleCard} onSetField={(key, value) => { if (key === "budget_min" || key === "budget_max") setBudgetTouched(true); setField(key, value); }} onSetTags={setTags} prefilled={!!preferences && !restored?.snapshot} fieldErrors={{ budget_max: fieldValues.budget_min && fieldValues.budget_max && !validBudget ? "O máximo deve ser maior que zero e igual ou superior ao mínimo. Ajuste este valor." : undefined }} />{currentStep.key === "timing" && getCardValues("timing")[0] === "false" && <TripCalendar start={fieldValues.start_date ?? ""} end={fieldValues.end_date ?? ""} onChange={(start, end) => { setField("start_date", start); setField("end_date", end); }} />}
 
 {currentStep.key === "timing" && flexibleDatesValue && <span className="field-support">Posso adaptar o período se isso melhorar preço ou experiência.</span>}</div>
@@ -304,7 +295,7 @@ export default function TravelPreferencesOnboarding() {
         </StepTransition></div>
         <footer className="planning-footer">{currentIndex > 0 && <Button variant="ghost" onClick={prev} disabled={saving}>Voltar</Button>}
         {!canAdvance && <p id="planning-required" className="text-xs text-muted-foreground">{currentStep.key === "timing" ? !flexibleDatesValue ? "Selecione ida e volta para continuar" : "Informe duração e mês para continuar" : "Preencha os campos obrigatórios ou selecione uma opção para continuar."}</p>}
-{!isLast && currentStep.key === "needs" && <Button variant="ghost" onClick={skip} disabled={saving}>Pular essa etapa</Button>}<Button onClick={isLast ? handleFinish : next} loading={saving} disabled={!canAdvance} aria-describedby={!canAdvance ? "planning-required" : undefined}>{isLast ? "Revisar viagem" : "Continuar"}</Button></footer>
+{!isLast && currentStep.key === "needs" && <Button variant="ghost" onClick={skip} disabled={saving}>Pular essa etapa</Button>}<Button onClick={isLast ? handleFinish : next} loading={saving} disabled={!canAdvance} aria-describedby={!canAdvance ? "planning-required" : undefined}>{isLast ? passedState?.stepKey ? "Revisar viagem" : "Sugerir meu destino" : "Continuar"}</Button></footer>
       </section>
     </div>
   </div>;

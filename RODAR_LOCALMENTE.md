@@ -181,7 +181,7 @@ Abra `http://localhost:5173`. O front já aponta para `http://localhost:8001`. S
 
 - A Home reúne Meus roteiros e Roteiros para você lado a lado no desktop, com destinos recomendados abaixo. Recomendações usam interesses do DNA e tags dos pontos de interesse; não há conteúdo fictício para preencher listas vazias.
 - Explorar mostra escolhas por DNA e outros destinos. Categorias vêm das tags do banco, incluindo Praia e Natureza quando presentes.
-- O detalhe do destino apresenta orçamento econômico/intermediário/alto, informações gerais, imagens e dados dos pontos de interesse. Gerar roteiro leva o destino selecionado para o planejamento; Ajustar preferências preserva essa seleção.
+- O detalhe do destino apresenta orçamento econômico/intermediário/alto, informações gerais, imagens e dados dos pontos de interesse. Gerar roteiro abre a configuração da viagem, seguida de uma sugestão automática de destino. A revisão permite ajustar parâmetros ou pedir outra sugestão.
 - Favoritos está na navegação. Destinos favoritos são salvos por conta no armazenamento deste navegador; roteiros favoritos usam a API existente.
 - Perfil → Moeda de exibição salva `preferred_currency` na API. Valores de destinos e roteiros são convertidos aproximadamente com taxas do Frankfurter (`https://frankfurter.dev/`). A cotação consultada aparece na interface. Sem cotação, permanece o valor na moeda original; o orçamento de origem não é alterado.
 - Editar roteiro salva nome, resumo e datas na API. Edição, remoção e reordenação de atividades são salvas por conta e roteiro neste navegador, pois a API ainda não oferece mutação de eventos. Arrastar, teclado (espaço/setas/espaço) e botões de subir/descer são suportados. Reordenar não altera horários; as estimativas originais são preservadas.
@@ -193,7 +193,7 @@ Em `front/`, `npm test` cobre câmbio, personalização, persistência da progra
 
 1. **Cadastro:** "Criar uma conta nova" (senha com pelo menos 8 caracteres).
 2. **Perfil de viajante:** responda o onboarding e conclua.
-3. **Criar roteiro:** na Home, "Criar novo roteiro" → "Já sei para onde ir" (ou "Gostaria de uma sugestão") → busque e selecione um destino (ex.: Lisboa, ou um que não está no banco, como Gramado) → "Configurar esta viagem" (orçamento, companhia, período, hospedagem, deslocamento, cuidados e interesses) → "Revisar minha viagem" → "Confirmar e gerar roteiro".
+3. **Criar roteiro:** na Home, "Criar novo roteiro" → preencha orçamento, companhia, período, hospedagem, deslocamento, cuidados e interesses → "Sugerir meu destino" → revise o destino sugerido e os parâmetros → "Confirmar e gerar roteiro". Não há escolha inicial entre busca e sugestão. Os parâmetros desta viagem seguem para a sugestão e para o prompt de geração; o DNA permanente continua no perfil.
 4. **Avaliar:** no detalhe do roteiro, "Avaliar roteiro" → escolha a nota → "Publicar avaliação". O roteiro passa a aparecer em "Roteiros mais bem avaliados" na Home.
 5. **Perfil:** em "Perfil", edite o nome e troque a foto. A barra lateral atualiza na hora.
 
