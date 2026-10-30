@@ -14,6 +14,9 @@
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts",
     "migration:show": "typeorm-ts-node-commonjs migration:show -d src/database/data-source.ts",
     "migration:create": "typeorm-ts-node-commonjs migration:create",
+    "seed": "ts-node src/cli/seed.ts",
+    "db:setup": "ts-node src/cli/migrate-and-seed.ts",
+    "fixtures:load": "ts-node src/cli/load-fixtures.ts",
     "backfill:hero-images": "ts-node src/cli/backfill-hero-images.ts",
     "test": "jest",
     "test:cov": "jest --coverage"
