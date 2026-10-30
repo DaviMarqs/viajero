@@ -7,7 +7,7 @@ export default function Steps() {
             <ChevronRight />
             <p>Roteiros</p>
              <ChevronRight />
-            <p className="font-semibold">Programação da viagem</p>
+            <p className="font-medium">Programação da viagem</p>
         </div>
     );
 }

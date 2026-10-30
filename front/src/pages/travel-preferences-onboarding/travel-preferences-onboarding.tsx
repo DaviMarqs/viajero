@@ -1,5 +1,15 @@
-import { PartyPopper, AlertCircle, Loader2, ArrowLeft } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { PlanningSkeleton } from "@/components/ui/planning-skeleton";
+import { AnimatedNumber } from "@/components/motion/animated-number";
+import { StepTransition } from "@/components/motion/step-transition";
+import { planningPeriod } from "@/components/ui/planning-date";
+import { PlanningSteps } from "@/components/ui/planning-steps";
+import { Button } from "@/components/ui/button";
+import { PartyPopper, AlertCircle } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import type { Destination } from "@/types/travel";
+import { TripCalendar } from "@/components/ui/trip-calendar";
+import { tripDuration } from "@/lib/trip-dates";
+import { readPlanningDraft, savePlanningDraft, clearPlanningDraft } from "@/lib/planning-draft";
 import { useEffect, useRef, useState } from "react";
 import OnboardingSidebar from "@/components/ui/onboarding-sidebar";
 import OnboardingStepFields from "@/components/ui/onboarding-step-fields";
@@ -49,6 +59,8 @@ function buildSnapshotFromPreferences(
         preferences.preferred_trip_length_days,
       ),
       travel_month: preferences.travel_month,
+      start_date: preferences.metadata?.start_date,
+      end_date: preferences.metadata?.end_date,
     },
     tagValues: {
       dietary_preferences: preferences.dietary_preferences ?? [],
@@ -56,7 +68,9 @@ function buildSnapshotFromPreferences(
       interests: preferences.interests ?? [],
     },
     cardSelections: {
-      companionship: getCardIndexes("companionship", [preferences.companionship]),
+      companionship: getCardIndexes("companionship", [
+        preferences.companionship,
+      ]),
       timing: getCardIndexes("timing", [
         String(Boolean(preferences.metadata?.flexible_dates)),
       ]),
@@ -68,19 +82,31 @@ function buildSnapshotFromPreferences(
   };
 }
 
+function planningQuestion(key: string, fallback: string) { return ({ budget: "Quanto deseja investir na viagem?", companionship: "Com quem você vai viajar?", timing: "Quando você quer viajar?", stay: "Como prefere se hospedar?", transport: "Como deseja se deslocar?", needs: "Quais cuidados devemos considerar?", interests: "O que quer descobrir nesta viagem?" } as Record<string, string>)[key] ?? fallback; }
+
 export default function TravelPreferencesOnboarding() {
-  const { token: contextToken } = useAuth();
+  const location = useLocation();
+  const { token: contextToken, user } = useAuth();
+  const [restored] = useState(() => readPlanningDraft(user?.id));
+  const passedState = location.state as { destination?: Destination; stepKey?: string } | null;
+  const destination = passedState?.destination ?? restored?.destination;
   const navigate = useNavigate();
   const token =
     contextToken || localStorage.getItem("viajero.access_token") || "";
+  const [budgetTouched, setBudgetTouched] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [draftNotice, setDraftNotice] = useState("");
+  const [draftReady, setDraftReady] = useState(false);
   const hydratedRef = useRef(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const {
     currentIndex,
     currentStep,
     isLast,
     finished,
     selectedCards,
+    setCurrentStep,
+    cardSelections,
     fieldValues,
     tagValues,
     hasSelection,
@@ -97,40 +123,61 @@ export default function TravelPreferencesOnboarding() {
     useTripPreferences(token);
 
   useEffect(() => {
-    if (!preferences || hydratedRef.current) return;
-    setSnapshot(buildSnapshotFromPreferences(preferences));
+    if (loading || hydratedRef.current) return;
+    const sameDestination = String(restored?.destination?.id ?? "") === String(destination?.id ?? "");
+    const initial = sameDestination && restored?.snapshot ? restored.snapshot : preferences ? buildSnapshotFromPreferences(preferences) : {};
+    const index = TRAVEL_PREFERENCES_STEPS.findIndex(step => step.key === passedState?.stepKey);
+    setSnapshot({ ...initial, ...(index >= 0 ? { currentIndex: index } : {}) });
+    setDraftNotice(sameDestination && restored?.snapshot ? "Rascunho recuperado neste navegador." : preferences ? "Preenchemos com suas últimas preferências. Revise para esta viagem." : "");
     hydratedRef.current = true;
-  }, [preferences, setSnapshot]);
+    setDraftReady(true);
+  }, [preferences, loading, restored, destination?.id, passedState?.stepKey, setSnapshot]);
 
-  const canAdvance = hasSelection();
+  useEffect(() => {
+    if (!draftReady || saving) return;
+    const persist = () => { if (!savePlanningDraft(user?.id, { destination, tripPreferences: undefined, snapshot: { currentIndex, fieldValues, tagValues, cardSelections } })) setDraftNotice("Não foi possível guardar o rascunho neste navegador. Mantenha esta página aberta para continuar."); };
+    const timer = window.setTimeout(persist, 200);
+    window.addEventListener("pagehide", persist);
+    return () => { window.clearTimeout(timer); window.removeEventListener("pagehide", persist); };
+  }, [draftReady, saving, user?.id, destination, currentIndex, fieldValues, tagValues, cardSelections]);
+
   const flexibleDatesValue = getCardValues("timing")[0] === "true";
+  const fixedDuration = tripDuration(fieldValues.start_date, fieldValues.end_date);
+  const validBudget = !!fieldValues.budget_min?.trim() && !!fieldValues.budget_max?.trim() && currencyStringToNumber(fieldValues.budget_min) <= currencyStringToNumber(fieldValues.budget_max) && currencyStringToNumber(fieldValues.budget_max) > 0;
+  const canAdvance = currentStep.key === "budget" ? hasSelection() && validBudget : currentStep.key === "timing" && !flexibleDatesValue
+    ? getCardValues("timing").length > 0 && fixedDuration != null && fixedDuration <= 60
+    : hasSelection();
+  const displayDuration = flexibleDatesValue ? Number(fieldValues.preferred_trip_length_days) : fixedDuration;
+  const dailyMoney = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: fieldValues.currency_code || "BRL" }).format(value);
+  const visibleStep = currentStep.key === "timing" && !flexibleDatesValue ? { ...currentStep, fields: currentStep.fields.filter(field => field.type === "cards") } : currentStep;
   const companionship = getCardValues("companionship")[0] ?? "";
+  useEffect(() => { headingRef.current?.focus(); }, [currentIndex]);
 
   async function handleFinish() {
     const budgetMin = currencyStringToNumber(fieldValues.budget_min ?? "");
     const budgetMax = currencyStringToNumber(fieldValues.budget_max ?? "");
-    const tripLength = parseInt(
+    let tripLength = parseInt(
       fieldValues.preferred_trip_length_days ?? "0",
       10,
     );
     const hotelLevel = getCardValues("stay")[0] ?? "";
     const transportationStyle = getCardValues("transport")[0] ?? "";
 
-    if (!budgetMin || !budgetMax) {
+    if (!fieldValues.budget_min?.trim() || !Number.isFinite(budgetMin) || budgetMin < 0 || !budgetMax) {
       setSubmitError("Informe a faixa de Orçamento antes de continuar.");
       return;
     }
 
     if (budgetMin > budgetMax) {
-      setSubmitError("O Orçamento mínimo nao pode ser maior que o máximo.");
+      setSubmitError("O Orçamento mínimo não pode ser maior que o máximo.");
       return;
     }
 
     if (
-      !tripLength ||
+      (flexibleDatesValue && (!tripLength || tripLength > 60)) ||
       !fieldValues.currency_code ||
       !companionship ||
-      !fieldValues.travel_month ||
+      (flexibleDatesValue && !fieldValues.travel_month) ||
       !hotelLevel ||
       !transportationStyle
     ) {
@@ -138,13 +185,23 @@ export default function TravelPreferencesOnboarding() {
       return;
     }
 
+    if (!flexibleDatesValue) {
+      if (!fieldValues.start_date || !fieldValues.end_date || fieldValues.end_date < fieldValues.start_date) {
+        setSubmitError("Informe as datas de ida e volta desta viagem."); return;
+      }
+      tripLength = Math.round((Date.parse(fieldValues.end_date) - Date.parse(fieldValues.start_date)) / 86400000) + 1;
+      if (tripLength < 1 || tripLength > 60) { setSubmitError("A viagem deve durar entre 1 e 60 dias."); return; }
+    }
+    if (!(tagValues.interests ?? []).length) { setSubmitError("Selecione ao menos um interesse desta viagem."); return; }
     const payload: TripPreferenceUpsertInput = {
       budget_min: budgetMin,
       budget_max: budgetMax,
       currency_code: fieldValues.currency_code,
       companionship,
       preferred_trip_length_days: tripLength,
-      travel_month: fieldValues.travel_month,
+      travel_month: !flexibleDatesValue
+        ? new Intl.DateTimeFormat("en", { month: "long", timeZone: "UTC" }).format(new Date(`${fieldValues.start_date}T00:00:00Z`))
+        : fieldValues.travel_month ?? "",
       hotel_level: hotelLevel,
       transportation_style: transportationStyle,
       dietary_preferences: tagValues.dietary_preferences ?? [],
@@ -152,6 +209,7 @@ export default function TravelPreferencesOnboarding() {
       interests: tagValues.interests ?? [],
       metadata: {
         flexible_dates: flexibleDatesValue,
+        ...(!flexibleDatesValue ? { start_date: fieldValues.start_date, end_date: fieldValues.end_date } : {}),
       },
     };
 
@@ -159,6 +217,7 @@ export default function TravelPreferencesOnboarding() {
     try {
       const savedPreferences = await save(payload);
       const preferencesId = savedPreferences?.id;
+      savePlanningDraft(user?.id, { destination, tripPreferences: payload, snapshot: { currentIndex, fieldValues, tagValues, cardSelections } });
 
       navigate(
         preferencesId
@@ -166,7 +225,7 @@ export default function TravelPreferencesOnboarding() {
           : "/roteiros/criacao",
         {
           replace: true,
-          state: preferencesId ? { preferencesId } : undefined,
+          state: { preferencesId, destination, tripPreferences: payload },
         },
       );
     } catch (error) {
@@ -174,27 +233,19 @@ export default function TravelPreferencesOnboarding() {
         setSubmitError(error.message);
         return;
       }
-      setSubmitError("Nao foi possivel salvar suas preferências agora.");
+      setSubmitError("Não foi possível salvar suas preferências agora.");
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="size-6 animate-spin text-slate-400" />
-          <p className="text-sm text-slate-500">Carregando preferências...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <PlanningSkeleton steps={TRAVEL_PREFERENCES_STEPS.length} />;
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
-        <div className="flex max-w-md flex-col items-center gap-3 rounded-3xl border border-red-100 bg-white px-6 py-8 text-center">
-          <AlertCircle className="size-6 text-red-500" />
-          <p className="text-sm leading-6 text-slate-500">{error}</p>
+      <div className="flex min-h-screen items-center justify-center bg-background px-6">
+        <div className="flex max-w-md flex-col items-center gap-3 rounded-lg border border-line bg-white px-6 py-8 text-center">
+          <AlertCircle className="size-6 text-ink-muted" />
+          <p className="text-sm leading-6 text-muted-foreground">{error}</p>
+          <button type="button" className="min-h-11 text-sm font-medium text-ink underline" onClick={() => navigate(0)}>Tentar novamente</button>
         </div>
       </div>
     );
@@ -202,31 +253,31 @@ export default function TravelPreferencesOnboarding() {
 
   if (finished) {
     return (
-      <div className="min-h-screen bg-slate-50 lg:flex">
+      <div className="onboarding-shell">
         <OnboardingSidebar
           currentIndex={currentIndex}
           steps={TRAVEL_PREFERENCES_STEPS}
           title={TRAVEL_PREFERENCES_SIDEBAR.title}
           description={TRAVEL_PREFERENCES_SIDEBAR.description}
         />
-        <main className="flex flex-1 px-6 py-8 sm:px-8 lg:p-10">
-          <div className="flex flex-1 items-center justify-center rounded-[32px] bg-white px-6 py-10 shadow-[0_18px_60px_rgba(15,23,42,0.08)]">
+        <main className="flex min-w-0 flex-1 px-6 py-8 sm:px-8 lg:p-10">
+          <div className="flex flex-1 items-center justify-center rounded-card border border-border bg-white px-6 py-10">
             <div className="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
               <PartyPopper
                 size={52}
                 strokeWidth={1.5}
-                className="text-sky-500"
+                className="text-ink-muted"
               />
-              <h2 className="text-4xl font-semibold text-slate-950">
+              <h2 className="text-4xl font-medium text-foreground">
                 preferências salvas!
               </h2>
-              <p className="text-base leading-7 text-slate-500">
-                Seu perfil de viagem foi atualizado e ja pode ser usado na
+              <p className="text-base leading-7 text-muted-foreground">
+                Seu perfil de viagem foi atualizado e já pode ser usado na
                 geração de roteiros.
               </p>
               <Link
                 to="/"
-                className="mt-2 inline-flex h-14 items-center justify-center rounded-2xl bg-slate-950 px-6 text-sm font-semibold text-white transition hover:bg-slate-800"
+                className="mt-2 inline-flex h-12 items-center justify-center rounded-control bg-primary px-6 text-sm font-medium text-white transition hover:bg-primary-hover"
               >
                 Voltar para a home
               </Link>
@@ -237,93 +288,24 @@ export default function TravelPreferencesOnboarding() {
     );
   }
 
-  const hasCards = currentStep.fields.some((field) => field.type === "cards");
+  return <div className="planning-page">
+    <div className="planning-context"><span className="planning-destination">{destination?.name || "Destino a definir"}</span><span className="planning-data">{flexibleDatesValue ? (TRAVEL_PREFERENCES_STEPS.flatMap(step => step.fields).flatMap(field => field.type === "dropdown" && field.key === "travel_month" ? field.options : []).find(option => option.value === fieldValues.travel_month)?.label || "Mês a definir") : planningPeriod(fieldValues.start_date, fieldValues.end_date)}</span><span className="planning-data">{!flexibleDatesValue && fixedDuration ? `${fixedDuration} dias` : fieldValues.preferred_trip_length_days ? `${fieldValues.preferred_trip_length_days} dias · flexíveis` : "Duração a definir"}</span><Link to="/destinos" className="planning-exit">Sair</Link></div>
+    <div className="planning-layout">
+      <PlanningSteps steps={TRAVEL_PREFERENCES_STEPS} currentIndex={currentIndex} fieldValues={fieldValues} tagValues={tagValues} cardSelections={cardSelections} onSelect={setCurrentStep} />
+      <section className="planning-content"><div className="planning-scroll min-h-0 overflow-y-auto" tabIndex={0} aria-label="Conteúdo da etapa">
+        {draftNotice && !draftNotice.startsWith("Preenchemos") && <div role="status" className="planning-draft-notice"><span>{draftNotice}</span>{restored?.snapshot && <Button variant="ghost" onClick={() => { clearPlanningDraft(user?.id); setSnapshot({ currentIndex: 0, fieldValues: {}, tagValues: {}, cardSelections: {} }); setDraftNotice(""); }}>Descartar rascunho</Button>}</div>}
+        <StepTransition step={currentIndex}><header className="planning-heading"><p className="text-xs text-muted-foreground">{currentStep.label} · Etapa {currentIndex + 1} de {TRAVEL_PREFERENCES_STEPS.length}</p><h2 ref={headingRef} tabIndex={-1}>{planningQuestion(currentStep.key, currentStep.title)}</h2><p className="text-sm text-muted-foreground">{currentStep.key === "timing" ? "Escolha como tratar as datas desta viagem." : currentStep.key === "budget" ? "Defina uma faixa de gasto para esta viagem." : currentStep.key === "needs" ? "Indique os cuidados que a viagem precisa considerar." : currentStep.sub}</p></header>
+        <div className={`planning-controls planning-step-card ${currentStep.key === "timing" ? "planning-period-card" : ""}`}><OnboardingStepFields currentStep={visibleStep} selectedCards={selectedCards} fieldValues={fieldValues} tagValues={tagValues} onToggleCard={toggleCard} onSetField={(key, value) => { if (key === "budget_min" || key === "budget_max") setBudgetTouched(true); setField(key, value); }} onSetTags={setTags} prefilled={!!preferences && !restored?.snapshot} fieldErrors={{ budget_max: fieldValues.budget_min && fieldValues.budget_max && !validBudget ? "O máximo deve ser maior que zero e igual ou superior ao mínimo. Ajuste este valor." : undefined }} />{currentStep.key === "timing" && getCardValues("timing")[0] === "false" && <TripCalendar start={fieldValues.start_date ?? ""} end={fieldValues.end_date ?? ""} onChange={(start, end) => { setField("start_date", start); setField("end_date", end); }} />}
 
-  return (
-    <div className="min-h-screen bg-slate-50 lg:flex">
-      <OnboardingSidebar
-        currentIndex={currentIndex}
-        steps={TRAVEL_PREFERENCES_STEPS}
-        title={TRAVEL_PREFERENCES_SIDEBAR.title}
-        description={TRAVEL_PREFERENCES_SIDEBAR.description}
-      />
-
-      <main className="flex flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:p-10">
-        <div className="flex w-full flex-col rounded-[32px] bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.08)] sm:p-8 lg:p-10">
-         <header className="flex flex-col gap-3">
-            {/* NOVO BOTÃO DE VOLTAR AQUI */}
-            {currentIndex > 0 && (
-              <button
-                type="button"
-                onClick={prev}
-                disabled={saving}
-                className="mb-2 flex w-fit items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-slate-900 disabled:opacity-50"
-              >
-                <ArrowLeft className="size-4" />
-                Voltar
-              </button>
-            )}
-
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
-              {currentStep.title}
-            </h2>
-            <p className="max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
-              {currentStep.sub}
-            </p>
-            {hasCards &&
-              currentStep.fields.some((field) => field.type === "cards") && (
-                <span className="inline-flex w-fit rounded-full bg-sky-50 px-3 py-1 text-sm font-medium text-sky-700">
-                  Escolha a opção que melhor descreve sua preferência
-                </span>
-              )}
-          </header>
-
-          <div className="mt-8 flex flex-1 flex-col gap-5">
-            <OnboardingStepFields
-              currentStep={currentStep}
-              selectedCards={selectedCards}
-              fieldValues={fieldValues}
-              tagValues={tagValues}
-              onToggleCard={toggleCard}
-              onSetField={setField}
-              onSetTags={setTags}
-            />
-          </div>
-
-          {(submitError || saveError) && (
-            <div className="mt-6 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-              <AlertCircle className="mt-0.5 size-4 shrink-0" />
-              <span>{submitError || saveError}</span>
-            </div>
-          )}
-
-          <footer className="mt-8 flex flex-col gap-3">
-            <button
-              type="button"
-              className="flex h-14 w-full items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-              onClick={isLast ? handleFinish : next}
-              disabled={!canAdvance || saving}
-            >
-              {saving
-                ? "Salvando..."
-                : isLast
-                  ? "Concluir preferências"
-                  : "Próximo"}
-            </button>
-
-            {!isLast && (
-              <button
-                type="button"
-                className="text-sm font-medium text-slate-500 transition hover:text-slate-900"
-                onClick={skip}
-                disabled={saving}
-              >
-                Pular essa etapa
-              </button>
-            )}
-          </footer>
-        </div>
-      </main>
+{currentStep.key === "timing" && flexibleDatesValue && <span className="field-support">Posso adaptar o período se isso melhorar preço ou experiência.</span>}</div>
+        {currentStep.key === "budget" && <p className="field-support planning-data">{validBudget && fieldValues.currency_code && displayDuration && displayDuration > 0 && displayDuration <= 60 ? <>≈ <AnimatedNumber value={currencyStringToNumber(fieldValues.budget_min ?? "") / displayDuration} format={dailyMoney} animate={budgetTouched} /> a <AnimatedNumber value={currencyStringToNumber(fieldValues.budget_max ?? "") / displayDuration} format={dailyMoney} animate={budgetTouched} /> por dia · total ÷ {displayDuration} dias</> : "A referência por dia aparece ao informar os valores e a duração."}</p>}
+        {currentIndex === 0 && <p className="field-support planning-dna-note">Estas escolhas valem só para esta viagem. Seu DNA de viajante continua no perfil.</p>}
+        {(submitError || saveError) && <p role="alert" className="planning-notice text-sm">{submitError || saveError}</p>}
+        </StepTransition></div>
+        <footer className="planning-footer">{currentIndex > 0 && <Button variant="ghost" onClick={prev} disabled={saving}>Voltar</Button>}
+        {!canAdvance && <p id="planning-required" className="text-xs text-muted-foreground">{currentStep.key === "timing" ? !flexibleDatesValue ? "Selecione ida e volta para continuar" : "Informe duração e mês para continuar" : "Preencha os campos obrigatórios ou selecione uma opção para continuar."}</p>}
+{!isLast && currentStep.key === "needs" && <Button variant="ghost" onClick={skip} disabled={saving}>Pular essa etapa</Button>}<Button onClick={isLast ? handleFinish : next} loading={saving} disabled={!canAdvance} aria-describedby={!canAdvance ? "planning-required" : undefined}>{isLast ? "Revisar viagem" : "Continuar"}</Button></footer>
+      </section>
     </div>
-  );
+  </div>;
 }

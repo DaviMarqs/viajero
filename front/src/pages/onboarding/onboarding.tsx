@@ -1,4 +1,9 @@
-import { AlertCircle, Loader2, PartyPopper, ArrowLeft } from "lucide-react";
+import { Feedback } from "@/components/ui/feedback";
+import { PlanningSkeleton } from "@/components/ui/planning-skeleton";
+import { StepTransition } from "@/components/motion/step-transition";
+import { PlanningSteps } from "@/components/ui/planning-steps";
+import { Button } from "@/components/ui/button";
+import { PartyPopper } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import OnboardingSidebar from "../../components/ui/onboarding-sidebar";
@@ -17,7 +22,7 @@ function getProfileNotes(rawNotes: string | null | undefined) {
   if (!rawNotes) return "";
 
   try {
-    const parsed = JSON.parse(rawNotes) as { text?: unknown };
+    const parsed = JSON.parse(rawNotes) as { text?: unknown; };
     return typeof parsed?.text === "string" ? parsed.text : "";
   } catch {
     return rawNotes;
@@ -79,6 +84,7 @@ export default function Onboarding() {
   const token =
     contextToken || localStorage.getItem("viajero.access_token") || "";
   const hydratedRef = useRef(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const {
     currentIndex,
@@ -86,6 +92,8 @@ export default function Onboarding() {
     isLast,
     finished,
     selectedCards,
+    setCurrentStep,
+    cardSelections,
     fieldValues,
     tagValues,
     hasSelection,
@@ -98,6 +106,7 @@ export default function Onboarding() {
     skip,
     buildProfilePayload,
   } = useOnboarding(ONBOARDING_STEPS);
+  useEffect(() => { headingRef.current?.focus(); }, [currentIndex]);
   const dna = useTravelerDNAProfile(token);
   const tripPreferences = useTripPreferences(token);
 
@@ -133,61 +142,43 @@ export default function Onboarding() {
         return;
       }
 
-      setSubmitError("Nao foi possivel salvar suas respostas agora.");
+      setSubmitError("Não foi possível salvar suas respostas agora.");
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="size-6 animate-spin text-slate-400" />
-          <p className="text-sm text-slate-500">Carregando seu onboarding...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <PlanningSkeleton steps={ONBOARDING_STEPS.length} />;
 
-  if (loadError) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
-        <div className="flex max-w-md flex-col items-center gap-3 rounded-3xl border border-red-100 bg-white px-6 py-8 text-center">
-          <AlertCircle className="size-6 text-red-500" />
-          <p className="text-sm leading-6 text-slate-500">{loadError}</p>
-        </div>
-      </div>
-    );
-  }
+  if (loadError) return <section className="page-content"><Feedback kind="error" title="Não foi possível carregar seu DNA" description={loadError} onRetry={dna.refetch} /></section>;
 
   if (finished) {
     return (
-      <div className="min-h-screen bg-slate-50 lg:flex">
+      <div className="onboarding-shell">
         <OnboardingSidebar currentIndex={currentIndex} />
-        <main className="flex flex-1 px-6 py-8 sm:px-8 lg:p-10">
-          <div className="flex flex-1 items-center justify-center rounded-[32px] bg-white px-6 py-10 shadow-[0_18px_60px_rgba(15,23,42,0.08)]">
+        <main className="flex min-w-0 flex-1 px-6 py-8 sm:px-8 lg:p-10">
+          <div className="flex flex-1 items-center justify-center rounded-card border border-border bg-white px-6 py-10">
             <div className="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
               <PartyPopper
                 size={52}
                 strokeWidth={1.5}
-                className="text-sky-500"
+                className="text-ink-muted"
               />
-              <h2 className="text-4xl font-semibold text-slate-950">
+              <h2 className="text-4xl font-medium text-foreground">
                 DNA configurado!
               </h2>
-              <p className="text-base leading-7 text-slate-500">
-                Suas preferências foram salvas. A IA do Viajero já pode montar
-                roteiros personalizados para você.
+              <p className="text-base leading-7 text-muted-foreground">
+                Suas preferências foram salvas no perfil. Elas serão consideradas
+                nas recomendações disponíveis.
               </p>
               <div className="mt-2 flex flex-col gap-3 sm:flex-row">
                 <Link
                   to="/"
-                  className="inline-flex h-14 items-center justify-center rounded-2xl bg-slate-950 px-6 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  className="inline-flex h-12 items-center justify-center rounded-control bg-primary px-6 text-sm font-medium text-white transition hover:bg-primary-hover"
                 >
                   Ir para a home
                 </Link>
                 <Link
                   to="/onboard/preferências"
-                  className="inline-flex h-14 items-center justify-center rounded-2xl border border-slate-200 px-6 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  className="inline-flex h-12 items-center justify-center rounded-control border border-border px-6 text-sm font-medium text-strong transition hover:border-border hover:bg-background"
                 >
                   Refinar preferências
                 </Link>
@@ -199,89 +190,17 @@ export default function Onboarding() {
     );
   }
 
-  const hasCards = currentStep.fields.some((field) => field.type === "cards");
-
-  return (
-    <div className="min-h-screen bg-slate-50 lg:flex">
-      <OnboardingSidebar currentIndex={currentIndex} />
-
-      <main className="flex flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:p-10">
-        <div className="flex w-full flex-col rounded-[32px] bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.08)] sm:p-8 lg:p-10">
-          <header className="flex flex-col gap-3">
-            {currentIndex > 0 && (
-              <button
-                type="button"
-                onClick={prev}
-                disabled={saving}
-                className="mb-2 flex w-fit items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-slate-900 disabled:opacity-50"
-              >
-                <ArrowLeft className="size-4" />
-                Voltar
-              </button>
-            )}
-
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
-              {currentStep.title}
-            </h2>
-            <p className="max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
-              {currentStep.sub}
-            </p>
-            {hasCards &&
-              currentStep.fields.some(
-                (field) => field.type === "cards" && field.multi,
-              ) && (
-                <span className="inline-flex w-fit rounded-full bg-sky-50 px-3 py-1 text-sm font-medium text-sky-700">
-                  Selecione quantas quiser
-                </span>
-              )}
-          </header>
-
-          <div className="mt-8 flex flex-1 flex-col gap-5">
-            <OnboardingStepFields
-              currentStep={currentStep}
-              selectedCards={selectedCards}
-              fieldValues={fieldValues}
-              tagValues={tagValues}
-              onToggleCard={toggleCard}
-              onSetField={setField}
-              onSetTags={setTags}
-            />
-          </div>
-
-          {(submitError || saveError) && (
-            <div className="mt-6 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-              <AlertCircle className="mt-0.5 size-4 shrink-0" />
-              <span>{submitError || saveError}</span>
-            </div>
-          )}
-
-     <footer className="mt-8 flex flex-col gap-3">
-            <button
-              type="button"
-              className="flex h-14 w-full items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-              onClick={isLast ? handleFinish : next}
-              disabled={!canAdvance || saving}
-            >
-              {saving
-                ? "Salvando..."
-                : isLast
-                  ? "Concluir configuração"
-                  : "Próximo"}
-            </button>
-
-            {!isLast && currentStep.key !== "conta" && (
-              <button
-                type="button"
-                className="text-sm font-medium text-slate-500 transition hover:text-slate-900"
-                onClick={skip}
-                disabled={saving}
-              >
-                Pular essa etapa
-              </button>
-            )}
-          </footer>
-        </div>
-      </main>
+  return <div className="planning-page">
+    <div className="planning-context"><span className="planning-destination">DNA do viajante</span><Link to="/perfil" className="planning-exit">Sair</Link></div>
+    <div className="planning-layout">
+      <PlanningSteps title="Seu DNA" steps={ONBOARDING_STEPS} currentIndex={currentIndex} fieldValues={fieldValues} tagValues={tagValues} cardSelections={cardSelections} onSelect={setCurrentStep} />
+      <section className="planning-content"><div className="planning-scroll min-h-0 overflow-y-auto" tabIndex={0} aria-label="Conteúdo da etapa">
+        <StepTransition step={currentIndex}><header className="planning-heading"><p className="text-xs text-muted-foreground">{currentStep.label} · Etapa {currentIndex + 1} de {ONBOARDING_STEPS.length}</p><h2 ref={headingRef} tabIndex={-1}>{currentStep.title.endsWith("?") ? currentStep.title : `${currentStep.title}?`}</h2><p className="text-sm text-muted-foreground">{currentStep.sub}</p></header>
+        <div className="planning-controls planning-step-card"><OnboardingStepFields currentStep={currentStep} selectedCards={selectedCards} fieldValues={fieldValues} tagValues={tagValues} onToggleCard={toggleCard} onSetField={setField} onSetTags={setTags} prefilled={!!dna.profile} /></div>
+        {(submitError || saveError) && <p role="alert" className="planning-notice text-sm">{submitError || saveError}</p>}
+        {!canAdvance && <p id="planning-required" className="text-xs text-muted-foreground">{currentStep.key === "timing" ? "Escolha datas válidas (até 60 dias) ou informe duração e mês para continuar." : "Preencha os campos obrigatórios ou selecione uma opção para continuar."}</p>}
+        </StepTransition></div><footer className="planning-footer">{currentIndex > 0 && <Button variant="ghost" onClick={prev} disabled={saving}>Voltar</Button>}{!isLast && currentStep.key !== "conta" && <Button variant="ghost" onClick={skip} disabled={saving}>Pular essa etapa</Button>}<Button onClick={isLast ? handleFinish : next} loading={saving} disabled={!canAdvance} aria-describedby={!canAdvance ? "planning-required" : undefined}>{isLast ? "Concluir configuração" : "Continuar"}</Button></footer>
+      </section>
     </div>
-  );
+  </div>;
 }

@@ -6,8 +6,11 @@
   "scripts": {
     "build": "nest build",
     "start": "node dist/main.js",
-    "start:dev": "nest start --watch",
-    "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\"",
+    "start:dev": "node scripts/dev.mjs",
+    "start:watch": "nest start --watch",
+    "lint": "eslint \"src/**/*.ts\"",
+    "smoke": "node scripts/smoke-contract.mjs",
+    "backfill:hero-images": "ts-node src/cli/backfill-hero-images.ts",
     "test": "jest",
     "test:cov": "jest --coverage"
   },
@@ -51,6 +54,7 @@
     "typescript": "^5.7.2"
   },
   "jest": {
+    "setupFiles": ["reflect-metadata"],
     "moduleFileExtensions": ["js", "json", "ts"],
     "rootDir": ".",
     "testRegex": ".*\\.spec\\.ts$",

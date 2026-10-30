@@ -53,10 +53,14 @@ export interface RegisterInput {
   last_name: string;
 }
 
+export function persistUser(user: AuthUser) {
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
 export function persistAuth(payload: AuthPayload) {
   localStorage.setItem(ACCESS_TOKEN_KEY, payload.access);
   localStorage.setItem(REFRESH_TOKEN_KEY, payload.refresh);
-  localStorage.setItem(USER_KEY, JSON.stringify(payload.user));
+  persistUser(payload.user);
 }
 
 export function getStoredUser() {
@@ -93,7 +97,7 @@ export function isAuthenticated() {
 }
 
 export async function login(input: LoginInput) {
-  const response = await apiRequest<AuthPayload>("/api/auth/login/", {
+  const response = await apiRequest<{ data: AuthPayload; }>("/api/auth/login/", {
     method: "POST",
     body: JSON.stringify(input),
   });
@@ -103,7 +107,7 @@ export async function login(input: LoginInput) {
 }
 
 export async function register(input: RegisterInput) {
-  const response = await apiRequest<AuthPayload>("/api/auth/register/", {
+  const response = await apiRequest<{ data: AuthPayload; }>("/api/auth/register/", {
     method: "POST",
     body: JSON.stringify(input),
   });

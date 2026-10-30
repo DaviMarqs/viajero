@@ -1,46 +1,72 @@
+import { lazy, Suspense } from "react";
+import { ScreenEntrance } from "./components/ui/screen-entrance";
+import { RouteFocus } from "./components/motion/route-focus";
+import { PageSkeleton } from "./components/ui/feedback";
 import {
   BrowserRouter,
   Routes,
   Route,
   Outlet,
   useOutletContext,
+  useLocation,
   Navigate,
 } from "react-router-dom";
 import { useAuth } from "@/contexts/authContext";
 
-import Login from "./pages/login/login";
-import Register from "./pages/register/register";
-import Onboard from "./pages/onboarding/onboarding";
-import TravelPreferencesOnboarding from "./pages/travel-preferences-onboarding/travel-preferences-onboarding";
-import Test from "./pages/tests/test";
-import { Dashboard } from "./pages/dashboard/dashboard";
-import DestinationPage from "./pages/destination/destination";
+const Login = lazy(() => import("./pages/login/login"));
+const Register = lazy(() => import("./pages/register/register"));
+const Onboard = lazy(() => import("./pages/onboarding/onboarding"));
+const TravelPreferencesOnboarding = lazy(
+  () =>
+    import("./pages/travel-preferences-onboarding/travel-preferences-onboarding"),
+);
+const Test = lazy(() => import("./pages/tests/test"));
+const Dashboard = lazy(() =>
+  import("./pages/dashboard/dashboard").then((module) => ({
+    default: module.Dashboard,
+  })),
+);
+const DestinationPage = lazy(() => import("./pages/destination/destination"));
+const DestinationsPage = lazy(() => import("./pages/destination/destinations"));
 
 import "./index.css";
-import ProfilePage from "./pages/user-profile/user";
-import Recommendations from "./pages/recommendations/recommendations";
-import Explorer from "./pages/explorer/explorer";
-import Roteiros from "./pages/roteiros/roteiros";
-import RoteiroCriacaoPage from "./pages/roteiros/roteiro-criacao";
-import RoteiroDetalhePage from "./pages/roteiros/roteiro-detalhe";
+const ProfilePage = lazy(() => import("./pages/user-profile/user"));
+const Recommendations = lazy(
+  () => import("./pages/recommendations/recommendations"),
+);
+const Explorer = lazy(() => import("./pages/explorer/explorer"));
+const Favorites = lazy(() => import("./pages/favorites/favorites"));
+const Roteiros = lazy(() => import("./pages/roteiros/roteiros"));
+const RoteiroCriacaoPage = lazy(
+  () => import("./pages/roteiros/roteiro-criacao"),
+);
+const RoteiroDetalhePage = lazy(
+  () => import("./pages/roteiros/roteiro-detalhe"),
+);
 import Sidebar from "./components/ui/Sidebar";
+import { CurrencyPicker } from "./components/ui/currency-picker";
 
 function PrivateRoute() {
   const { token, logout, isGuest, isAuthenticated } = useAuth();
+  const { pathname } = useLocation();
+  const isOnboarding = pathname.startsWith("/onboard");
 
   if (!isAuthenticated || !token) {
     return <Navigate to="/login" replace />;
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <aside className="hidden h-full w-64 shrink-0 lg:block">
-        <Sidebar />
-      </aside>
-      <div className="lg:hidden">
-        <Sidebar />
-      </div>
-      <main className="flex-1 overflow-y-auto pt-14 lg:pt-0">
+    <div className="flex min-h-dvh">
+      <a href="#main-content" className="skip-link">
+        Pular para o conteúdo
+      </a>
+      <Sidebar hideCurrency={isOnboarding} />
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="app-main relative min-w-0 flex-1 pt-16 lg:pt-0"
+      >
+        {!isOnboarding && <div className="platform-toolbar hidden lg:flex"><CurrencyPicker /></div>}
         <Outlet context={{ token, logout, isGuest }} />
       </main>
     </div>
@@ -62,29 +88,37 @@ function ProfilePageWrapper() {
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route element={<PublicRoute />}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-        </Route>
+      <ScreenEntrance />
+      <RouteFocus />
+      <Suspense
+        fallback={<PageSkeleton />}
+      >
+        <Routes>
+          <Route element={<PublicRoute />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Route>
 
-        <Route element={<PrivateRoute />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/explorar" element={<Explorer />} />
-          <Route path="/destinos/:id" element={<DestinationPage />} />
-          <Route path="/onboard" element={<Onboard />} />
-          <Route
-            path="/onboard/preferências"
-            element={<TravelPreferencesOnboarding />}
-          />
-          <Route path="/roteiros/:id" element={<RoteiroDetalhePage />} />
-          <Route path="/roteiros/criacao" element={<RoteiroCriacaoPage />} />
-          <Route path="/roteiros" element={<Roteiros />} />
-          <Route path="/perfil" element={<ProfilePageWrapper />} />
-          <Route path="/test" element={<Test />} />
-          <Route path="/recomendações" element={<Recommendations />} />
-        </Route>
-      </Routes>
+          <Route element={<PrivateRoute />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/explorar" element={<Explorer />} />
+            <Route path="/favoritos" element={<Favorites />} />
+            <Route path="/destinos/:id" element={<DestinationPage />} />
+            <Route path="/destinos" element={<DestinationsPage />} />
+            <Route path="/onboard" element={<Onboard />} />
+            <Route
+              path="/onboard/preferências"
+              element={<TravelPreferencesOnboarding />}
+            />
+            <Route path="/roteiros/:id" element={<RoteiroDetalhePage />} />
+            <Route path="/roteiros/criacao" element={<RoteiroCriacaoPage />} />
+            <Route path="/roteiros" element={<Roteiros />} />
+            <Route path="/perfil" element={<ProfilePageWrapper />} />
+            <Route path="/test" element={<Test />} />
+            <Route path="/recomendações" element={<Recommendations />} />
+          </Route>
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

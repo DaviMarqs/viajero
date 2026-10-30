@@ -1,5 +1,9 @@
-const DEFAULT_API_BASE_URL = "http://localhost:8000";
+const DEFAULT_API_BASE_URL = "http://localhost:8001";
 const ACCESS_TOKEN_KEY = "viajero.access_token";
+
+/** Disparado quando uma requisição autenticada recebe 401 (token expirado ou inválido). */
+export const SESSION_EXPIRED_EVENT = "viajero:session-expired";
+const SESSION_EXPIRED_MESSAGE = "Sua sessão expirou. Entre novamente para continuar.";
 
 export class ApiError extends Error {
   status: number;
@@ -11,7 +15,7 @@ export class ApiError extends Error {
     this.name = "ApiError";
     this.status = status;
     this.payload = payload;
-    this.errors = (payload as { errors?: unknown })?.errors;
+    this.errors = (payload as { errors?: unknown; })?.errors;
   }
 }
 
@@ -48,6 +52,13 @@ function buildUrl(path: string, params?: Record<string, string | number | boolea
   return url.toString();
 }
 
+/** O backend manda a mensagem para a UI em `message`; `detail` fica como alternativa. */
+function readErrorMessage(payload: unknown) {
+  if (!payload || typeof payload !== "object") return undefined;
+  const { message, detail } = payload as { message?: unknown; detail?: unknown; };
+  return [message, detail].find((value): value is string => typeof value === "string" && value.trim().length > 0);
+}
+
 export async function apiFetch<T>(
   path: string,
   init: RequestInit = {},
@@ -60,7 +71,7 @@ export async function apiFetch<T>(
     headers.set("Accept", "application/json");
   }
 
-  if (init.body && !headers.has("Content-Type")) {
+  if (init.body && !(init.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -68,21 +79,28 @@ export async function apiFetch<T>(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(buildUrl(path, params), {
-    headers,
-    ...init,
-  });
+  let response: Response;
+  try {
+    response = await fetch(buildUrl(path, params), { ...init, headers });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") throw error;
+    throw new ApiError("Não foi possível conectar ao serviço. Verifique sua conexão e tente novamente.", 0, error);
+  }
 
   if (!response.ok) {
-    let message = `Request failed with status ${response.status}`;
     let payload: unknown;
 
     try {
       payload = await response.json();
-      const errorPayload = payload as { detail?: string; message?: string };
-      message = errorPayload.detail || errorPayload.message || message;
     } catch {
       // Keep fallback message when the server does not return JSON.
+    }
+
+    let message = readErrorMessage(payload) ?? `Não foi possível concluir a solicitação (erro ${response.status}). Tente novamente.`;
+
+    if (response.status === 401 && headers.has("Authorization")) {
+      message = SESSION_EXPIRED_MESSAGE;
+      if (typeof window !== "undefined") window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
     }
 
     throw new ApiError(message, response.status, payload);
@@ -95,18 +113,18 @@ export async function apiFetch<T>(
   return (await response.json()) as T;
 }
 
-export async function apiRequest<T>(
+export async function apiRequest<T = unknown>(
   path: string,
   init?: RequestInit,
   params?: Record<string, string | number | boolean | null | undefined>,
-): Promise<any> {
+): Promise<T> {
   return apiFetch<T>(path, init, params);
 }
 
 export function unwrapListResponse<T>(
   payload:
     | T[]
-    | { results?: T[]; data?: T[] | { results?: T[]; items?: T[] }; items?: T[] }
+    | { results?: T[]; data?: T[] | { results?: T[]; items?: T[]; }; items?: T[]; }
     | null
     | undefined,
 ) {

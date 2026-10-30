@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useAsyncResource } from "./useAsyncResource";
+import { useCallback, useState } from "react";
 import { apiRequest } from "../lib/api";
 import type { TravelerDNAProfile as ExistingTravelerDNAProfile } from "../lib/profiles";
 
@@ -6,9 +7,7 @@ export type TravelerDNAProfile = ExistingTravelerDNAProfile;
 
 const GUEST_TRAVELER_DNA_KEY = "viajero.guest.traveler_dna";
 
-export interface TravelerDNAUpsertInput {
-  [key: string]: any;
-}
+export type TravelerDNAUpsertInput = Partial<import("../lib/profiles").TravelerDNAUpsertInput>;
 
 function readGuestProfile() {
   const raw = localStorage.getItem(GUEST_TRAVELER_DNA_KEY);
@@ -23,48 +22,14 @@ function readGuestProfile() {
 }
 
 export function useTravelerDNAProfile(token?: string) {
-  const [profile, setProfile] = useState<TravelerDNAProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    if (!token) {
-      setProfile(readGuestProfile());
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await apiRequest<{ data?: TravelerDNAProfile | null }>(
-        "/api/traveler-dna/me/",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      setProfile(response.data ?? null);
-    } catch (err) {
-      setProfile(null);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Não foi possível carregar o perfil Traveler DNA.",
-      );
-    } finally {
-      setLoading(false);
-    }
+  const load = useCallback(async (signal: AbortSignal) => {
+    if (!token) return readGuestProfile();
+    const response = await apiRequest<{ data?: TravelerDNAProfile | null; }>("/api/traveler-dna/me/", { signal, headers: { Authorization: `Bearer ${token}` } });
+    return response.data ?? null;
   }, [token]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  const { data: profile, loading, error, refetch: refresh, setData: setProfile } = useAsyncResource<TravelerDNAProfile | null>(load, null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const save = useCallback(
     async (input: TravelerDNAUpsertInput) => {
@@ -101,7 +66,7 @@ export function useTravelerDNAProfile(token?: string) {
       }
 
       try {
-        const response = await apiRequest<{ data?: TravelerDNAProfile }>(
+        const response = await apiRequest<{ data?: TravelerDNAProfile; }>(
           "/api/traveler-dna/me/",
           {
             method: "PATCH",
@@ -131,7 +96,7 @@ export function useTravelerDNAProfile(token?: string) {
         setSaving(false);
       }
     },
-    [token],
+    [token, setProfile],
   );
 
   const hasProfile = Boolean(profile);

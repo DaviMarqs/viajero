@@ -23,7 +23,7 @@ export class Destination {
   @Column({ type: 'text', default: '' })
   summary!: string;
 
-  @Column({ name: 'hero_image_url', type: 'varchar', length: 200, default: '' })
+  @Column({ name: 'hero_image_url', type: 'varchar', length: 500, default: '' })
   hero_image_url!: string;
 
   @Column({ type: 'varchar', length: 64, default: '' })

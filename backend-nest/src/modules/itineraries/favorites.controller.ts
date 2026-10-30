@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
@@ -19,5 +19,11 @@ export class FavoritesController {
   @Post()
   async create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateFavoriteDto) {
     return this.response.withMessage('Registro criado com sucesso.').build(await this.itineraries.createFavorite(user.id, dto));
+  }
+
+  @Delete(':id')
+  async remove(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseIntPipe) id: number) {
+    await this.itineraries.removeFavorite(user.id, id);
+    return this.response.withMessage('Roteiro removido dos favoritos.').build(null);
   }
 }

@@ -1,5 +1,7 @@
+import { Collapse } from "@/components/motion/collapse";
+import { useId, useLayoutEffect, useRef } from "react";
 import type { ChangeEvent } from "react";
-import { DollarSign, Info} from "lucide-react";
+
 
 interface InputCurrencyProps {
   label: string;
@@ -7,13 +9,15 @@ interface InputCurrencyProps {
   required?: boolean;
   value: string;
   onChange: (value: string) => void;
+  currency?: string;
+  error?: string;
 }
 
 function formatBRL(raw: string): string {
   const digits = raw.replace(/\D/g, "");
   if (!digits) return "";
   const number = parseInt(digits, 10) / 100;
-  return number.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return number.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function parseBRL(formatted: string): string {
@@ -26,37 +30,50 @@ export default function InputCurrency({
   required,
   value,
   onChange,
+  currency = "BRL",
+  error,
 }: InputCurrencyProps) {
+  const id = useId();
+  const input = useRef<HTMLInputElement>(null);
+  const digitsRight = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    const element = input.current;
+    if (!element || digitsRight.current == null || document.activeElement !== element) return;
+    let position = element.value.length;
+    let remaining = digitsRight.current;
+    while (position > 0 && remaining > 0) { position--; if (/\d/.test(element.value[position])) remaining--; }
+    element.setSelectionRange(position, position);
+    digitsRight.current = null;
+  }, [value]);
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    digitsRight.current = parseBRL(e.target.value.slice(e.target.selectionStart ?? e.target.value.length)).length;
     const raw = parseBRL(e.target.value);
     onChange(raw);
   };
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-slate-700">
+      <label htmlFor={id} className="text-sm font-medium text-strong">
         {label}
-        {required && <span className="text-red-500"> *</span>}
+        {!required && <span className="text-ink-muted"> (opcional)</span>}
       </label>
 
-      <div className="flex h-14 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 transition focus-within:border-sky-500 focus-within:shadow-[0_0_0_4px_rgba(46,140,255,0.12)]">
-        <span className="text-slate-400">
-          <DollarSign size={18} />
-        </span>
-        <input
+      <div className="form-control-shell">
+        <span className="money-prefix" aria-hidden="true">{new Intl.NumberFormat("pt-BR", { style: "currency", currency }).formatToParts(0).find(part => part.type === "currency")?.value}</span>
+        <input ref={input} id={id} required={required} aria-invalid={!!error} aria-describedby={[hint ? id + "-hint" : "", error ? id + "-error" : ""].filter(Boolean).join(" ") || undefined}
           type="text"
           inputMode="numeric"
-          className="h-full w-full border-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-          placeholder="R$ 0,00"
+          className="h-full w-full min-w-0 border-0 bg-transparent font-data text-sm text-foreground outline-none placeholder:text-muted-foreground"
+          placeholder={formatBRL("0")}
           value={value ? formatBRL(value) : ""}
           onChange={handleChange}
         />
       </div>
 
+      <Collapse open={!!error}>{error && <p id={id + "-error"} role="alert" className="field-support">{error}</p>}</Collapse>
+
       {hint && (
-        <p className="flex items-start gap-2 text-sm leading-6 text-slate-500">
-          <span className="text-slate-400"><Info className="size-5" /></span> {hint}
-        </p>
+        <p id={id + "-hint"} className="field-support">{hint}</p>
       )}
     </div>
   );

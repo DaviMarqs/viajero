@@ -1,4 +1,4 @@
-import {Info} from "lucide-react";
+
 
 interface TagOption {
   label: string;
@@ -38,9 +38,9 @@ export default function TagSelector({
 
   return (
     <div className="space-y-3">
-      <label className="text-sm font-medium text-slate-700">
+      <label className="text-sm font-medium text-strong">
         {label}
-        {required && <span className="text-red-500"> *</span>}
+        {!required && <span className="text-ink-muted"> (opcional)</span>}
       </label>
 
       <div className="flex flex-wrap gap-3">
@@ -50,8 +50,8 @@ export default function TagSelector({
             type="button"
             className={
               selected.includes(opt.value)
-                ? "rounded-full border border-sky-500 bg-sky-500 px-4 py-2 text-sm font-medium text-white transition hover:border-sky-600 hover:bg-sky-600"
-                : "rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:text-sky-700"
+                ? "rounded-control border border-ring bg-primary px-4 py-2 text-sm font-medium text-white transition hover:border-line hover:bg-primary"
+                : "rounded-control border border-border bg-white px-4 py-2 text-sm font-medium text-strong transition hover:border-border hover:text-ink-muted"
             }
             onClick={() => toggle(opt.value)}
             aria-pressed={selected.includes(opt.value)}
@@ -62,9 +62,7 @@ export default function TagSelector({
       </div>
 
       {hint && (
-        <p className="flex items-start gap-2 text-sm leading-6 text-slate-500">
-          <span className="text-slate-400"><Info className="size-5" /></span> {hint}
-        </p>
+        <p className="field-support">{hint}</p>
       )}
     </div>
   );

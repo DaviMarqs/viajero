@@ -77,15 +77,15 @@ export default function Filter() {
   }
 
   const filterContent = (
-    <div className="rounded-2xl border border-neutral-200 p-7">
+    <div className="rounded-lg border border-line p-7">
       <p className="pb-5 text-xs font-medium uppercase tracking-widest text-neutral-400">
         Filtros
       </p>
 
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6">
         {FILTER_GROUPS.map((group, i) => (
           <div key={group.id}>
-            {i > 0 && <div className="mb-5 h-px bg-neutral-100" />}
+            {i > 0 && <div className="mb-5 h-px bg-canvas" />}
 
             <p className="mb-2.5 pb-2 text-sm font-medium text-neutral-800">
               {group.title}
@@ -100,15 +100,15 @@ export default function Filter() {
                     onClick={() => toggle(option.id)}
                     className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left transition-colors ${
                       isChecked
-                        ? "border border-blue-200 bg-blue-50"
-                        : "border border-transparent hover:bg-neutral-50"
+                        ? "border border-accent bg-surface"
+                        : "border border-transparent hover:bg-canvas"
                     }`}
                   >
                     <span
                       className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors ${
                         isChecked
-                          ? "border-blue-600 bg-blue-600"
-                          : "border-neutral-300 bg-white"
+                          ? "border-accent bg-accent"
+                          : "border-line bg-white"
                       }`}
                     >
                       {isChecked && (
@@ -132,7 +132,7 @@ export default function Filter() {
                     <span
                       className={`text-sm ${
                         isChecked
-                          ? "font-medium text-blue-700"
+                          ? "font-medium text-ink"
                           : "text-neutral-700"
                       }`}
                     >
@@ -153,11 +153,11 @@ export default function Filter() {
       {/* Mobile toggle */}
       <button
         onClick={() => setIsOpen((prev) => !prev)}
-        className="md:hidden flex w-full items-center justify-between rounded-2xl border border-neutral-200 bg-white px-5 py-4 mb-3"
+        className="md:hidden flex w-full items-center justify-between rounded-lg border border-line bg-white px-6 py-4 mb-3"
       >
         <span className="text-sm font-medium text-neutral-800">Filtros</span>
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-blue-600 px-2 py-0.5 text-xs font-medium text-white">
+          <span className="rounded-control bg-accent px-2 py-0.5 text-xs font-medium text-white">
             {selected.size}
           </span>
           <svg

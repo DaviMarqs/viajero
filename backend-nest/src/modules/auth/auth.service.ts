@@ -18,7 +18,12 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     const existing = await this.users.findByEmail(dto.email);
-    if (existing) throw new BadRequestException({ email: ['A user with this email already exists.'] });
+    if (existing) {
+      throw new BadRequestException({
+        message: 'Ja existe um usuario cadastrado com este email.',
+        email: ['Ja existe um usuario cadastrado com este email.'],
+      });
+    }
     const user = await this.users.create(dto);
     await this.audit.log({ event_type: 'user.registered', actor_id: user.id, content_type: 'User', object_id: String(user.id) });
     return this.buildPayload(user);
@@ -27,7 +32,7 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.users.findByEmail(dto.email);
     if (!user || !this.passwords.verify(dto.password, user.password)) {
-      throw new BadRequestException({ detail: 'Invalid credentials.', message: 'Credenciais invalidas.' });
+      throw new BadRequestException({ detail: 'Email ou senha invalidos.', message: 'Email ou senha invalidos.' });
     }
     await this.audit.log({ event_type: 'user.logged_in', actor_id: user.id, content_type: 'User', object_id: String(user.id) });
     return this.buildPayload(user);

@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import { fetchFeaturedItineraries, fetchItineraries } from "../lib/itineraries";
+import { fetchFeaturedItineraries, fetchItineraries, fetchTopRatedItineraries } from "../lib/itineraries";
 import type { Itinerary } from "../types/travel";
 export type { ItineraryWithDestination } from "../lib/itineraries";
 
-type ItineraryMode = "mine" | "featured";
+type ItineraryMode = "mine" | "featured" | "top-rated";
 
 export function useItineraries(mode: ItineraryMode = "mine") {
   const [itineraries, setItineraries] = useState<Itinerary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -21,7 +22,9 @@ export function useItineraries(mode: ItineraryMode = "mine") {
         const data =
           mode === "featured"
             ? await fetchFeaturedItineraries()
-            : await fetchItineraries();
+            : mode === "top-rated"
+              ? await fetchTopRatedItineraries()
+              : await fetchItineraries();
         if (active) {
           setItineraries(data);
         }
@@ -41,7 +44,7 @@ export function useItineraries(mode: ItineraryMode = "mine") {
     return () => {
       active = false;
     };
-  }, [mode]);
+  }, [mode, revision]);
 
-  return { itineraries, loading, error };
+  return { itineraries, loading, error, refetch: () => setRevision(value => value + 1) };
 }

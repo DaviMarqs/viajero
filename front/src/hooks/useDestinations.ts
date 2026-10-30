@@ -6,6 +6,7 @@ export function useDestinations() {
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -16,7 +17,7 @@ export function useDestinations() {
       setError(null);
 
       try {
-        const data = await fetchDestinations();
+        const data = await fetchDestinations(controller.signal);
         if (active) {
           setDestinations(data);
         }
@@ -37,7 +38,7 @@ export function useDestinations() {
       active = false;
       controller.abort();
     };
-  }, []);
+  }, [revision]);
 
-  return { destinations, loading, error };
+  return { destinations, loading, error, refetch: () => setRevision(value => value + 1) };
 }

@@ -10,3 +10,4 @@ node_modules/
 dist/
 .env
 .pytest_cache/
+.local/

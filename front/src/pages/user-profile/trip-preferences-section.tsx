@@ -1,6 +1,7 @@
 "use client";
+import { Button } from '@/components/ui/button';
 
-import { useEffect, useState } from "react";
+import { useState, useId, isValidElement, cloneElement } from "react";
 import { useTripPreferences } from "@/hooks/useTripPreferences";
 import {
   Wallet,
@@ -107,21 +108,21 @@ interface FormState {
 }
 
 const inputClass =
-  "w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition";
+  "w-full min-h-11 rounded-control border border-input bg-white px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring transition";
 
 function toggleInArray(arr: string[], value: string) {
   return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
 }
 
 function labelFor(
-  options: { label: string; value: string | number }[],
+  options: { label: string; value: string | number; }[],
   value: string | number | undefined | null,
 ) {
   return options.find((o) => String(o.value) === String(value))?.label ?? "-";
 }
 
 function joinLabels(
-  options: { label: string; value: string }[],
+  options: { label: string; value: string; }[],
   values: string[] | undefined | null,
 ) {
   if (!values || values.length === 0) return "-";
@@ -154,7 +155,8 @@ export function TripPreferencesSection({ token }: Props) {
     interests: [],
   });
 
-  useEffect(() => {
+  function startEditing() {
+    setEditing(true);
     if (!preferences) return;
     setForm({
       budget_min: String(preferences.budget_min ?? ""),
@@ -169,7 +171,7 @@ export function TripPreferencesSection({ token }: Props) {
       accessibility_needs: preferences.accessibility_needs ?? [],
       interests: preferences.interests ?? [],
     });
-  }, [preferences]);
+  }
 
   async function handleSave() {
     setSuccess(false);
@@ -199,7 +201,7 @@ export function TripPreferencesSection({ token }: Props) {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex items-center gap-2 text-sm text-neutral-400">
+      <div className="bg-white rounded-lg border border-border p-6 flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="size-4 animate-spin" />
         Carregando preferências da viagem...
       </div>
@@ -208,7 +210,7 @@ export function TripPreferencesSection({ token }: Props) {
 
   if (error) {
     return (
-      <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex items-center gap-2 text-sm text-red-500">
+      <div className="bg-white rounded-lg border border-border p-6 flex items-center gap-2 text-sm text-ink-muted">
         <AlertCircle className="size-4" />
         {error}
       </div>
@@ -218,31 +220,30 @@ export function TripPreferencesSection({ token }: Props) {
   const hasData = !!preferences;
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex flex-col gap-5">
+    <div className="bg-white rounded-lg border border-border p-6 flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
-          <h2 className="text-sm font-semibold text-neutral-700">
+          <h2 className="text-lg font-medium text-foreground">
             Preferências da viagem
           </h2>
           {!hasData && !editing && (
-            <p className="text-xs text-neutral-400 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Nenhuma preferência salva ainda. Clique em editar para preencher.
             </p>
           )}
         </div>
         {!editing && (
-          <button
-            onClick={() => setEditing(true)}
-            className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition-colors"
+          <Button variant="travel"
+            onClick={startEditing}
           >
             <Pencil className="size-3.5" />
             Editar
-          </button>
+          </Button>
         )}
       </div>
 
       {!editing && hasData && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
           <ReadOnly icon={<Wallet className="size-3.5" />} label="Orçamento">
             {preferences?.budget_min} – {preferences?.budget_max}{" "}
             {preferences?.currency_code}
@@ -293,7 +294,7 @@ export function TripPreferencesSection({ token }: Props) {
       )}
 
       {editing && (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <FieldGroup
               icon={<Wallet className="size-3.5" />}
@@ -476,39 +477,34 @@ export function TripPreferencesSection({ token }: Props) {
           />
 
           <div className="flex items-center gap-3 pt-2">
-            <button
+            <Button variant="default"
               onClick={handleSave}
-              disabled={saving}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+              loading={saving}
             >
-              {saving ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Check className="size-4" />
-              )}
-              {saving ? "Salvando..." : "Salvar"}
-            </button>
-            <button
+              <Check className="size-4" />
+              Salvar
+            </Button>
+            <Button variant="outline"
               onClick={() => setEditing(false)}
               disabled={saving}
-              className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-700 border border-neutral-200 hover:bg-neutral-50 px-4 py-2 rounded-xl transition-colors"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-strong border border-border hover:bg-background px-4 py-2 rounded-xl transition-colors"
             >
               <X className="size-4" />
               Cancelar
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {saveError && (
-        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+        <div className="flex items-center gap-2 text-sm text-ink-muted bg-canvas border border-line rounded-xl px-4 py-3">
           <AlertCircle className="size-4 shrink-0" />
           {saveError}
         </div>
       )}
 
       {success && (
-        <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+        <div className="flex items-center gap-2 text-sm text-ink-muted bg-canvas border border-line rounded-xl px-4 py-3">
           <Check className="size-4 shrink-0" />
           Preferencias atualizadas com sucesso!
         </div>
@@ -528,11 +524,12 @@ function ReadOnly({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="flex items-center gap-2 text-xs font-medium text-neutral-400 uppercase tracking-wider">
+      <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground ">
         {icon}
         {label}
       </span>
-      <p className="text-sm text-neutral-800 font-medium pl-0.5">{children}</p>
+      <p className="text-sm text-foreground font-medium pl-0.5">{children}
+      </p>
     </div>
   );
 }
@@ -546,13 +543,14 @@ function FieldGroup({
   label: string;
   children: React.ReactNode;
 }) {
+  const id = useId();
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="flex items-center gap-2 text-xs font-medium text-neutral-400 uppercase tracking-wider">
+      <label htmlFor={id} className="flex items-center gap-2 text-sm font-medium text-muted-foreground ">
         {icon}
         {label}
       </label>
-      {children}
+      {isValidElement<{ id?: string; }>(children) ? cloneElement(children, { id }) : children}
     </div>
   );
 }
@@ -566,13 +564,13 @@ function TagPicker({
 }: {
   icon: React.ReactNode;
   label: string;
-  options: { label: string; value: string }[];
+  options: { label: string; value: string; }[];
   values: string[];
   onToggle: (value: string) => void;
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <span className="flex items-center gap-2 text-xs font-medium text-neutral-400 uppercase tracking-wider">
+      <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground ">
         {icon}
         {label}
       </span>
@@ -580,18 +578,18 @@ function TagPicker({
         {options.map((o) => {
           const active = values.includes(o.value);
           return (
-            <button
+            <Button variant="default"
               key={o.value}
               type="button"
               onClick={() => onToggle(o.value)}
               className={
                 active
-                  ? "px-3 py-1.5 rounded-full text-xs font-medium border border-blue-500 bg-blue-500 text-white transition-colors"
-                  : "px-3 py-1.5 rounded-full text-xs font-medium border border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 transition-colors"
+                  ? "px-3 py-1.5 rounded-control text-xs font-medium border border-ring bg-primary text-white transition-colors"
+                  : "px-3 py-1.5 rounded-control text-xs font-medium border border-border bg-white text-strong hover:border-border transition-colors"
               }
             >
               {o.label}
-            </button>
+            </Button>
           );
         })}
       </div>

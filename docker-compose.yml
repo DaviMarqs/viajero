@@ -1,0 +1,64 @@
+#   docker compose up --build
+#
+# App: http://localhost:5173 · API: http://localhost:8001 · PostgreSQL: localhost:5432
+name: viajero
+
+services:
+  db:
+    image: postgres:16
+    container_name: viajero-pg
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "1414"
+      POSTGRES_DB: viajero
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d viajero"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  migrate:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://postgres:1414@db:5432/viajero
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build: ./backend-nest
+    env_file:
+      - path: ./backend-nest/.env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://postgres:1414@db:5432/viajero
+      PORT: "8001"
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./backend-nest/uploads:/app/uploads
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./front
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8001}
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+    name: viajero-pgdata

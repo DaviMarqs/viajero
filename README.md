@@ -12,65 +12,30 @@ O Viajero é um projeto criado do zero (_greenfield_) com um backend em Django p
 
 ## Como rodar localmente (do zero)
 
-1. **Instale as ferramentas basicas**
-   - Git
-   - `uv` (instala o Python e gerencia dependencias)
+O passo a passo completo (pré-requisitos, banco, API, front, primeiro uso, testes e problemas comuns) está em **[RODAR_LOCALMENTE.md](./RODAR_LOCALMENTE.md)**.
 
-   Linux/macOS:
+**Tudo no Docker (um comando, na raiz):**
 
-   ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
+```bash
+docker compose up --build    # app em http://localhost:5173, API em http://localhost:8001
+```
 
-   Windows (PowerShell):
+Sobe o PostgreSQL, cria as tabelas e o seed (Django), a API Nest e o front. Para a IA, crie antes o `backend-nest/.env` a partir do `.env.example` e preencha `GROQ_API_KEY`.
 
-   ```powershell
-   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-   ```
+**Para desenvolver (recarga automática)**, com Docker, Node 20.19+ e `uv` instalados:
 
-   Depois, feche e abra o terminal para o `uv` entrar no PATH.
+```bash
+cd backend-nest && npm ci && cp .env.example .env && npm run start:dev   # liga o banco, aplica migrations/seed e sobe a API
+cd front && npm ci && npm run dev                                           # outro terminal; app em http://localhost:5173
+```
 
-2. **Clone o repositorio**
-
-   ```bash
-   git clone https://github.com/DaviMarqs/viajero.git
-   cd viajero
-   ```
-
-3. **Configure o backend**
-
-   ```bash
-   cd backend
-   uv python install 3.12
-   uv sync
-   ```
-
-4. **Crie o arquivo de ambiente**
-   Crie o arquivo `backend/.env` com o basico para SQLite:
-
-   ```dotenv
-   DJANGO_SECRET_KEY=troque-isto
-   DATABASE_URL=sqlite:///./db.sqlite3
-   DEBUG=true
-   ALLOWED_HOSTS=*
-   CORS_ALLOW_ALL_ORIGINS=true
-   JWT_SECRET_KEY=troque-isto
-   DEFAULT_LLM_PROVIDER=mock
-   DEFAULT_LLM_MODEL=mock-itinerary-v1
-   ```
-
-5. **Crie o banco e rode o servidor**
-
-   ```bash
-   uv run manage.py migrate
-   uv run manage.py loaddata seed_data.json
-   uv run manage.py runserver
-   ```
-
-   A API fica disponivel em http://127.0.0.1:8000
+| Pasta | O que é |
+|---|---|
+| `backend/` | Django + DRF: dono do schema (migrations e seed). A API Django é legado |
+| `backend-nest/` | API principal (NestJS) usada pelo front, com a IA: roteiros com Groq/Gemini, descoberta de destinos com Firecrawl e sugestão por perfil |
+| `front/` | React + Vite |
 
 ## Notas
 
-- **Variaveis de ambiente completas:** `FIRECRAWL_API_KEY`, `FIRECRAWL_API_URL`, `DEFAULT_LLM_PROVIDER`, `DEFAULT_LLM_MODEL`, `LLM_API_KEY`, `CORS_ALLOWED_ORIGINS`.
-- **Migracoes:** Rode `uv run manage.py makemigrations` apenas se voce alterar modelos.
-- **Provedor de LLM:** Substitua o gerador simulado em `backend/apps/ai/services.py` por um adaptador real assim que o provedor for escolhido.
+- **IA:** preencha `GROQ_API_KEY` (e, se quiser, `GEMINI_API_KEY` e `FIRECRAWL_API_KEY`) em `backend-nest/.env`. Sem chaves o app funciona com gerador determinístico. Detalhes em [backend-nest/README.md](./backend-nest/README.md#ia).
+- **Migrações:** rode `uv run manage.py makemigrations` apenas se você alterar modelos.

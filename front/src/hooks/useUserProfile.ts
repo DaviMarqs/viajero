@@ -1,38 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
+import { useAsyncResource } from "./useAsyncResource";
+import { useCallback } from "react";
 import { apiRequest } from "../lib/api";
 import { getStoredUser, persistGuestUser, type AuthUser } from "../lib/auth";
 
 export function useUserProfile(token?: string) {
-  const [profile, setProfile] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    if (!token) {
-      setProfile(getStoredUser());
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = (await apiRequest<{ data?: AuthUser }>("/api/users/me/", {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      })) as { data?: AuthUser };
-
-      setProfile(response.data ?? null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível carregar o perfil.");
-    } finally {
-      setLoading(false);
-    }
+  const load = useCallback(async (signal: AbortSignal) => {
+    if (!token) return getStoredUser();
+    const response = await apiRequest<{ data?: AuthUser | null; }>("/api/users/me/", { signal, headers: { Authorization: `Bearer ${token}` } });
+    return response.data ?? null;
   }, [token]);
+  const { data: profile, loading, error, refetch: refresh, setData: setProfile } = useAsyncResource<AuthUser | null>(load, null);
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
 
   return {
     profile,

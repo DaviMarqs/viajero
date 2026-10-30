@@ -17,14 +17,16 @@ export default function OnboardingSidebar({
   description = "Suas preferências permitem que a IA recomende destinos e monte roteiros feitos para você.",
 }: OnboardingSidebarProps) {
   return (
-    <aside className="flex w-full flex-col gap-6 overflow-hidden bg-[linear-gradient(160deg,#2e8cff_0%,#1553c6_45%,#0c2f73_100%)] p-6 text-white lg:m-4 lg:w-[22rem] lg:rounded-[28px] lg:p-8">
+    <aside className="onboarding-story flex min-w-0 flex-col gap-6 overflow-hidden">
       <div className="hidden flex-col gap-3 lg:flex">
-        <h1 className="text-3xl font-semibold leading-tight">{title}</h1>
-        <p className="text-sm leading-6 text-white/68">{description}</p>
+        <h1 className="font-medium leading-tight">{title}
+        </h1>
+        <p className="text-sm leading-6 text-muted-foreground">{description}
+        </p>
       </div>
 
       <nav
-        className="flex flex-1 gap-2 overflow-x-auto lg:flex-col lg:gap-4"
+        className="flex gap-2 overflow-x-auto lg:flex-col lg:gap-4"
         aria-label="Progresso do cadastro"
       >
         {steps.map((step: OnboardingStep, i: number) => {
@@ -39,27 +41,24 @@ export default function OnboardingSidebar({
             >
               <div
                 className={cn(
-                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition",
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition",
                   isDone || isActive
-                    ? "border-white bg-white text-sky-700"
-                    : "border-white/15 bg-white/10 text-transparent",
+                    ? "border-primary bg-primary text-white"
+                    : "border-input bg-surface text-muted-foreground",
                 )}
               >
-                {isDone && <Check size={10} strokeWidth={3} />}
+                {isDone ? <Check size={12} strokeWidth={1.5} /> : <span className="text-xs">{i + 1}</span>}
               </div>
 
               <span
                 className={cn(
                   "hidden text-sm leading-none lg:inline",
-                  isActive ? "font-semibold text-white" : "text-white/50",
+                  isActive ? "font-medium text-foreground" : "text-muted-foreground",
                 )}
               >
                 {step.label}
               </span>
 
-              {isActive && (
-                <div className="hidden h-px w-8 rounded-full bg-white lg:block" />
-              )}
             </div>
           );
         })}

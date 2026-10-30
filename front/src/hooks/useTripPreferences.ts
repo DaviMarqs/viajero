@@ -1,13 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useAsyncResource } from "./useAsyncResource";
+import { useCallback, useState } from "react";
 import { apiRequest } from "../lib/api";
 import type { UserTripPreference as ExistingUserTripPreference } from "../lib/profiles";
 
 export type UserTripPreference = ExistingUserTripPreference;
 const GUEST_TRIP_PREFERENCES_KEY = "viajero.guest.trip_preferences";
 
-export interface TripPreferenceUpsertInput {
-  [key: string]: any;
-}
+export type TripPreferenceUpsertInput = Partial<import("../lib/profiles").TripPreferenceUpsertInput>;
 
 function readGuestPreferences() {
   const raw = localStorage.getItem(GUEST_TRIP_PREFERENCES_KEY);
@@ -21,38 +20,14 @@ function readGuestPreferences() {
 }
 
 export function useTripPreferences(token?: string) {
-  const [preferences, setPreferences] = useState<UserTripPreference | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    if (!token) {
-      setPreferences(readGuestPreferences());
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = (await apiRequest<{ data?: UserTripPreference }>("/api/trip-preferences/me/", {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      })) as { data?: UserTripPreference };
-
-      setPreferences(response.data ?? null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível carregar as preferências de viagem.");
-    } finally {
-      setLoading(false);
-    }
+  const load = useCallback(async (signal: AbortSignal) => {
+    if (!token) return readGuestPreferences();
+    const response = await apiRequest<{ data?: UserTripPreference | null; }>("/api/trip-preferences/me/", { signal, headers: { Authorization: `Bearer ${token}` } });
+    return response.data ?? null;
   }, [token]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  const { data: preferences, loading, error, refetch: refresh, setData: setPreferences } = useAsyncResource<UserTripPreference | null>(load, null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const save = useCallback(
     async (input: TripPreferenceUpsertInput) => {
@@ -87,14 +62,14 @@ export function useTripPreferences(token?: string) {
       }
 
       try {
-  const response = (await apiRequest<{ data?: UserTripPreference }>("/api/trip-preferences/me/", {
-    method: "PATCH",
-    body: JSON.stringify(input),
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    },
-  })) as { data?: UserTripPreference };
+        const response = (await apiRequest<{ data?: UserTripPreference; }>("/api/trip-preferences/me/", {
+          method: "PATCH",
+          body: JSON.stringify(input),
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+        })) as { data?: UserTripPreference; };
 
         const nextPreferences = response.data ?? null;
         setPreferences(nextPreferences);
@@ -107,7 +82,7 @@ export function useTripPreferences(token?: string) {
         setSaving(false);
       }
     },
-    [token],
+    [token, setPreferences],
   );
 
   return {
