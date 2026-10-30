@@ -14,5 +14,7 @@ WORKDIR /app
 COPY --from=build /app/package.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/seed ./seed
 EXPOSE 8001
-CMD ["node", "dist/main.js"]
+# Antes de subir a API: migrations pendentes do Nest e seed (so com o banco sem destinos).
+CMD ["sh", "-c", "node dist/cli/migrate-and-seed.js && exec node dist/main.js"]
