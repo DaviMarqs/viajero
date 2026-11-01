@@ -25,3 +25,5 @@ dist-ssr
 
 # Local browser validation outputs
 artifacts/
+
+references/

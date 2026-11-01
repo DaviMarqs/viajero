@@ -29,7 +29,7 @@ const links = [
   { to: "/", label: "Início", icon: Home },
   { to: "/roteiros", label: "Roteiros", icon: Map },
   { to: "/destinos", label: "Destinos", icon: MapPin },
-  { to: "/explorar", label: "Experiências", icon: Compass },
+  { to: "/explorar", label: "Explorar", icon: Compass },
   { to: "/recomendações", label: "Para você", icon: TrendingUp },
   { to: "/favoritos", label: "Favoritos", icon: Heart },
   { to: "/perfil", label: "Perfil", icon: User },

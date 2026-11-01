@@ -11,8 +11,8 @@ export function HomeHero() {
         <h1 className="page-title">Planeje a próxima viagem.</h1>
         <p className="travel-hero-description">Escolha o destino e crie seu roteiro.</p>
         <div className="travel-hero-actions">
-          <Button size="lg" asChild><Link to="/roteiros/criacao"><Plus aria-hidden="true" />Criar novo roteiro</Link></Button>
-          <Link className="travel-hero-explore" to="/destinos">Ver destinos<ArrowRight className="size-4" aria-hidden="true" /></Link>
+          <Button size="lg" variant="secondary" asChild><Link to="/roteiros/criacao"><Plus aria-hidden="true" />Criar novo roteiro</Link></Button>
+          <Button size="lg" variant="ghost" className="travel-hero-explore" asChild><Link to="/destinos">Ver destinos<ArrowRight className="size-4" aria-hidden="true" /></Link></Button>
         </div>
       </div>
     </header>

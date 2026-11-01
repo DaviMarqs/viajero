@@ -4,6 +4,7 @@ import { useMoney } from "@/contexts/currencyContext";
 import { apiRequest, type ApiSuccessResponse } from "@/lib/api";
 import type { AuthUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { SelectField } from "@/components/ui/select-field";
 
 const DISPLAY_CURRENCIES = [
   ["BRL", "Real brasileiro"],
@@ -58,24 +59,7 @@ export function CurrencySection() {
         </p>
       </div>
       <div className="flex flex-wrap items-end gap-4">
-        <label className="form-label">
-          Sua moeda
-          <select
-            className="h-11 rounded-control border border-input bg-surface px-3"
-            value={selected}
-            disabled={saving}
-            onChange={(e) => {
-              setSelected(e.target.value);
-              setMessage("");
-            }}
-          >
-            {DISPLAY_CURRENCIES.map(([code, label]) => (
-              <option key={code} value={code}>
-                {label} ({code})
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectField label="Sua moeda" value={selected} disabled={saving} onChange={value => { setSelected(value); setMessage(""); }} options={DISPLAY_CURRENCIES.map(([code, label]) => ({ value: code, label: `${label} (${code})` }))} />
         <Button variant="outline" onClick={save} loading={saving} disabled={selected === currency}>
           Salvar moeda
         </Button>

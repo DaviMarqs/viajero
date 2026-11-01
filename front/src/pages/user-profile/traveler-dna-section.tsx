@@ -1,5 +1,6 @@
 "use client";
 import { Button } from '@/components/ui/button';
+import { SelectField } from '@/components/ui/select-field';
 
 import { useState, useId, isValidElement, cloneElement } from "react";
 import { useTravelerDNAProfile } from "@/hooks/useTravelerDNAProfile";
@@ -224,54 +225,9 @@ export function TravelerDNASection({ token }: Props) {
       {editing && (
         <div className="flex flex-col gap-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <FieldGroup icon={<Compass className="size-3.5" />} label="Estilo">
-              <select
-                className={inputClass}
-                value={form.travel_style}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, travel_style: e.target.value }))
-                }
-              >
-                <option value="">Selecionar...</option>
-                {TRAVEL_STYLE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </FieldGroup>
-            <FieldGroup icon={<Gauge className="size-3.5" />} label="Ritmo">
-              <select
-                className={inputClass}
-                value={form.pace}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, pace: e.target.value }))
-                }
-              >
-                <option value="">Selecionar...</option>
-                {PACE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </FieldGroup>
-            <FieldGroup icon={<Crown className="size-3.5" />} label="Conforto">
-              <select
-                className={inputClass}
-                value={form.comfort_level}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, comfort_level: e.target.value }))
-                }
-              >
-                <option value="">Selecionar...</option>
-                {COMFORT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </FieldGroup>
+            <SelectField icon={<Compass className="size-3.5" />} label="Estilo" value={form.travel_style} onChange={value => setForm(f => ({ ...f, travel_style: value }))} options={[{ value: "", label: "Selecionar..." }, ...TRAVEL_STYLE_OPTIONS]} />
+            <SelectField icon={<Gauge className="size-3.5" />} label="Ritmo" value={form.pace} onChange={value => setForm(f => ({ ...f, pace: value }))} options={[{ value: "", label: "Selecionar..." }, ...PACE_OPTIONS]} />
+            <SelectField icon={<Crown className="size-3.5" />} label="Conforto" value={form.comfort_level} onChange={value => setForm(f => ({ ...f, comfort_level: value }))} options={[{ value: "", label: "Selecionar..." }, ...COMFORT_OPTIONS]} />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

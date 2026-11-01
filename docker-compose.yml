@@ -1,4 +1,5 @@
-#   docker compose up --build
+#   docker compose up --build -d   # first run or dependency changes
+#   docker compose up -d           # later runs; front-end edits reload automatically
 #
 # App: http://localhost:5173 · API: http://localhost:8001 · PostgreSQL: localhost:5432
 name: viajero
@@ -51,10 +52,15 @@ services:
   web:
     build:
       context: ./front
-      args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8001}
+      target: dev
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8001}
+      DOCKER_WATCH_POLLING: "true"
     ports:
-      - "5173:80"
+      - "5173:5173"
+    volumes:
+      - ./front:/app
+      - /app/node_modules
     depends_on:
       - api
     restart: unless-stopped

@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 
 import { ApiError, apiRequest } from "../../lib/api";
 import { login } from "../../lib/auth";
@@ -78,7 +78,7 @@ export default function Login() {
   };
 
   return (
-    <AuthLayout title="Sua viagem continua aqui." description="Retome seus roteiros e encontre novas experiências com o seu jeito de viajar." storySide="right">
+    <AuthLayout title="Sua viagem continua aqui." description="Retome seus roteiros e encontre novas experiências com o seu jeito de viajar." login>
 
       <div className="mx-auto w-full max-w-md">
         <div className="mb-10 space-y-3">
@@ -105,7 +105,6 @@ export default function Login() {
               Email
             </label>
             <div className="form-control-shell">
-              <Mail className="h-5 w-5 text-muted-foreground" />
               <input
                 id="email"
                 aria-invalid={!!errors.email}
@@ -131,7 +130,6 @@ export default function Login() {
               Senha
             </label>
             <div className="form-control-shell">
-              <Lock className="h-5 w-5 text-muted-foreground" />
               <input
                 id="senha"
                 aria-invalid={!!errors.senha}
@@ -142,9 +140,11 @@ export default function Login() {
                 className="h-full w-full border-0 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
                 {...register("senha")}
               />
-              <button
+              <Button
                 type="button"
-                className="flex size-11 shrink-0 items-center justify-center rounded-control text-muted-foreground transition-colors hover:bg-muted hover:text-strong"
+                variant="ghost"
+                size="icon"
+                className="shrink-0 text-muted-foreground"
                 onClick={() => setShowPassword((current) => !current)}
                 aria-label={
                   showPassword ? "Ocultar senha" : "Mostrar senha"
@@ -155,7 +155,7 @@ export default function Login() {
                 ) : (
                   <EyeOff className="h-5 w-5" />
                 )}
-              </button>
+              </Button>
             </div>
             {errors.senha && (
               <p id="senha-error" role="alert" className="text-sm text-destructive">{errors.senha.message}
@@ -174,12 +174,13 @@ export default function Login() {
           </Button>
         </form>
 
-        <div className="mt-6 flex items-center justify-center">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-sm">
+          <span className="text-muted-foreground">Ainda não tem conta?</span>
           <Link
             to="/register"
-            className="text-sm font-medium text-strong transition hover:text-foreground"
+            className="font-medium text-primary hover:underline"
           >
-            Criar uma conta nova
+            Criar conta
           </Link>
         </div>
       </div>

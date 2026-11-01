@@ -8,11 +8,13 @@ export function travelTagLabel(value: string): string {
 }
 
 export function destinationCategories(destination: Destination): string[] {
-  const tags = destination.metadata?.tags ?? destination.tags;
   return [
     ...new Set([
-      ...(Array.isArray(tags)
-        ? tags.filter((tag): tag is string => typeof tag === "string")
+      ...(Array.isArray(destination.metadata?.tags)
+        ? destination.metadata.tags.filter((tag): tag is string => typeof tag === "string")
+        : []),
+      ...(Array.isArray(destination.tags)
+        ? destination.tags.filter((tag): tag is string => typeof tag === "string")
         : []),
       ...(destination.pois ?? []).flatMap((poi) =>
         (poi.tags ?? []).map((tag) => tag.name),
@@ -26,30 +28,25 @@ const normalize = (value: string) =>
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase();
-export function destinationAffinity(
-  destination: Destination,
-  profile: TravelerDNAProfile | null,
-) {
-  if (!profile) return 0;
-  const tags = destinationCategories(destination).map(normalize);
-  const weights: [string[], number][] = [
-    [["cultura", "historia", "cultural"], profile.cultural_interest],
-    [["gastronomia", "food"], profile.food_focus],
-    [["natureza", "praia", "nature"], profile.nature_interest],
-    [["noturno", "nightlife", "vida noturna"], profile.nightlife_interest],
-    [["aventura", "adventure"], profile.adventure_level],
+function matchingPreferences(destination: Destination, profile: TravelerDNAProfile | null) {
+  if (!profile) return [];
+  const interests = [
+    { categories: ["cultura", "historia", "cultural"], label: "cultura", score: Number(profile.cultural_interest) || 0 },
+    { categories: ["gastronomia", "food"], label: "gastronomia", score: Number(profile.food_focus) || 0 },
+    { categories: ["natureza", "praia", "nature"], label: "natureza", score: Number(profile.nature_interest) || 0 },
+    { categories: ["noturno", "nightlife", "vida noturna"], label: "vida noturna", score: Number(profile.nightlife_interest) || 0 },
+    { categories: ["aventura", "adventure"], label: "aventura", score: Number(profile.adventure_level) || 0 },
   ];
-  return (
-    weights.reduce(
-      (score, [matches, weight]) =>
-        score +
-        (tags.some((tag) => matches.includes(tag)) ? Number(weight) || 0 : 0),
-      0,
-    ) +
-    ((destination.pois ?? []).some((poi) => poi.poi_type === "activity")
-      ? (Number(profile.adventure_level) || 0) / 2
-      : 0)
-  );
+  const highest = Math.max(...interests.map(({ score }) => score));
+  const categories = destinationCategories(destination).map(normalize);
+  return interests
+    .filter(({ score }) => score >= 6 || (highest < 6 && score > 0 && score === highest))
+    .filter(({ categories: matches }) => matches.some((category) => categories.includes(category)))
+    .sort((a, b) => b.score - a.score);
+}
+
+export function destinationAffinity(destination: Destination, profile: TravelerDNAProfile | null) {
+  return matchingPreferences(destination, profile).reduce((score, interest) => score + interest.score, 0);
 }
 
 export function rankDestinations(
@@ -63,20 +60,10 @@ export function rankDestinations(
   );
 }
 
-/** Reasons use only explicit categories and strong interests from the traveler's DNA. */
+/** Reasons use only destination categories and fixed preferences saved in the traveler's DNA. */
 export function destinationRecommendationReason(destination: Destination, profile: TravelerDNAProfile | null): string {
-  if (!profile) return "Explore o catálogo; complete seu DNA para personalizar.";
-  const tags = destinationCategories(destination).map(normalize);
-  if (!tags.length) return "Categorias insuficientes para explicar a afinidade com seu DNA.";
-  const interests: [string[], string, number][] = [
-    [["cultura", "historia"], "cultura", Number(profile.cultural_interest)],
-    [["gastronomia"], "gastronomia", Number(profile.food_focus)],
-    [["natureza", "praia"], "natureza", Number(profile.nature_interest)],
-    [["vida noturna"], "vida noturna", Number(profile.nightlife_interest)],
-    [["aventura"], "aventura", Number(profile.adventure_level)],
-  ];
-  const matches = interests.filter(([categories, , value]) => value >= 6 && categories.some(category => tags.includes(category))).sort((a, b) => b[2] - a[2]).slice(0, 2).map(([, label]) => label);
-  return matches.length ? `Combina com seu interesse em ${matches.join(" e ")}.` : "Uma descoberta além dos seus interesses principais.";
+  const matches = matchingPreferences(destination, profile).slice(0, 2);
+  return matches.length ? `No seu DNA: ${matches.map(({ label, score }) => `${label} ${score}/10`).join(" e ")}.` : "";
 }
 
 export function itineraryDestination(

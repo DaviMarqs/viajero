@@ -1,8 +1,14 @@
-# Front do docker-compose: build do Vite servido pelo nginx (com fallback de rotas para o React Router).
-FROM node:22-slim AS build
+# Development uses Vite with the source mounted by Docker Compose.
+FROM node:22-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
+
+FROM deps AS dev
+EXPOSE 5173
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
+FROM deps AS build
 COPY . .
 ARG VITE_API_URL=http://localhost:8001
 ENV VITE_API_URL=$VITE_API_URL

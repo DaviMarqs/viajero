@@ -1,5 +1,6 @@
 "use client";
 import { Button } from '@/components/ui/button';
+import { SelectField } from '@/components/ui/select-field';
 
 import { useState, useId, isValidElement, cloneElement } from "react";
 import { useTripPreferences } from "@/hooks/useTripPreferences";
@@ -322,120 +323,20 @@ export function TripPreferencesSection({ token }: Props) {
                 }
               />
             </FieldGroup>
-            <FieldGroup icon={<Wallet className="size-3.5" />} label="Moeda">
-              <select
-                className={inputClass}
-                value={form.currency_code}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, currency_code: e.target.value }))
-                }
-              >
-                {CURRENCY_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </FieldGroup>
+            <SelectField icon={<Wallet className="size-3.5" />} label="Moeda" value={form.currency_code} onChange={value => setForm(f => ({ ...f, currency_code: value }))} options={CURRENCY_OPTIONS} />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldGroup icon={<Users className="size-3.5" />} label="Companhia">
-              <select
-                className={inputClass}
-                value={form.companionship}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, companionship: e.target.value }))
-                }
-              >
-                <option value="">Selecionar...</option>
-                {COMPANIONSHIP_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </FieldGroup>
-            <FieldGroup
-              icon={<CalendarDays className="size-3.5" />}
-              label="Duração ideal"
-            >
-              <select
-                className={inputClass}
-                value={form.preferred_trip_length_days}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    preferred_trip_length_days: Number(e.target.value),
-                  }))
-                }
-              >
-                {TRIP_LENGTH_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </FieldGroup>
+            <SelectField icon={<Users className="size-3.5" />} label="Companhia" value={form.companionship} onChange={value => setForm(f => ({ ...f, companionship: value }))} options={[{ value: "", label: "Selecionar..." }, ...COMPANIONSHIP_OPTIONS]} />
+            <SelectField icon={<CalendarDays className="size-3.5" />} label="Duração ideal" value={form.preferred_trip_length_days} onChange={value => setForm(f => ({ ...f, preferred_trip_length_days: Number(value) }))} options={TRIP_LENGTH_OPTIONS} />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldGroup
-              icon={<CalendarDays className="size-3.5" />}
-              label="Mês preferido"
-            >
-              <select
-                className={inputClass}
-                value={form.travel_month}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, travel_month: e.target.value }))
-                }
-              >
-                <option value="">Selecionar...</option>
-                {MONTH_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </FieldGroup>
-            <FieldGroup icon={<Hotel className="size-3.5" />} label="Hospedagem">
-              <select
-                className={inputClass}
-                value={form.hotel_level}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, hotel_level: e.target.value }))
-                }
-              >
-                <option value="">Selecionar...</option>
-                {HOTEL_LEVEL_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </FieldGroup>
+            <SelectField icon={<CalendarDays className="size-3.5" />} label="Mês preferido" value={form.travel_month} onChange={value => setForm(f => ({ ...f, travel_month: value }))} options={[{ value: "", label: "Selecionar..." }, ...MONTH_OPTIONS]} />
+            <SelectField icon={<Hotel className="size-3.5" />} label="Hospedagem" value={form.hotel_level} onChange={value => setForm(f => ({ ...f, hotel_level: value }))} options={[{ value: "", label: "Selecionar..." }, ...HOTEL_LEVEL_OPTIONS]} />
           </div>
 
-          <FieldGroup icon={<Bus className="size-3.5" />} label="Transporte">
-            <select
-              className={inputClass}
-              value={form.transportation_style}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  transportation_style: e.target.value,
-                }))
-              }
-            >
-              <option value="">Selecionar...</option>
-              {TRANSPORT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </FieldGroup>
+          <SelectField icon={<Bus className="size-3.5" />} label="Transporte" value={form.transportation_style} onChange={value => setForm(f => ({ ...f, transportation_style: value }))} options={[{ value: "", label: "Selecionar..." }, ...TRANSPORT_OPTIONS]} />
 
           <TagPicker
             icon={<Sparkles className="size-3.5" />}

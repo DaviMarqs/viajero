@@ -5,6 +5,7 @@ import PoiFilter from "./poi-filter";
 import type { Poi } from "@/lib/pois";
 import { DestinationImage } from "@/features/destinations/destination-card";
 import { TagList } from "./tag-list";
+import { Button } from "./button";
 
 type PoiType = "all" | "attraction" | "restaurant" | "activity" | "lodging";
 
@@ -50,16 +51,14 @@ function PoiCard({ poi }: { poi: Poi }) {
         </div>
 
         {poi.source_url && (
-          <a
+          <Button asChild variant="ghost" size="icon-sm" className="shrink-0"><a
             href={poi.source_url}
             aria-label={`Consultar fonte: ${poi.name}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center text-sm gap-2 shrink-0 text-muted-foreground hover:text-strong transition-colors"
           >
-            <span className="sr-only">Acessar site</span>
             <ExternalLink className="size-4" />
-          </a>
+          </a></Button>
         )}
       </div>
 
