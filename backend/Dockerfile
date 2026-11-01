@@ -9,4 +9,5 @@ WORKDIR /app
 COPY pyproject.toml uv.lock .python-version ./
 RUN uv sync --frozen --no-dev
 COPY . .
+RUN sed -i 's/\r$//' migrate-and-seed.sh
 CMD ["sh", "migrate-and-seed.sh"]
