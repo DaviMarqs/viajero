@@ -20,7 +20,7 @@ export default function RoteiroCriacaoPage() {
   const { user } = useAuth();
   const passed = location.state as { destination?: Destination; tripPreferences?: TripPreferenceUpsertInput } | null;
   const [restored] = useState(() => readPlanningDraft(user?.id));
-  const tripPreferences = passed?.tripPreferences ?? restored?.tripPreferences;
+  const tripPreferences = passed?.tripPreferences ?? (passed?.destination ? undefined : restored?.tripPreferences);
   const initialDestination = passed?.destination ?? (passed?.tripPreferences ? undefined : restored?.destination);
   const [selected, setSelected] = useState<Destination | null>(initialDestination ?? null);
   const [suggestionRevision, setSuggestionRevision] = useState(initialDestination ? 0 : 1);
@@ -87,7 +87,7 @@ export default function RoteiroCriacaoPage() {
     }
   }
 
-  if (!tripPreferences) return <Navigate to="/onboard/preferências" replace />;
+  if (!tripPreferences) return <Navigate to="/onboard/preferências" replace state={{ destination: initialDestination }} />;
   const card = selected && destinationCardData(selected);
   return <section className="page-content">
     <Breadcrumbs current="Criar roteiro" parent={{ label: "Roteiros", to: "/roteiros" }} />

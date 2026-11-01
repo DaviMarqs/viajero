@@ -216,7 +216,7 @@ export default function TravelPreferencesOnboarding() {
     setSubmitError(null);
     try {
       await save(payload);
-      const reviewedDestination = passedState?.stepKey ? destination : undefined;
+      const reviewedDestination = destination;
       savePlanningDraft(user?.id, { destination: reviewedDestination, tripPreferences: payload, snapshot: { currentIndex, fieldValues, tagValues, cardSelections } });
       navigate("/roteiros/criacao", { replace: true, state: { destination: reviewedDestination, tripPreferences: payload } });
     } catch (error) {
@@ -295,7 +295,7 @@ export default function TravelPreferencesOnboarding() {
         </StepTransition></div>
         <footer className="planning-footer">{currentIndex > 0 && <Button variant="ghost" onClick={prev} disabled={saving}>Voltar</Button>}
         {!canAdvance && <p id="planning-required" className="text-xs text-muted-foreground">{currentStep.key === "timing" ? !flexibleDatesValue ? "Selecione ida e volta para continuar" : "Informe duração e mês para continuar" : "Preencha os campos obrigatórios ou selecione uma opção para continuar."}</p>}
-{!isLast && currentStep.key === "needs" && <Button variant="ghost" onClick={skip} disabled={saving}>Pular essa etapa</Button>}<Button onClick={isLast ? handleFinish : next} loading={saving} disabled={!canAdvance} aria-describedby={!canAdvance ? "planning-required" : undefined}>{isLast ? passedState?.stepKey ? "Revisar viagem" : "Sugerir meu destino" : "Continuar"}</Button></footer>
+{!isLast && currentStep.key === "needs" && <Button variant="ghost" onClick={skip} disabled={saving}>Pular essa etapa</Button>}<Button onClick={isLast ? handleFinish : next} loading={saving} disabled={!canAdvance} aria-describedby={!canAdvance ? "planning-required" : undefined}>{isLast ? destination ? "Revisar viagem" : "Sugerir meu destino" : "Continuar"}</Button></footer>
       </section>
     </div>
   </div>;
