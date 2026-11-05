@@ -8,6 +8,7 @@ import { UpdateItineraryDto } from './dto/update-itinerary.dto';
 import { ApiResponseBuilder } from '../../common/builders/api-response.builder';
 import { ItineraryGenerationFacade } from '../../common/facades/itinerary-generation.facade';
 import { ItinerariesCrudService } from './itineraries-crud.service';
+import { publicItinerary } from './itinerary-program';
 import { ListRequest, ListRequestContext } from '../../common/query/list-request.decorator';
 
 @Controller('api/itineraries')
@@ -22,13 +23,13 @@ export class ItinerariesController {
   @Get('templates')
   async templates() {
     const itineraries = await this.itineraries.templates();
-    return this.response.withMessage('Templates de roteiros carregados com sucesso.').build(itineraries);
+    return this.response.withMessage('Templates de roteiros carregados com sucesso.').build(itineraries.map(publicItinerary));
   }
 
   @Get('top-rated')
   async topRated() {
     const itineraries = await this.itineraries.topRated();
-    return this.response.withMessage('Ranking de roteiros mais bem avaliados carregado com sucesso.').build(itineraries);
+    return this.response.withMessage('Ranking de roteiros mais bem avaliados carregado com sucesso.').build(itineraries.map(publicItinerary));
   }
 
   @Get()
@@ -49,7 +50,7 @@ export class ItinerariesController {
   @UseGuards(JwtAuthGuard)
   async retrieve(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseIntPipe) id: number) {
     const { itinerary, isOwner } = await this.itineraries.findVisibleForUser(id, user.id);
-    return this.response.withMessage('Registro carregado com sucesso.').build({ ...itinerary, is_owner: isOwner });
+    return this.response.withMessage('Registro carregado com sucesso.').build({ ...(isOwner ? itinerary : publicItinerary(itinerary)), is_owner: isOwner });
   }
 
   @Patch(':id')

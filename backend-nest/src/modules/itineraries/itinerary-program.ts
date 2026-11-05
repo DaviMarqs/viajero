@@ -371,3 +371,9 @@ export function assertDatesMatchDuration(startDate: string | null, endDate: stri
     throw new BadRequestException(`As datas precisam cobrir exatamente ${durationDays} ${durationDays === 1 ? 'dia' : 'dias'}.`);
   }
 }
+
+/** O historico de desfazer so interessa ao dono: respostas publicas saem sem os snapshots. */
+export function publicItinerary<T extends { metadata?: Record<string, unknown> | null }>(itinerary: T): T {
+  if (!itinerary.metadata || !(PROGRAM_HISTORY_KEY in itinerary.metadata)) return itinerary;
+  return { ...itinerary, metadata: withoutProgramHistory(itinerary.metadata) };
+}
