@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Smoke HTTP do contrato usado pelo front contra um backend-nest em execucao.
-// Rode contra um banco DESCARTAVEL migrado pelo Django com o seed: cada execucao cria usuarios e roteiros.
+// Rode contra um banco DESCARTAVEL criado pelo Nest com o seed (npm run db:setup): cada execucao cria usuarios e roteiros.
 // Uso: BASE_URL=http://localhost:8001 npm run smoke
 const BASE_URL = (process.env.BASE_URL ?? 'http://localhost:8001').replace(/\/+$/, '');
 const RUN = Date.now();
