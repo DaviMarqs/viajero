@@ -10,6 +10,7 @@ import { ItineraryGeneratorFactory } from '../../common/factories/itinerary-gene
 import { ItineraryGenerationFacade } from '../../common/facades/itinerary-generation.facade';
 import { ApiResponseBuilder } from '../../common/builders/api-response.builder';
 import { LlmModule } from './llm/llm.module';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { LlmModule } from './llm/llm.module';
       PointOfInterest,
     ]),
     LlmModule,
+    AuditModule,
   ],
   providers: [AiService, ItineraryGeneratorFactory, ItineraryGenerationFacade, ApiResponseBuilder],
   controllers: [AiController],

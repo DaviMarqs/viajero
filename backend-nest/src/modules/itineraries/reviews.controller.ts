@@ -1,10 +1,13 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
+import { ReplaceReviewDto } from './dto/replace-review.dto';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
+import { ListRequest, ListRequestContext } from '../../common/query/list-request.decorator';
 import { ApiResponseBuilder } from '../../common/builders/api-response.builder';
 
 @Controller('api/reviews')
@@ -12,8 +15,8 @@ export class ReviewsController {
   constructor(private readonly reviews: ReviewsService, private readonly response: ApiResponseBuilder) {}
 
   @Get()
-  async list(@Query('itinerary', new ParseIntPipe({ optional: true })) itinerary?: number) {
-    const reviews = await this.reviews.list(itinerary);
+  async list(@ListRequest() request: ListRequestContext) {
+    const reviews = await this.reviews.list(request);
     return this.response.withMessage('Lista carregada com sucesso.').build(reviews);
   }
 
@@ -22,6 +25,20 @@ export class ReviewsController {
   async create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateReviewDto) {
     const review = await this.reviews.create(user.id, dto);
     return this.response.withMessage('Avaliacao publicada com sucesso.').build(review);
+  }
+
+  @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
+  async retrieve(@Req() request: { user?: AuthenticatedUser }, @Param('id', ParseIntPipe) id: number) {
+    const review = await this.reviews.findVisible(id, request.user ? request.user.id : null);
+    return this.response.withMessage('Registro carregado com sucesso.').build(review);
+  }
+
+  @Put(':id')
+  @UseGuards(JwtAuthGuard)
+  async replace(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseIntPipe) id: number, @Body() dto: ReplaceReviewDto) {
+    const review = await this.reviews.replace(user.id, id, dto);
+    return this.response.withMessage('Avaliacao atualizada com sucesso.').build(review);
   }
 
   @Patch(':id')

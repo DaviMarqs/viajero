@@ -1,7 +1,8 @@
-import { Body, Controller, ForbiddenException, HttpCode, HttpStatus, NotFoundException, Post, ServiceUnavailableException, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, NotFoundException, Post, ServiceUnavailableException, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
+import { requireStaff } from '../auth/staff.guard';
 import { ApiResponseBuilder } from '../../common/builders/api-response.builder';
 import { AuditService } from '../audit/audit.service';
 import { DestinationsService } from './destinations.service';
@@ -24,7 +25,7 @@ export class FirecrawlController {
   @Post('ingest')
   @HttpCode(HttpStatus.OK)
   async ingest(@CurrentUser() user: AuthenticatedUser, @Body() dto: FirecrawlIngestDto) {
-    if (!user.is_staff && !user.is_superuser) throw new ForbiddenException('Apenas administradores podem ingerir conteudo do Firecrawl.');
+    requireStaff(user, 'Apenas administradores podem ingerir conteudo do Firecrawl.');
     if (!this.firecrawl.isConfigured()) throw new ServiceUnavailableException('Firecrawl nao configurado. Defina FIRECRAWL_API_KEY no backend.');
     const destination = await this.destinations.findOne(dto.destination_id).catch(() => {
       throw new NotFoundException('Destino nao encontrado.');
