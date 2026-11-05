@@ -927,6 +927,524 @@
       "method": "GET",
       "url": "{{ base_url }}/api/itineraries/top-rated/",
       "description": "Roteiros mais bem avaliados exibidos na página principal (AllowAny). Ordenados por ReviewStat.average_rating desc, requer pelo menos uma avaliação."
+    },
+    {
+      "_id": "req_users_retrieve_id",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Retrieve by id (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/users/{{ user_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_users_put_id",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Replace by id (PUT)",
+      "method": "PUT",
+      "url": "{{ base_url }}/api/users/{{ user_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"user@example.com\",\n  \"username\": \"user\"\n}"
+      }
+    },
+    {
+      "_id": "req_users_patch_id",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Update by id (PATCH)",
+      "method": "PATCH",
+      "url": "{{ base_url }}/api/users/{{ user_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"display_name\": \"Novo nome\"\n}"
+      }
+    },
+    {
+      "_id": "req_dest_put",
+      "_type": "request",
+      "parentId": "fld_destinations",
+      "name": "Replace (PUT, staff)",
+      "method": "PUT",
+      "url": "{{ base_url }}/api/destinations/{{ destination_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"slug\": \"lisboa\",\n  \"name\": \"Lisboa\",\n  \"country\": \"Portugal\"\n}"
+      }
+    },
+    {
+      "_id": "req_dest_patch",
+      "_type": "request",
+      "parentId": "fld_destinations",
+      "name": "Update (PATCH, staff)",
+      "method": "PATCH",
+      "url": "{{ base_url }}/api/destinations/{{ destination_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"summary\": \"Novo resumo\"\n}"
+      }
+    },
+    {
+      "_id": "req_dest_delete",
+      "_type": "request",
+      "parentId": "fld_destinations",
+      "name": "Delete (staff)",
+      "method": "DELETE",
+      "url": "{{ base_url }}/api/destinations/{{ destination_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_poi_create",
+      "_type": "request",
+      "parentId": "fld_pois",
+      "name": "Create (POST, staff)",
+      "method": "POST",
+      "url": "{{ base_url }}/api/pois/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"destination\": \"{{ destination_id }}\",\n  \"name\": \"Torre\",\n  \"slug\": \"torre\",\n  \"poi_type\": \"attraction\"\n}"
+      }
+    },
+    {
+      "_id": "req_poi_retrieve",
+      "_type": "request",
+      "parentId": "fld_pois",
+      "name": "Retrieve (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/pois/{{ poi_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_poi_put",
+      "_type": "request",
+      "parentId": "fld_pois",
+      "name": "Replace (PUT, staff)",
+      "method": "PUT",
+      "url": "{{ base_url }}/api/pois/{{ poi_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"destination\": \"{{ destination_id }}\",\n  \"name\": \"Torre\",\n  \"slug\": \"torre\",\n  \"poi_type\": \"attraction\"\n}"
+      }
+    },
+    {
+      "_id": "req_poi_patch",
+      "_type": "request",
+      "parentId": "fld_pois",
+      "name": "Update (PATCH, staff)",
+      "method": "PATCH",
+      "url": "{{ base_url }}/api/pois/{{ poi_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"rating\": 4.5\n}"
+      }
+    },
+    {
+      "_id": "req_poi_delete",
+      "_type": "request",
+      "parentId": "fld_pois",
+      "name": "Delete (staff)",
+      "method": "DELETE",
+      "url": "{{ base_url }}/api/pois/{{ poi_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_dna_create",
+      "_type": "request",
+      "parentId": "fld_traveler_dna",
+      "name": "Create (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/api/traveler-dna/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"travel_style\": \"balanced\"\n}"
+      }
+    },
+    {
+      "_id": "req_dna_retrieve",
+      "_type": "request",
+      "parentId": "fld_traveler_dna",
+      "name": "Retrieve by id (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/traveler-dna/{{ traveler_dna_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_dna_delete",
+      "_type": "request",
+      "parentId": "fld_traveler_dna",
+      "name": "Delete by id",
+      "method": "DELETE",
+      "url": "{{ base_url }}/api/traveler-dna/{{ traveler_dna_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_tp_create",
+      "_type": "request",
+      "parentId": "fld_trip_preferences",
+      "name": "Create (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/api/trip-preferences/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"budget_min\": 1000,\n  \"budget_max\": 4000,\n  \"currency_code\": \"BRL\",\n  \"preferred_trip_length_days\": 5\n}"
+      }
+    },
+    {
+      "_id": "req_tp_retrieve",
+      "_type": "request",
+      "parentId": "fld_trip_preferences",
+      "name": "Retrieve by id (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/trip-preferences/{{ trip_preference_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_tp_delete",
+      "_type": "request",
+      "parentId": "fld_trip_preferences",
+      "name": "Delete by id",
+      "method": "DELETE",
+      "url": "{{ base_url }}/api/trip-preferences/{{ trip_preference_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_it_put",
+      "_type": "request",
+      "parentId": "fld_itineraries",
+      "name": "Replace (PUT)",
+      "method": "PUT",
+      "url": "{{ base_url }}/api/itineraries/{{ itinerary_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"destination\": \"{{ destination_id }}\",\n  \"title\": \"Meu roteiro\"\n}"
+      }
+    },
+    {
+      "_id": "req_it_delete",
+      "_type": "request",
+      "parentId": "fld_itineraries",
+      "name": "Delete",
+      "method": "DELETE",
+      "url": "{{ base_url }}/api/itineraries/{{ itinerary_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_it_program",
+      "_type": "request",
+      "parentId": "fld_itineraries",
+      "name": "Edit program (PUT)",
+      "method": "PUT",
+      "url": "{{ base_url }}/api/itineraries/{{ itinerary_id }}/program",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"days\": [\n    {\n      \"day_number\": 1,\n      \"event_ids\": [\n        1,\n        2,\n        3\n      ]\n    }\n  ]\n}"
+      }
+    },
+    {
+      "_id": "req_it_program_undo",
+      "_type": "request",
+      "parentId": "fld_itineraries",
+      "name": "Undo last edit (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/api/itineraries/{{ itinerary_id }}/program/undo",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_fav_retrieve",
+      "_type": "request",
+      "parentId": "fld_favorites",
+      "name": "Retrieve (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/favorites/{{ favorite_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_fav_patch",
+      "_type": "request",
+      "parentId": "fld_favorites",
+      "name": "Update (PATCH)",
+      "method": "PATCH",
+      "url": "{{ base_url }}/api/favorites/{{ favorite_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"itinerary\": \"{{ itinerary_id }}\"\n}"
+      }
+    },
+    {
+      "_id": "req_rev_retrieve",
+      "_type": "request",
+      "parentId": "fld_reviews",
+      "name": "Retrieve (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/reviews/{{ review_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_rev_put",
+      "_type": "request",
+      "parentId": "fld_reviews",
+      "name": "Replace (PUT)",
+      "method": "PUT",
+      "url": "{{ base_url }}/api/reviews/{{ review_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"rating\": 5,\n  \"title\": \"Otimo\",\n  \"body\": \"Gostei\"\n}"
+      }
+    },
+    {
+      "_id": "req_sl_retrieve",
+      "_type": "request",
+      "parentId": "fld_shared_links",
+      "name": "Retrieve (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/shared-links/{{ shared_link_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_sl_patch",
+      "_type": "request",
+      "parentId": "fld_shared_links",
+      "name": "Update (PATCH)",
+      "method": "PATCH",
+      "url": "{{ base_url }}/api/shared-links/{{ shared_link_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"is_active\": false\n}"
+      }
+    },
+    {
+      "_id": "req_sl_delete",
+      "_type": "request",
+      "parentId": "fld_shared_links",
+      "name": "Delete",
+      "method": "DELETE",
+      "url": "{{ base_url }}/api/shared-links/{{ shared_link_id }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_audit_retrieve",
+      "_type": "request",
+      "parentId": "fld_audit_logs",
+      "name": "Retrieve (GET, staff)",
+      "method": "GET",
+      "url": "{{ base_url }}/api/audit-logs/1/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ jwt }}"
+        }
+      ]
     }
   ]
 }

@@ -450,6 +450,16 @@ Para respostas simples, adiciona uma chamada a mais.
 
 O envelope de resposta é requisito de compatibilidade com o frontend e com o backend Django.
 
+## 8. Memento
+
+**Problema:** a edição do roteiro (reordenar, mover, remover, mudar nome e datas) precisa ser desfeita sem o front guardar cópias do estado.
+
+**Solução:** antes de cada alteração, o servidor guarda um snapshot do estado (título, datas, custos e dias com eventos) em `itinerary.metadata.program_history`, com no máximo 10 entradas. O desfazer retira o último snapshot e reconcilia o estado atual com ele: atualiza os eventos que ainda existem, recria os removidos e apaga os que não estavam no snapshot.
+
+**Onde:** `src/modules/itineraries/itinerary-program.ts` (`buildProgramSnapshot`, `pushProgramSnapshot`, `planProgramRestore`) e `itinerary-program.service.ts` (`PUT /program` e `POST /program/undo`).
+
+**Impacto:** o desfazer é consistente entre abas e dispositivos, e uma nova geração do roteiro limpa o histórico.
+
 ## Comparação Django x NestJS
 
 | Django / DRF | NestJS |
@@ -496,6 +506,7 @@ Sem os padrões, controllers teriam que conhecer detalhes de auditoria, geraçã
 | Singleton | Criacional | `AuditService` via DI Nest | Serviço compartilhado de auditoria | Consistência e baixo acoplamento |
 | Factory | Criacional | `ItineraryGeneratorFactory` | Escolher gerador LLM | Extensibilidade para providers |
 | Builder | Criacional | `ApiResponseBuilder` | Respostas padronizadas | Compatibilidade com DRF |
+| Memento | Comportamental | `buildProgramSnapshot` / `planProgramRestore` | Desfazer a edição do roteiro | Histórico no servidor, sem estado no front |
 
 # Roteiro para apresentação acadêmica
 

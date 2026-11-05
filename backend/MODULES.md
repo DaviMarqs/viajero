@@ -242,6 +242,53 @@ Cobre **US-16** (Ingestão de Dados).
 
 ---
 
+## Backend NestJS (`backend-nest/`) — rotas adicionais e regras
+
+O NestJS é o backend em execução (porta 8001). Este documento descreve os módulos originais do Django; abaixo ficam as rotas e regras que o Nest acrescentou ou mudou. Todas respondem no envelope `{success, message, data | errors}`.
+
+### Listas: busca, filtros, ordenação e paginação
+- Parâmetros: `search`, `ordering` (separado por vírgula, `-` para descendente), `page`, `page_size` (padrão 12, máximo 100) e filtros exatos por campo. Parâmetros desconhecidos são ignorados.
+- Sem `page` a lista volta como array (contrato do front). Com `page` volta `{count, next, previous, results}`; página inválida responde 404.
+
+| Recurso | Filtros | Busca | Ordenação |
+|---|---|---|---|
+| `/api/destinations/` | `country`, `city` | `name`, `country`, `city`, `summary` | `name`, `average_rating`, `created_at` |
+| `/api/pois/` | `destination`, `poi_type`, `tags__slug` | `name`, `summary`, `address` | `name`, `rating`, `estimated_visit_minutes` |
+| `/api/itineraries/` | `destination`, `generation_status` | `title`, `summary` | `created_at`, `budget_total`, `duration_days` |
+| `/api/reviews/` | `itinerary`, `rating` | — | `created_at`, `rating` |
+| `/api/audit-logs/` | `event_type`, `content_type` | — | `created_at` |
+
+### Rotas por id e permissões
+| Rota | Métodos | Quem acessa |
+|---|---|---|
+| `/api/users/{id}/` | GET, PUT, PATCH | o próprio usuário ou staff |
+| `/api/destinations/{id}/` | PUT, PATCH, DELETE | staff (DELETE remove roteiros e POIs do destino) |
+| `/api/pois/` e `/api/pois/{id}/` | POST, PUT, PATCH, DELETE | staff (leitura pública) |
+| `/api/traveler-dna/` e `/{id}/` | POST, GET, PUT, PATCH, DELETE | dono (POST repetido responde 409) |
+| `/api/trip-preferences/` e `/{id}/` | POST, GET, PUT, PATCH, DELETE | dono |
+| `/api/itineraries/{id}/` | PUT, DELETE | dono (DELETE remove eventos, dias, favoritos, avaliações e links) |
+| `/api/favorites/{id}/` | GET, PUT, PATCH | dono |
+| `/api/reviews/{id}/` | GET, PUT | GET: quem pode ver o roteiro; PUT: autor |
+| `/api/shared-links/{id}/` | GET, PUT, PATCH, DELETE | quem criou (o token não muda) |
+| `/api/audit-logs/` e `/{id}/` | GET | staff (demais recebem 403) |
+
+### Edição da programação do roteiro (US-11)
+Só o dono, com o roteiro em `generation_status = ready` (senão 409).
+
+| Rota | Corpo | Efeito |
+|---|---|---|
+| `PUT /api/itineraries/{id}/program` | `{days: [{day_number, event_ids}]}` | Layout completo: reordena, move entre dias e remove os eventos ausentes. Horários recalculados no servidor (duração da visita + 30 min de deslocamento; passar da meia-noite responde 400). Custo do dia = soma dos eventos; `budget_total` = soma dos dias |
+| `POST /api/itineraries/{id}/program/undo` | — | Restaura o último snapshot (até 10, guardados em `metadata.program_history`); sem histórico responde 409 |
+
+- O layout precisa conter exatamente os dias atuais, então a duração informada nunca muda.
+- O `PATCH /api/itineraries/{id}/` exige que `start_date` e `end_date` cubram `duration_days` e também gera snapshot ao mudar nome ou datas.
+- O histórico de desfazer só aparece nas respostas para o dono.
+
+### Auditoria acrescentada no Nest
+`itinerary.generated`, `itinerary.deleted`, `itinerary.program_updated`, `itinerary.program_undone`, `itinerary.share_updated`, `itinerary.unshared`, `user.profile_updated`, `destination.updated`, `destination.deleted`, `poi.created`, `poi.updated`, `poi.deleted`, `favorite.updated`, `review.updated`, além de `.deleted` em `traveler-dna` e `trip-preferences`.
+
+---
+
 ## Matriz de cobertura User Story → Controller
 
 | US | Funcionalidade | Endpoint principal | Status |
