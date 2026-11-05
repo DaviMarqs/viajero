@@ -14,6 +14,7 @@ import { AuditService } from '../audit/audit.service';
 import { AuditedServiceDecorator } from '../../common/decorators/audited-service.decorator';
 import { canViewItinerary, resolveItineraryDefaults } from './itinerary-rules';
 import { requireTripParameters } from './trip-generation-context';
+import { assertDatesMatchDuration, metadataWithDetailsSnapshot } from './itinerary-program';
 
 const RANKING_LIMIT = 10;
 
@@ -112,6 +113,14 @@ export class ItinerariesService {
     if (dto.duration_days !== undefined) changes.duration_days = dto.duration_days;
     if (dto.budget_total !== undefined) changes.budget_total = dto.budget_total.toFixed(2);
     if (dto.currency_code !== undefined) changes.currency_code = dto.currency_code.toUpperCase();
+    // Edicao no servidor (#50): datas cobrem a duracao e nome/datas de roteiro pronto entram no desfazer.
+    if (dto.start_date !== undefined || dto.end_date !== undefined || dto.duration_days !== undefined) {
+      assertDatesMatchDuration(startDate, endDate, dto.duration_days ?? itinerary.duration_days);
+    }
+    const nextTitle = (changes.title as string | undefined) ?? itinerary.title;
+    const previousMetadata = (changes.metadata as Record<string, unknown> | undefined) ?? itinerary.metadata;
+    const withHistory = metadataWithDetailsSnapshot(itinerary, { title: nextTitle, start_date: startDate, end_date: endDate }, previousMetadata);
+    if (withHistory) changes.metadata = withHistory as QueryDeepPartialEntity<Itinerary['metadata']>;
     if (Object.keys(changes).length > 0) await this.itineraries.update({ id: itinerary.id }, changes);
     return this.findForUser(id, userId);
   }

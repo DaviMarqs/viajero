@@ -49,6 +49,15 @@ async function register(label) {
   return { email, token: res.payload?.data?.access, user: res.payload?.data?.user };
 }
 
+// Edicao da programacao (#50): o layout e a ordem dos ids por dia; custos em centavos para comparar.
+const layoutOf = (itinerary) => (itinerary?.days ?? []).map((day) => ({ day_number: day.day_number, event_ids: (day.events ?? []).map((event) => Number(event.id)) }));
+const cents = (value) => Math.round(Number(value) * 100);
+const eventCount = (itinerary) => (itinerary?.days ?? []).reduce((sum, day) => sum + (day.events ?? []).length, 0);
+const titlesByDay = (itinerary) => JSON.stringify((itinerary?.days ?? []).map((day) => (day.events ?? []).map((event) => event.title)));
+const costsAreConsistent = (itinerary) =>
+  (itinerary?.days ?? []).every((day) => cents(day.estimated_cost) === (day.events ?? []).reduce((sum, event) => sum + cents(event.estimated_cost), 0)) &&
+  cents(itinerary?.budget_total) === (itinerary?.days ?? []).reduce((sum, day) => sum + cents(day.estimated_cost), 0);
+
 function imageForm(bytes, type, filename) {
   const form = new FormData();
   form.append('avatar', new Blob([bytes], { type }), filename);
@@ -144,6 +153,84 @@ async function main() {
   check(detail.status === 200 && detail.payload?.data?.is_owner === true, 'detalhe do dono com is_owner', detail.payload?.message);
   const mine = await call('GET', '/api/itineraries/', { token });
   check((mine.payload?.data ?? []).some((item) => item.id === itineraryId), 'roteiro na lista do dono');
+
+  console.log('\n# Roteiro (edicao)');
+  const putProgram = (days, auth = token) => call('PUT', `/api/itineraries/${itineraryId}/program/`, { token: auth, json: { days } });
+  const undoProgram = () => call('POST', `/api/itineraries/${itineraryId}/program/undo/`, { token });
+  const original = detail.payload?.data;
+  const baseLayout = layoutOf(original);
+  check(baseLayout.length === 4 && baseLayout[0].event_ids.length >= 2 && baseLayout[1].event_ids.length >= 1, 'roteiro pronto com atividades para editar', baseLayout);
+  const intruder = await register('intruso');
+  const intruderEdit = await putProgram(baseLayout, intruder.token);
+  check(intruderEdit.status === 404, 'quem nao e dono nao edita a programacao -> 404', intruderEdit.payload);
+
+  const reversed = [...baseLayout[0].event_ids].reverse();
+  const reorder = await putProgram(baseLayout.map((day, index) => (index === 0 ? { ...day, event_ids: reversed } : day)));
+  const reordered = reorder.payload?.data;
+  check(reorder.status === 200 && reordered?.is_owner === true && JSON.stringify(layoutOf(reordered)[0].event_ids) === JSON.stringify(reversed), 'reordenar dentro do dia', reorder.payload?.message);
+  const firstStart = original.days[0].events.map((event) => event.start_time).filter(Boolean).sort()[0];
+  check(
+    reordered?.days?.[0]?.events?.[0]?.start_time === firstStart && reordered.days[0].events.every((event, index) => event.order_index === index),
+    'horarios e ordem recalculados a partir do inicio do dia',
+    reordered?.days?.[0]?.events?.map((event) => [event.order_index, event.start_time, event.end_time]),
+  );
+
+  const movedId = layoutOf(reordered)[0].event_ids[0];
+  const move = await putProgram(layoutOf(reordered).map((day, index) => {
+    if (index === 0) return { ...day, event_ids: day.event_ids.slice(1) };
+    if (index === 1) return { ...day, event_ids: [...day.event_ids, movedId] };
+    return day;
+  }));
+  const moved = move.payload?.data;
+  check(move.status === 200 && Number(moved?.days?.[1]?.events?.at(-1)?.id) === movedId && costsAreConsistent(moved), 'mover para outro dia (vai para o fim, custos do dia e total batem)', move.payload?.message);
+
+  const droppedEvent = moved?.days?.[1]?.events?.[0];
+  const drop = await putProgram(layoutOf(moved).map((day, index) => (index === 1 ? { ...day, event_ids: day.event_ids.slice(1) } : day)));
+  const dropped = drop.payload?.data;
+  check(
+    drop.status === 200 && eventCount(dropped) === eventCount(moved) - 1 && costsAreConsistent(dropped) && cents(dropped?.budget_total) === cents(moved?.budget_total) - cents(droppedEvent?.estimated_cost),
+    'remover recalcula custo do dia e total',
+    { status: drop.status, budget: dropped?.budget_total, before: moved?.budget_total, removed: droppedEvent?.estimated_cost },
+  );
+  const reloaded = (await call('GET', `/api/itineraries/${itineraryId}/`, { token })).payload?.data;
+  check(JSON.stringify(layoutOf(reloaded)) === JSON.stringify(layoutOf(dropped)) && reloaded?.budget_total === dropped?.budget_total, 'GET devolve a programacao editada');
+
+  const missingDay = await putProgram(layoutOf(reloaded).slice(1));
+  check(missingDay.status === 400 && missingDay.payload?.message === 'A programacao precisa incluir todos os dias do roteiro. Falta o dia 1.', 'layout sem um dia -> 400 PT', missingDay.payload);
+  const repeated = await putProgram(layoutOf(reloaded).map((day, index) => (index === 0 ? { ...day, event_ids: [...day.event_ids, movedId] } : day)));
+  check(repeated.status === 400 && repeated.payload?.message === `A atividade ${movedId} aparece mais de uma vez na programacao.`, 'atividade repetida -> 400 PT', repeated.payload);
+
+  const undoDrop = await undoProgram();
+  check(
+    undoDrop.status === 200 && eventCount(undoDrop.payload?.data) === eventCount(moved) && undoDrop.payload?.data?.budget_total === moved?.budget_total && titlesByDay(undoDrop.payload?.data) === titlesByDay(moved),
+    'desfazer recria a atividade removida e restaura o total',
+    { status: undoDrop.status, count: eventCount(undoDrop.payload?.data), budget: undoDrop.payload?.data?.budget_total },
+  );
+
+  const rename = await call('PATCH', `/api/itineraries/${itineraryId}/`, { token, json: { title: 'Roteiro editado no smoke' } });
+  check(rename.status === 200 && rename.payload?.data?.title === 'Roteiro editado no smoke', 'PATCH de nome no roteiro pronto', rename.payload?.message);
+  const shortDates = await call('PATCH', `/api/itineraries/${itineraryId}/`, { token, json: { start_date: '2026-11-10', end_date: '2026-11-11' } });
+  check(shortDates.status === 400 && shortDates.payload?.message === 'As datas precisam cobrir exatamente 4 dias.', 'datas que nao cobrem a duracao -> 400 PT', shortDates.payload);
+  const undoRename = await undoProgram();
+  check(undoRename.status === 200 && undoRename.payload?.data?.title === original.title, 'desfazer restaura o nome', undoRename.payload?.data?.title);
+
+  await undoProgram();
+  const undoReorder = await undoProgram();
+  check(
+    undoReorder.status === 200 && titlesByDay(undoReorder.payload?.data) === titlesByDay(original) && undoReorder.payload?.data?.budget_total === original.budget_total,
+    'desfazer tudo volta a programacao original',
+    undoReorder.payload?.message,
+  );
+  const emptyHistory = await undoProgram();
+  check(emptyHistory.status === 409 && emptyHistory.payload?.message === 'Nao ha alteracoes para desfazer.', 'desfazer sem historico -> 409 PT', emptyHistory.payload);
+
+  await putProgram(layoutOf(undoReorder.payload?.data).map((day, index) => (index === 0 ? { ...day, event_ids: [...day.event_ids].reverse() } : day)));
+  await call('POST', `/api/itineraries/${itineraryId}/generate/`, { token });
+  const afterRegeneration = await undoProgram();
+  check(afterRegeneration.status === 409, 'gerar novamente limpa o historico do desfazer', afterRegeneration.payload);
+  const draft = await call('POST', '/api/itineraries/', { token, json: { destination: target.id, title: 'Rascunho', trip_preferences: tripPreferences, duration_days: 4 } });
+  const draftEdit = await call('PUT', `/api/itineraries/${draft.payload?.data?.id}/program/`, { token, json: { days: [] } });
+  check(draftEdit.status === 409, 'roteiro que nao esta pronto nao e editado -> 409', draftEdit.payload);
 
   console.log('\n# Avaliacoes');
   const visitor = await register('visitante');
