@@ -3,7 +3,8 @@
 // 1. PostgreSQL: se o DATABASE_URL local nao responde, sobe o servico `db` do docker-compose.yml da raiz
 //    (container `viajero-pg`).
 //    Com PostgreSQL instalado na maquina e respondendo, o Docker nao e usado.
-// 2. Schema: aplica as migrations do Django (dono do schema) e carrega o seed se o banco estiver vazio.
+// 2. Schema: aplica as migrations do Nest (TypeORM) e carrega o seed se o banco nao tiver destinos
+//    (o mesmo que `npm run db:setup`). Nao depende do Django nem do uv.
 // 3. Inicia `nest start --watch` conectado a esse banco.
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
@@ -13,7 +14,6 @@ import dotenv from 'dotenv';
 import pg from 'pg';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const BACKEND_DJANGO = join(ROOT, '..', 'backend');
 const COMPOSE_FILE = join(ROOT, '..', 'docker-compose.yml');
 dotenv.config({ path: join(ROOT, '.env') });
 
@@ -127,47 +127,25 @@ async function ensureDatabase() {
   }
 }
 
-function djangoManage(args, label) {
-  const result = run('uv', ['run', 'manage.py', ...args], {
-    cwd: BACKEND_DJANGO,
+/**
+ * O Nest e o dono do schema: aplica as migrations pendentes e carrega o seed (seed/seed_data.json)
+ * se ainda nao houver destinos. Num banco criado pelo Django, a migration baseline nao faz nada.
+ */
+function ensureSchema() {
+  log('Conferindo migrations e seed do Nest...');
+  // --transpile-only: so roda o script; a checagem de tipos fica com o `nest start --watch`.
+  const tsNode = join(ROOT, 'node_modules', 'ts-node', 'dist', 'bin.js');
+  const result = run(process.execPath, [tsNode, '--transpile-only', join('src', 'cli', 'migrate-and-seed.ts')], {
+    cwd: ROOT,
     env: { ...process.env, DATABASE_URL },
+    stdio: 'inherit',
   });
-  if (result.error || result.status !== 0) {
-    process.stdout.write(result.stdout ?? '');
-    process.stderr.write(result.stderr ?? '');
-    fail(`${label} falhou. Rode manualmente em backend/: uv run manage.py ${args.join(' ')}`);
-  }
-  return result.stdout ?? '';
-}
-
-/** O Django e o dono do schema: aplica migrations pendentes e carrega o seed num banco vazio. */
-async function ensureSchema(client) {
-  const canMigrate = existsSync(join(BACKEND_DJANGO, 'manage.py')) && hasCommand('uv');
-  const { rows } = await client.query("select to_regclass('public.users_user') is not null as ready");
-  if (!canMigrate) {
-    if (!rows[0].ready) fail('Banco sem tabelas e o `uv` nao foi encontrado. Instale o uv e rode de novo (as migrations vem do Django em backend/).');
-    log('uv nao encontrado: migrations do Django nao conferidas.');
-    return;
-  }
-  log(rows[0].ready ? 'Conferindo migrations do Django...' : 'Banco vazio: criando as tabelas pelas migrations do Django...');
-  const output = djangoManage(['migrate', '--noinput'], 'Migrations do Django');
-  const applied = (output.match(/Applying .* OK/g) ?? []).length;
-  log(applied ? `${applied} migration(s) aplicada(s).` : 'Schema em dia.');
-
-  const { rows: destinations } = await client.query('select count(*)::int as total from destinations_destination');
-  if (destinations[0].total === 0) {
-    log('Sem destinos: carregando o seed (seed_data.json)...');
-    djangoManage(['loaddata', 'seed_data.json'], 'Seed');
-    log('Seed carregado.');
-  }
+  if (result.error || result.status !== 0) fail('Migrations ou seed falharam. Rode manualmente em backend-nest/: npm run db:setup');
 }
 
 const client = await ensureDatabase();
-try {
-  await ensureSchema(client);
-} finally {
-  await client.end();
-}
+await client.end();
+ensureSchema();
 
 log('Iniciando o Nest em modo watch...');
 // Fora do Windows o Nest roda num grupo de processos proprio: ao encerrar este script (Ctrl+C ou

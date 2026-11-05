@@ -2,27 +2,21 @@ $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 $logs = Join-Path $root '.local'
 $node = (Get-Command node -ErrorAction Stop).Source
-$python = Join-Path $root 'backend/.venv/Scripts/python.exe'
 
-if (!(Test-Path -LiteralPath $python)) {
-    throw 'Python local ausente. Execute uv sync na pasta backend primeiro.'
-}
 foreach ($folder in @('backend-nest', 'front')) {
     if (!(Test-Path -LiteralPath (Join-Path $root "$folder/node_modules"))) {
         throw "Dependencias ausentes. Execute npm ci na pasta $folder primeiro."
     }
 }
-foreach ($file in @('backend/.env', 'backend-nest/.env')) {
-    if (!(Test-Path -LiteralPath (Join-Path $root $file))) {
-        throw "Configure $file conforme RODAR_LOCALMENTE.md."
-    }
+if (!(Test-Path -LiteralPath (Join-Path $root 'backend-nest/.env'))) {
+    throw 'Configure backend-nest/.env conforme RODAR_LOCALMENTE.md.'
 }
 
-# Django gerencia o schema; o Nest usa as mesmas tabelas.
-Push-Location (Join-Path $root 'backend')
+# O Nest gerencia o schema: migrations pendentes e seed (so com o banco sem destinos).
+Push-Location (Join-Path $root 'backend-nest')
 try {
-    & $python manage.py migrate --noinput
-    if ($LASTEXITCODE -ne 0) { throw 'Falha nas migrations. Verifique PostgreSQL e DATABASE_URL.' }
+    & $node 'node_modules/ts-node/dist/bin.js' '--transpile-only' 'src/cli/migrate-and-seed.ts'
+    if ($LASTEXITCODE -ne 0) { throw 'Falha nas migrations ou no seed. Verifique PostgreSQL e DATABASE_URL.' }
 } finally { Pop-Location }
 
 New-Item -ItemType Directory -Path $logs -Force | Out-Null
