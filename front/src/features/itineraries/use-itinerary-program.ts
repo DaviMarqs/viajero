@@ -83,9 +83,12 @@ export function useItineraryProgram(itinerary: Itinerary | null, onChange: (next
   const changeDays = useCallback((change: (days: ItineraryDay[]) => ItineraryDay[]): string | null => {
     const base = current.current;
     if (!base) return null;
+    const days = change(base.days ?? []);
+    // Nada mudou (soltar no mesmo lugar): não gasta um passo do desfazer no servidor.
+    if (JSON.stringify(programLayout(days)) === JSON.stringify(programLayout(base.days ?? []))) return null;
     let next: Itinerary;
     try {
-      next = applyProgram(base, change(base.days ?? []));
+      next = applyProgram(base, days);
     } catch (err) {
       return err instanceof Error ? err.message : "Não foi possível aplicar esta alteração.";
     }
