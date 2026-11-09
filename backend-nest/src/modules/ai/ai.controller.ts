@@ -1,13 +1,12 @@
-import { Controller, ForbiddenException, Get, NotFoundException, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, NotFoundException, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
+import { requireStaff } from '../auth/staff.guard';
 import { AiService } from './ai.service';
 import { ApiResponseBuilder } from '../../common/builders/api-response.builder';
 
-const requireAdmin = (user: AuthenticatedUser) => {
-  if (!user.is_staff && !user.is_superuser) throw new ForbiddenException('Apenas administradores podem acessar os templates de prompt.');
-};
+const requireAdmin = (user: AuthenticatedUser) => requireStaff(user, 'Apenas administradores podem acessar os templates de prompt.');
 
 @Controller('api')
 @UseGuards(JwtAuthGuard)

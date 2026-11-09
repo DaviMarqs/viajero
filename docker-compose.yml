@@ -23,15 +23,7 @@ services:
       retries: 30
     restart: unless-stopped
 
-  migrate:
-    build: ./backend
-    environment:
-      DATABASE_URL: postgresql://postgres:1414@db:5432/viajero
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: "no"
-
+  # Na subida, a API aplica as migrations do Nest e carrega o seed se o banco nao tiver destinos.
   api:
     build: ./backend-nest
     env_file:
@@ -45,8 +37,8 @@ services:
     volumes:
       - ./backend-nest/uploads:/app/uploads
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
   web:

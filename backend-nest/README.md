@@ -1,19 +1,19 @@
 # Viajero Backend NestJS
 
-Backend principal do Viajero, usado pelo front. Nasceu como migração funcional do backend Django/DRF (`../backend`) e hoje cobre todos os recursos dele, inclusive a IA: geração de roteiro com LLM (Groq/Gemini), descoberta de destinos com Firecrawl + LLM e sugestão de destino pelo perfil. O Django continua dono do schema (migrations e seed).
+Backend principal do Viajero, usado pelo front. Nasceu como migração funcional do backend Django/DRF (`../backend`) e hoje cobre todos os recursos dele, inclusive a IA: geração de roteiro com LLM (Groq/Gemini), descoberta de destinos com Firecrawl + LLM e sugestão de destino pelo perfil. O Nest também é o dono do schema: migrations TypeORM, seed e importação dos dados antigos do Django. O `../backend` (Django) é legado e não é necessário para rodar.
 
 ## Requisitos
 
 - Node.js 20+
 - npm 10+
 - PostgreSQL
-- Banco existente do projeto Viajero ou banco novo compatível
+- Banco vazio (o Nest cria as tabelas) ou um banco já criado pelo Django (usado como está)
 
 ## Primeira execução
 
 Guia completo do projeto (banco, migrations, API, front e problemas comuns): [`../RODAR_LOCALMENTE.md`](../RODAR_LOCALMENTE.md).
 
-O Nest usa o **mesmo banco** do Django: o schema vem das migrations do Django (`../backend`) e o Nest não altera a estrutura (`synchronize: false`).
+As tabelas vêm das migrations do próprio Nest (`src/database/migrations`, veja [Banco](#banco-migrations-seed-e-dados-antigos)). O schema é o mesmo que o Django criava, então um banco antigo do Django continua servindo. O TypeORM não altera a estrutura sozinho (`synchronize: false`).
 
 ```bash
 cd backend-nest
@@ -22,7 +22,7 @@ cp .env.example .env
 npm run start:dev
 ```
 
-O `start:dev` (`scripts/dev.mjs`) deixa o banco pronto antes de subir o Nest em watch: se o PostgreSQL do `DATABASE_URL` não responde, sobe o serviço `db` do `../docker-compose.yml` (container `viajero-pg`); aplica as migrations do Django com `uv` e carrega o seed num banco vazio. `npm run start:watch` sobe só o Nest. Para rodar banco, API e front no Docker: `docker compose up --build` na raiz.
+O `start:dev` (`scripts/dev.mjs`) deixa o banco pronto antes de subir o Nest em watch: se o PostgreSQL do `DATABASE_URL` não responde, sobe o serviço `db` do `../docker-compose.yml` (container `viajero-pg`); aplica as migrations do Nest e carrega o seed se o banco não tiver destinos (o mesmo que `npm run db:setup`). Não usa Django nem `uv`. `npm run start:watch` sobe só o Nest. Para rodar banco, API e front no Docker: `docker compose up --build` na raiz.
 
 A API sobe em `http://localhost:8001`. O front (`../front`) já aponta para essa URL por padrão (`VITE_API_URL`).
 
@@ -68,7 +68,9 @@ Sem nenhuma chave, tudo continua funcionando offline: roteiro mock, busca cria d
 
 `npm run backfill:hero-images -- [--force] [--limit N] [--delay S]` preenche `hero_image_url` vazio pela Wikipedia (equivalente ao comando `backfill_hero_images` do Django).
 
-## Convivência com o schema do Django
+## Schema herdado do Django
+
+A baseline reproduz o schema que o Django criava, então valem as regras dele:
 
 - **Defaults:** o Django aplica defaults em Python, então as colunas não têm `DEFAULT` no banco. O `DjangoDefaultsSubscriber` (`src/database/django-defaults.subscriber.ts`) preenche, antes de cada INSERT feito por `repository.save()`, os defaults declarados nas entities (`created_at`, `updated_at`, `''`, `'{}'`, `false`...). Inserts via `QueryBuilder.insert()` não passam pelo subscriber; use `save()`.
 - **IDs:** `bigint` sai como string (padrão do TypeORM; o bugfix #720 já devolve ids gerados como string e misturar com `number` quebra a comparação de relações ao salvar). Os DTOs aceitam ids numéricos enviados como string (`@ToId()` em `src/common/validation.ts`). Decimais também saem como string (`"4.70"`).
@@ -86,7 +88,7 @@ npm run lint
 npm run smoke   # smoke HTTP do contrato usado pelo front
 ```
 
-O `smoke` precisa do backend rodando (`BASE_URL`, padrão `http://localhost:8001`) contra um banco **descartável** migrado pelo Django com o seed: cada execução cria usuários, roteiros e avaliações.
+O `smoke` precisa do backend rodando (`BASE_URL`, padrão `http://localhost:8001`) contra um banco **descartável** criado pelo Nest com o seed (`npm run db:setup`, que o `start:dev` já roda): cada execução cria usuários, roteiros e avaliações.
 
 ## Principais endpoints
 
@@ -182,9 +184,56 @@ Padrões implementados:
 - Factory: `ItineraryGeneratorFactory`
 - Builder: `ApiResponseBuilder`
 
-## Migrations
+## Banco: migrations, seed e dados antigos
 
-Este projeto não cria migrations automaticamente porque foi desenhado para ler o schema existente do Django. Para evolução futura, crie migrations TypeORM de forma controlada e revise manualmente antes de aplicar em produção.
+O schema vem das migrations TypeORM em `src/database/migrations`, registradas na tabela `nest_migrations`. A primeira (`Baseline`) cria as tabelas da aplicação exatamente como as migrations do Django criavam (mesmas colunas, constraints, índices e FKs), sem as tabelas internas do Django (`django_*`, `auth_*`, `authtoken_token` e as M2M de grupos e permissões do usuário). Num banco que já veio do Django (tem `users_user`), a baseline só é registrada e não mexe em nada: nenhum dado se perde.
+
+| Comando | O que faz |
+|---|---|
+| `npm run db:setup` | Migrations pendentes e o seed, se não houver destinos. É o que o `start:dev` e o container da API rodam na subida |
+| `npm run migration:run` | Só as migrations pendentes |
+| `npm run migration:revert` | Desfaz a última. A baseline só apaga as tabelas num banco criado pelo Nest; num banco vindo do Django não faz nada |
+| `npm run migration:show` | Lista as migrations e quais já rodaram |
+| `npm run migration:create -- src/database/migrations/NomeDaMudanca` | Cria uma migration vazia para escrever o SQL |
+| `npm run seed` | Carrega `seed/seed_data.json` (4 destinos, 4 perfis de custo, 8 tags e 16 POIs) se ainda não houver destinos |
+| `npm run fixtures:load -- <arquivo.json>` | Importa um `dumpdata` do Django (veja abaixo) |
+
+Os comandos usam o `DATABASE_URL` do ambiente ou do `.env`. Na imagem Docker (sem ts-node) os equivalentes são `node dist/cli/migrate-and-seed.js`, `node dist/cli/seed.js`, `node dist/cli/load-fixtures.js <arquivo.json>` e `npx typeorm migration:revert -d dist/database/data-source.js`.
+
+Para mudar o schema, crie uma migration com `migration:create` e escreva o SQL à mão. Não use `migration:generate` nem `synchronize`: as entities não repetem os nomes das constraints, os `ON DELETE` e a ausência de `DEFAULT` do schema herdado, então o diff gerado sairia cheio de alterações indevidas. O teste `src/database/__tests__/baseline.spec.ts` confere se toda entity e coluna mapeada existe na baseline.
+
+### Importar dados do Django (`fixtures:load`)
+
+O `fixtures:load` lê o JSON do `manage.py dumpdata`, o mesmo formato do seed, e grava pelo metadata das entities: o modelo `app.model` vira a tabela `app_model`, a FK `user` vira `user_id` e a lista de um M2M (`tags`) vira linhas na tabela de junção. Campos ausentes recebem o default do modelo. Grava por PK (insere ou atualiza) numa transação, com as FKs checadas no fim, e acerta as sequences. Se algo falhar, nada é gravado.
+
+- Modelo sem tabela no Nest (`contenttypes`, `sessions`, `auth`...) aborta com a lista; `--skip-unknown` ignora esses modelos.
+- Texto maior que o `varchar` da coluna aborta listando os registros (o SQLite não valida tamanho, o PostgreSQL recusa); `--truncate` corta no limite da coluna.
+- Chaves naturais (`--natural-foreign`/`--natural-primary`) não são suportadas.
+
+Passo a passo para trazer o SQLite antigo (`backend/db.sqlite3`). É o único uso que sobrou do Django, e só para exportar:
+
+```bash
+# 1. Copie o SQLite e atualize a cópia para o schema atual do Django (sem isso o dumpdata falha por coluna faltando)
+cp backend/db.sqlite3 /tmp/viajero-legado.sqlite3
+cd backend
+uv sync
+DATABASE_URL=sqlite:////tmp/viajero-legado.sqlite3 uv run manage.py migrate --noinput
+
+# 2. Exporte só os apps da aplicação
+DATABASE_URL=sqlite:////tmp/viajero-legado.sqlite3 uv run manage.py dumpdata \
+  users destinations profiles itineraries ai audit --indent 2 --output /tmp/viajero-legado.json
+
+# 3. Banco PostgreSQL vazio, só com as tabelas (sem o seed: os ids do seed colidem com os do dump)
+cd ../backend-nest
+npm run migration:run
+
+# 4. Importe
+npm run fixtures:load -- /tmp/viajero-legado.json --truncate
+```
+
+No PowerShell, use `$env:DATABASE_URL="sqlite:///C:/temp/viajero-legado.sqlite3"` antes dos comandos do Django. Se o banco de destino já tem o seed ou outros dados, zere antes (passo 11 do [`RODAR_LOCALMENTE.md`](../RODAR_LOCALMENTE.md)). Depois do import, o `start:dev` e o `docker compose up` não carregam o seed, porque já há destinos.
+
+Com o `db.sqlite3` do repositório, o import trouxe 420 registros: 3 usuários, 11 destinos, 9 perfis de custo, 194 tags, 180 POIs, 473 ligações POI–tag, 1 DNA de viajante, 1 preferência de viagem e 21 logs de auditoria. Três slugs de POI com mais de 50 caracteres foram cortados pelo `--truncate`. O resultado bate com um `loaddata` do Django no mesmo dump; só os ids internos da tabela de junção saem em outra ordem.
 
 ## Limitações conhecidas da migração
 

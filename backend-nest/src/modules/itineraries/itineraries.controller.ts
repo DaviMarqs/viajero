@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Put, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
@@ -7,6 +7,9 @@ import { CreateItineraryDto } from './dto/create-itinerary.dto';
 import { UpdateItineraryDto } from './dto/update-itinerary.dto';
 import { ApiResponseBuilder } from '../../common/builders/api-response.builder';
 import { ItineraryGenerationFacade } from '../../common/facades/itinerary-generation.facade';
+import { ItinerariesCrudService } from './itineraries-crud.service';
+import { publicItinerary } from './itinerary-program';
+import { ListRequest, ListRequestContext } from '../../common/query/list-request.decorator';
 
 @Controller('api/itineraries')
 export class ItinerariesController {
@@ -14,24 +17,25 @@ export class ItinerariesController {
     private readonly itineraries: ItinerariesService,
     private readonly generation: ItineraryGenerationFacade,
     private readonly response: ApiResponseBuilder,
+    private readonly crud: ItinerariesCrudService,
   ) {}
 
   @Get('templates')
   async templates() {
     const itineraries = await this.itineraries.templates();
-    return this.response.withMessage('Templates de roteiros carregados com sucesso.').build(itineraries);
+    return this.response.withMessage('Templates de roteiros carregados com sucesso.').build(itineraries.map(publicItinerary));
   }
 
   @Get('top-rated')
   async topRated() {
     const itineraries = await this.itineraries.topRated();
-    return this.response.withMessage('Ranking de roteiros mais bem avaliados carregado com sucesso.').build(itineraries);
+    return this.response.withMessage('Ranking de roteiros mais bem avaliados carregado com sucesso.').build(itineraries.map(publicItinerary));
   }
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  async list(@CurrentUser() user: AuthenticatedUser) {
-    const itineraries = await this.itineraries.listForUser(user.id);
+  async list(@CurrentUser() user: AuthenticatedUser, @ListRequest() request: ListRequestContext) {
+    const itineraries = await this.crud.list(user.id, request);
     return this.response.withMessage('Lista carregada com sucesso.').build(itineraries);
   }
 
@@ -46,7 +50,7 @@ export class ItinerariesController {
   @UseGuards(JwtAuthGuard)
   async retrieve(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseIntPipe) id: number) {
     const { itinerary, isOwner } = await this.itineraries.findVisibleForUser(id, user.id);
-    return this.response.withMessage('Registro carregado com sucesso.').build({ ...itinerary, is_owner: isOwner });
+    return this.response.withMessage('Registro carregado com sucesso.').build({ ...(isOwner ? itinerary : publicItinerary(itinerary)), is_owner: isOwner });
   }
 
   @Patch(':id')
@@ -78,5 +82,19 @@ export class ItinerariesController {
   async dayDetail(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseIntPipe) id: number, @Param('dayNumber', ParseIntPipe) dayNumber: number) {
     const day = await this.itineraries.dayDetail(id, dayNumber, user.id);
     return this.response.withMessage('Programacao do dia carregada com sucesso.').build(day);
+  }
+
+  @Put(':id')
+  @UseGuards(JwtAuthGuard)
+  async replace(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseIntPipe) id: number, @Body() dto: CreateItineraryDto) {
+    const itinerary = await this.crud.replace(id, user.id, dto);
+    return this.response.withMessage('Registro atualizado com sucesso.').build({ ...itinerary, is_owner: true });
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  async remove(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseIntPipe) id: number) {
+    await this.crud.remove(id, user.id);
+    return this.response.withMessage('Registro removido com sucesso.').build(null);
   }
 }

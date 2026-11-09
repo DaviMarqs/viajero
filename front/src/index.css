@@ -737,6 +737,6 @@
 /* The approved shared feedback is also used by the main application's forms. */
 @keyframes dirty-bar-enter { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: no-preference) {
-  .itinerary-detail[data-dirty="true"] .itinerary-editor-actions { animation: dirty-bar-enter var(--duration-base) var(--ease-out-expo) both; }
+  .itinerary-detail[data-editing="true"] .itinerary-editor-actions { animation: dirty-bar-enter var(--duration-base) var(--ease-out-expo) both; }
   main [role="alert"] { animation: panel-fade var(--duration-fast) var(--ease-out-expo) both; }
 }

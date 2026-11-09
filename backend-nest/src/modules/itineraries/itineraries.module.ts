@@ -5,10 +5,15 @@ import { Destination } from '../destinations/entities';
 import { UserTripPreference } from '../profiles/entities';
 import { ItinerariesService } from './itineraries.service';
 import { ReviewsService } from './reviews.service';
+import { ItinerariesCrudService } from './itineraries-crud.service';
+import { FavoritesService } from './favorites.service';
+import { SharedLinksService } from './shared-links.service';
 import { ItinerariesController } from './itineraries.controller';
 import { FavoritesController } from './favorites.controller';
 import { ReviewsController } from './reviews.controller';
 import { SharedLinksController } from './shared-links.controller';
+import { ItineraryProgramController } from './itinerary-program.controller';
+import { ItineraryProgramService } from './itinerary-program.service';
 import { ApiResponseBuilder } from '../../common/builders/api-response.builder';
 import { AuditModule } from '../audit/audit.module';
 import { AiModule } from '../ai/ai.module';
@@ -29,8 +34,8 @@ import { AiModule } from '../ai/ai.module';
     AuditModule,
     AiModule,
   ],
-  providers: [ItinerariesService, ReviewsService, ApiResponseBuilder],
-  controllers: [ItinerariesController, FavoritesController, ReviewsController, SharedLinksController],
+  providers: [ItinerariesService, ReviewsService, ItinerariesCrudService, FavoritesService, SharedLinksService, ItineraryProgramService, ApiResponseBuilder],
+  controllers: [ItinerariesController, ItineraryProgramController, FavoritesController, ReviewsController, SharedLinksController],
   exports: [ItinerariesService, TypeOrmModule],
 })
 export class ItinerariesModule {}

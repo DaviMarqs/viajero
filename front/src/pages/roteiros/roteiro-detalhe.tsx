@@ -1,11 +1,10 @@
 import { TabStrip } from "@/components/motion/tab-strip";
 import { DayTabLabel } from "@/components/ui/day-tab-label";
 import { Feedback, PageSkeleton } from "@/components/ui/feedback";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Star, Undo2 } from "lucide-react";
+import { Star } from "lucide-react";
 import { useParams } from "react-router-dom";
 
 import { apiRequest } from "@/lib/api";
@@ -18,18 +17,16 @@ import {
 import { useDestinations } from "@/hooks/useDestinations";
 import { ReviewsSection } from "@/features/reviews/reviews-section";
 import type { Itinerary } from "@/types/travel";
-import { useAuth } from "@/contexts/authContext";
 import { useMoney } from "@/contexts/currencyContext";
-import { ItineraryEditor, DayEditor } from "@/features/itineraries/itinerary-editor";
-import {
-  localProgramKey,
-  readLocalProgram,
-  tripHasEnded,
-} from "@/features/itineraries/itinerary-editing";
+import { useToast } from "@/components/motion/toast-context";
+import { DayEditor, ItineraryDetailsEditor, ItineraryEditToolbar } from "@/features/itineraries/itinerary-editor";
+import { tripHasEnded } from "@/features/itineraries/itinerary-editing";
 import { ItineraryActivity } from "@/features/itineraries/itinerary-activity";
 import { FavoriteItineraryButton } from "@/features/itineraries/favorite-itinerary-button";
 import { RegenerateItineraryButton } from "@/features/itineraries/regenerate-itinerary-button";
-import { dayInsights, draftChanges } from "@/features/itineraries/itinerary-insights";
+import { dayInsights } from "@/features/itineraries/itinerary-insights";
+import { clearLegacyPrograms, moveEvent, removeEvent, reorderEvent } from "@/features/itineraries/program-sync";
+import { useItineraryProgram } from "@/features/itineraries/use-itinerary-program";
 
 type ItineraryResponse = ApiSuccessResponse<Itinerary>;
 
@@ -43,26 +40,23 @@ function formatDate(value?: string | null) {
 }
 
 export default function RoteiroDetalhePage() {
-  const { user } = useAuth();
   const { money } = useMoney();
+  const notify = useToast();
   const { id } = useParams();
   const { destinations } = useDestinations();
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
-  const [savingEdit, setSavingEdit] = useState(false);
-  const [draft, setDraft] = useState<Itinerary | null>(null);
-  const [draftHistory, setDraftHistory] = useState<Itinerary[]>([]);
-  const [original, setOriginal] = useState<Itinerary | null>(null);
+  const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [selectedDay, setSelectedDay] = useState(0);
   const [revision, setRevision] = useState(0);
-  const hasUnsavedChanges = !!draft && !!itinerary && draft.id === itinerary.id && draftChanges(itinerary, draft).changed;
-  function changeDraft(next: Itinerary | null) {
-    if (next && draft && next.id === draft.id) setDraftHistory(history => [...history.slice(-39), structuredClone(draft)]);
-    else setDraftHistory([]);
-    setDraft(next);
-  }
+  // Edição salva no servidor (#50): cada ação aparece na hora e vai para a fila de salvamento.
+  const program = useItineraryProgram(itinerary, setItinerary);
+  const pendingTitle = program.titleDraft?.trim();
+  const hasUnsavedChanges = program.busy || program.canRetry || (!!pendingTitle && pendingTitle !== itinerary?.title);
+  // A programação editada ficava no navegador; agora vive no servidor e a cópia antiga só atrapalha.
+  useEffect(() => { clearLegacyPrograms(window.localStorage); }, []);
   useEffect(() => {
     if (!hasUnsavedChanges) return;
     const protect = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
@@ -80,15 +74,7 @@ export default function RoteiroDetalhePage() {
           { signal: controller.signal },
         );
         if (controller.signal.aborted) return;
-        setOriginal(response.data ?? null);
-        setItinerary(
-          response.data
-            ? readLocalProgram(
-                response.data,
-                localProgramKey(user?.id, response.data.id),
-              )
-            : null,
-        );
+        setItinerary(response.data ?? null);
         setError(null);
         if (response.data?.generation_status === "generating")
           timeout = window.setTimeout(load, 4000);
@@ -108,7 +94,7 @@ export default function RoteiroDetalhePage() {
       controller.abort();
       window.clearTimeout(timeout);
     };
-  }, [id, revision, user?.id]);
+  }, [id, revision]);
   if (!id) return <Feedback title="Roteiro não informado" />;
   if (loading) return <PageSkeleton />;
 
@@ -141,14 +127,18 @@ export default function RoteiroDetalhePage() {
     );
   }
 
-  const activeDraft = draft?.id === itinerary.id ? draft : null;
-  const displayed = activeDraft ?? itinerary;
-  const days = displayed.days ?? [];
+  const days = itinerary.days ?? [];
   const visual = itineraryPresentation(itinerary, destinations);
-  const changes = activeDraft ? draftChanges(itinerary, activeDraft) : null;
   const daily = dayInsights(days[selectedDay]);
+  const canEdit = itinerary.is_owner === true && itinerary.generation_status === "ready";
+  const isEditing = editing && canEdit;
+  function changeProgram(change: Parameters<typeof program.changeDays>[0], toast?: string) {
+    const problem = program.changeDays(change);
+    if (problem) notify({ title: problem });
+    else if (toast) notify({ title: toast, action: { label: "Desfazer", onClick: () => void program.undo() } });
+  }
   return (
-    <section className="page-content itinerary-detail" data-dirty={hasUnsavedChanges}>
+    <section className="page-content itinerary-detail" data-editing={isEditing}>
       <Breadcrumbs current={itinerary.title} parent={{ label: "Roteiros", to: "/roteiros" }} />
       <header className="page-header">
         <div className="space-y-3">
@@ -164,30 +154,28 @@ export default function RoteiroDetalhePage() {
           >
             {itineraryStatus(itinerary.generation_status)}
           </span>
+          {canEdit && (
+            <ItineraryEditToolbar
+              editing={isEditing}
+              status={program.status}
+              error={program.error}
+              canRetry={program.canRetry}
+              canUndo={program.canUndo}
+              undoing={program.undoing}
+              onEdit={() => setEditing(true)}
+              onFinish={() => { program.flushTitle(); setEditing(false); }}
+              onUndo={() => void program.undo()}
+              onRetry={program.retry}
+            />
+          )}
           {itinerary.is_owner &&
-            itinerary.generation_status === "ready" &&
-            original && (
-              <ItineraryEditor
-                key={String(itinerary.id)}
-                itinerary={itinerary}
-                original={original}
-                draft={activeDraft}
-                onDraftChange={changeDraft}
-                onSavingChange={setSavingEdit}
-                toolbarContent={<><span role="status" className="text-xs text-muted-foreground">{changes?.changed ? "Alterações não salvas" : "Nenhuma alteração pendente"}</span><Button type="button" variant="ghost" disabled={savingEdit || !draftHistory.length} onClick={() => { const previous = draftHistory[draftHistory.length - 1]; if (previous) { setDraft(previous); setDraftHistory(history => history.slice(0, -1)); } }}><Undo2 aria-hidden="true" />Desfazer</Button></>}
-                onSaved={setItinerary}
-              />
-            )}
-          {itinerary.is_owner &&
-            !activeDraft &&
+            !isEditing &&
+            !program.busy &&
             (itinerary.generation_status === "ready" || itinerary.generation_status === "failed") && (
               <RegenerateItineraryButton
                 itinerary={itinerary}
-                localProgramKey={localProgramKey(user?.id, itinerary.id)}
                 onRegenerated={(next) => {
-                  setOriginal(next);
                   setItinerary(next);
-                  changeDraft(null);
                   setSelectedDay(0);
                 }}
               />
@@ -206,18 +194,14 @@ export default function RoteiroDetalhePage() {
             )}
         </div>
       </header>
-      {activeDraft && <section className="edit-mode-panel space-y-4" aria-label="Modo de edição">
-        <div><h2 className="text-lg">Modo de edição ativado</h2><p className="mt-1 text-sm text-muted-foreground">Arraste pela alça para reordenar. Remova atividades antes de salvar. Os horários serão recalculados pela duração das visitas, com 30 minutos entre atividades. A programação fica salva neste navegador.</p></div>
-        <fieldset disabled={savingEdit} className="grid gap-4 sm:grid-cols-3">
-          <label className="form-label">Nome do roteiro<Input maxLength={160} value={activeDraft.title} onChange={e => changeDraft({...activeDraft, title:e.target.value})} /></label>
-          <label className="form-label">Ida<Input type="date" value={activeDraft.start_date ?? ""} onChange={e => changeDraft({...activeDraft, start_date:e.target.value || null})} /></label>
-          <label className="form-label">Volta<Input type="date" min={activeDraft.start_date || undefined} value={activeDraft.end_date ?? ""} onChange={e => changeDraft({...activeDraft, end_date:e.target.value || null})} /></label>
-        </fieldset>
+      {isEditing && <section className="edit-mode-panel space-y-4" aria-label="Modo de edição">
+        <div><h2 className="text-lg">Modo de edição ativado</h2><p className="mt-1 text-sm text-muted-foreground">Cada alteração é salva automaticamente. Arraste pela alça ou use as setas para reordenar, leve uma atividade para outro dia ou remova. Os horários são recalculados pela duração das visitas, com 30 minutos entre atividades.</p></div>
+        <ItineraryDetailsEditor itinerary={itinerary} titleDraft={program.titleDraft} disabled={program.undoing} onTitleChange={program.editTitle} onStartDateCommit={program.editStartDate} />
       </section>}
       <div className="itinerary-layout">
         <section className="space-y-6" aria-label="Programação da viagem">
           <TabStrip label="Dias do roteiro" selected={selectedDay}>
-            {days.map((day, index) => <button key={day.id} type="button" role="tab" tabIndex={selectedDay === index ? 0 : -1} id={`day-tab-${index}`} aria-controls={`day-panel-${index}`} aria-selected={selectedDay === index} onClick={() => setSelectedDay(index)} onKeyDown={event => { const next = event.key === "ArrowRight" ? (index + 1) % days.length : event.key === "ArrowLeft" ? (index + days.length - 1) % days.length : event.key === "Home" ? 0 : event.key === "End" ? days.length - 1 : null; if (next != null) { event.preventDefault(); setSelectedDay(next); event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`#day-tab-${next}`)?.focus(); } }}><DayTabLabel start={activeDraft?.start_date ?? itinerary.start_date} day={day.day_number} /></button>)}
+            {days.map((day, index) => <button key={day.id} type="button" role="tab" tabIndex={selectedDay === index ? 0 : -1} id={`day-tab-${index}`} aria-controls={`day-panel-${index}`} aria-selected={selectedDay === index} onClick={() => setSelectedDay(index)} onKeyDown={event => { const next = event.key === "ArrowRight" ? (index + 1) % days.length : event.key === "ArrowLeft" ? (index + days.length - 1) % days.length : event.key === "Home" ? 0 : event.key === "End" ? days.length - 1 : null; if (next != null) { event.preventDefault(); setSelectedDay(next); event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`#day-tab-${next}`)?.focus(); } }}><DayTabLabel start={itinerary.start_date} day={day.day_number} /></button>)}
           </TabStrip>
           {days.length === 0 ? <Feedback title="Ainda não existem dias gerados para este roteiro." description={itinerary.generation_status === "generating" ? "A programação aparecerá aqui quando a geração terminar." : undefined} /> : days.map((day, index) => selectedDay === index ? <div key={day.id} role="tabpanel" id={`day-panel-${index}`} aria-labelledby={`day-tab-${index}`} hidden={selectedDay !== index} className="space-y-5">
             <h2 className="section-title">{day.title}</h2>
@@ -225,8 +209,8 @@ export default function RoteiroDetalhePage() {
             <dl className="day-overview"><div><dt>Atividades</dt><dd>{daily.activities}</dd></div><div><dt>Tempo de visitas{daily.missingDurations ? " informado" : ""}</dt><dd>{daily.visitMinutes ? `${Math.floor(daily.visitMinutes / 60)}h ${daily.visitMinutes % 60}min` : "Não informado"}</dd></div><div><dt>Custo conhecido do dia</dt><dd>{daily.activities ? daily.missingCosts === daily.activities ? "—" : money(daily.knownCost, itinerary.currency_code || "BRL") : "Dia livre"}</dd></div></dl>
             {(daily.missingCosts > 0 || daily.missingDurations > 0) && <p className="text-sm text-muted-foreground">{daily.missingCosts > 0 && `${daily.missingCosts} atividades sem custo informado. `}{daily.missingDurations > 0 && `${daily.missingDurations} atividades sem duração informada.`}</p>}
             {daily.activities > 1 && <p className="text-xs text-muted-foreground">O tempo de visitas não inclui deslocamentos. Intervalos da programação não representam uma estimativa de trajeto real.</p>}
-            {activeDraft ? <fieldset disabled={savingEdit}><DayEditor day={day} destinationImage={visual.image} destinationName={visual.location} currency={itinerary.currency_code || "BRL"} update={next => changeDraft({...activeDraft, days: activeDraft.days?.map(item => item.id === next.id ? next : item)})} /></fieldset> : <ol className="space-y-5">{(day.events ?? []).map((event, eventIndex) => <ItineraryActivity key={event.id} event={event} index={eventIndex} currency={itinerary.currency_code || "BRL"} destinationImage={visual.image} destinationName={visual.location} />)}</ol>}
-            {!activeDraft && !day.events?.length && <p className="text-muted-foreground">Nenhuma atividade neste dia.</p>}
+            {isEditing ? <fieldset disabled={program.undoing}><DayEditor day={day} days={days} startDate={itinerary.start_date} destinationImage={visual.image} destinationName={visual.location} currency={itinerary.currency_code || "BRL"} onReorder={(from, to) => changeProgram(current => reorderEvent(current, day.day_number, from, to))} onMove={(event, target) => changeProgram(current => moveEvent(current, event.id, target), `Atividade movida para o dia ${target}.`)} onRemove={event => changeProgram(current => removeEvent(current, event.id), "Atividade removida.")} /></fieldset> : <ol className="space-y-5">{(day.events ?? []).map((event, eventIndex) => <ItineraryActivity key={event.id} event={event} index={eventIndex} currency={itinerary.currency_code || "BRL"} destinationImage={visual.image} destinationName={visual.location} />)}</ol>}
+            {!isEditing && !day.events?.length && <p className="text-muted-foreground">Nenhuma atividade neste dia.</p>}
           </div> : null)}
         </section>
         <aside className="itinerary-aside space-y-6">
