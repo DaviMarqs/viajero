@@ -1,13 +1,16 @@
 import { Children, useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "./button";
+import { collectionPagination } from "@/lib/collection-pagination";
 
-export function TravelCollection({ children, label, single = false, home = false, completeCards = false }: { children: ReactNode; label: string; single?: boolean; home?: boolean; completeCards?: boolean }) {
+export function TravelCollection({ children, label, single = false, home = false, completeCards = false, progressPagination = false }: { children: ReactNode; label: string; single?: boolean; home?: boolean; completeCards?: boolean; progressPagination?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [overflow, setOverflow] = useState(false);
   const [columns, setColumns] = useState(1);
   const [positions, setPositions] = useState<number[]>([0]);
   const [active, setActive] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const pagination = progressPagination ? collectionPagination(positions, scrollLeft) : { indexes: positions.map((_, index) => index), active };
   const items = Children.toArray(children);
   const [atEnd, setAtEnd] = useState(items.length < (single ? 2 : 3));
   useEffect(() => {
@@ -17,6 +20,7 @@ export function TravelCollection({ children, label, single = false, home = false
       const maximum = Math.max(0, container.scrollWidth - container.clientWidth);
       setAtEnd(container.scrollLeft >= maximum - 2);
       setOverflow(maximum > 2);
+      setScrollLeft(container.scrollLeft);
       const origin = (container.children[0] as HTMLElement)?.offsetLeft ?? 0;
       const pages = Array.from(new Set(Array.from(container.children).map(card => Math.min(maximum, (card as HTMLElement).offsetLeft - origin))));
       setPositions(pages.length ? pages : [0]);
@@ -35,6 +39,7 @@ export function TravelCollection({ children, label, single = false, home = false
   return <div className={`travel-collection ${single ? "single-collection" : ""} ${home ? "home-trip-collection" : ""} ${completeCards ? "complete-collection" : ""}`} style={home || completeCards ? { "--collection-columns": columns } as import("react").CSSProperties : undefined} role="group" aria-label={label} aria-roledescription={overflow ? "carrossel" : undefined}>
     <div ref={ref} className={`collection-scroll ${(home || completeCards) && items.length <= columns ? "collection-grid" : ""}`} onScroll={(event) => {
       const container = event.currentTarget;
+      setScrollLeft(container.scrollLeft);
       setActive(positions.reduce((nearest, position, index) => Math.abs(position - container.scrollLeft) < Math.abs(positions[nearest] - container.scrollLeft) ? index : nearest, 0));
       setAtEnd(container.scrollLeft + container.clientWidth >= container.scrollWidth - 2);
     }}>{items}</div>
@@ -42,8 +47,8 @@ export function TravelCollection({ children, label, single = false, home = false
     {items.length > 1 && overflow && <>
       <Button variant="outline" size="icon" className="collection-arrow collection-arrow-prev rounded-full size-10 bg-surface hover:bg-surface disabled:opacity-100" aria-label={`${label}: anterior`} disabled={active === 0} onClick={() => go(Math.max(0, active - 1))}><ArrowLeft /></Button>
       <Button variant="outline" size="icon" className="collection-arrow collection-arrow-next rounded-full size-10 bg-surface hover:bg-surface disabled:opacity-100" aria-label={`${label}: próximo`} disabled={atEnd} onClick={() => go(Math.min(positions.length - 1, active + 1))}><ArrowRight /></Button>
-      <div className="collection-pagination" role="group" aria-label={`Posição em ${label}`}>
-        {positions.map((_, index) => <button key={index} type="button" aria-label={`Mostrar página ${index + 1}`} aria-current={index === active ? "true" : undefined} onClick={() => go(index)}><span /></button>)}
+      <div className="collection-pagination" data-progress={progressPagination || undefined} role="group" aria-label={`Posição em ${label}`}>
+        {pagination.indexes.map((page, index) => <button key={index} type="button" aria-label={progressPagination ? `Ir para ${Math.round(index / (pagination.indexes.length - 1) * 100)}% de ${label}` : `Mostrar página ${index + 1}`} aria-current={index === pagination.active ? "true" : undefined} onClick={() => go(page)}><span /></button>)}
       </div>
     </>}
   </div>;

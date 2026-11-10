@@ -24,7 +24,10 @@ services:
 
   # Na subida, a API aplica as migrations do Nest e carrega o seed se o banco nao tiver destinos.
   api:
-    build: ./backend-nest
+    build:
+      context: ./backend-nest
+      target: development
+    init: true
     env_file:
       - path: ./backend-nest/.env
         required: false
@@ -34,7 +37,9 @@ services:
     ports:
       - "8001:8001"
     volumes:
-      - ./backend-nest/uploads:/app/uploads
+      - ./backend-nest:/app
+      - /app/node_modules
+      - /app/dist
     depends_on:
       db:
         condition: service_healthy
@@ -43,10 +48,16 @@ services:
   web:
     build:
       context: ./front
-      args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8001}
+      target: development
+    init: true
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8001}
+      WATCH_USE_POLLING: "true"
     ports:
-      - "5173:80"
+      - "5173:5173"
+    volumes:
+      - ./front:/app
+      - /app/node_modules
     depends_on:
       - api
     restart: unless-stopped

@@ -1,10 +1,14 @@
-# API NestJS do docker-compose: build com devDependencies; a imagem final reaproveita o node_modules
-# podado (sem baixar os pacotes de novo).
-FROM node:22-slim AS build
+FROM node:22-slim AS development
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
+# Nest watch uses ps to stop the previous API process before restarting.
+RUN apt-get update && apt-get install -y --no-install-recommends procps && rm -rf /var/lib/apt/lists/*
 COPY . .
+EXPOSE 8001
+CMD ["npm", "run", "start:dev"]
+
+FROM development AS build
 RUN npm run build
 RUN npm prune --omit=dev
 

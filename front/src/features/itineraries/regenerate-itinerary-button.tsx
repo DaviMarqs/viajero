@@ -1,3 +1,4 @@
+import { GenerationProgress } from "./generation-progress";
 import { useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { useToast } from "@/components/motion/toast-context";
@@ -62,7 +63,7 @@ export function RegenerateItineraryButton({
               A IA vai montar uma nova programação com os parâmetros desta viagem. As atividades, os horários e os custos atuais serão substituídos, e as alterações feitas antes não poderão mais ser desfeitas. O nome do roteiro e as datas são mantidos.
             </DialogDescription>
           </DialogHeader>
-          {running && <p role="status" className="text-sm text-muted-foreground">Gerando a nova programação. Isso leva alguns segundos.</p>}
+          {running && <GenerationProgress stage="generating" />}
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
           <DialogFooter>
             <DialogClose asChild>

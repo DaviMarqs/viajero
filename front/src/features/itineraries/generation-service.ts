@@ -2,7 +2,9 @@ import { apiRequest, type ApiSuccessResponse } from "@/lib/api";
 import type { TripPreferenceUpsertInput } from "@/lib/profiles";
 import type { Destination, Itinerary } from "@/types/travel";
 
-type Progress = { message: string; itineraryId?: number | string; };
+import type { GenerationStage } from "./generation-progress";
+
+type Progress = { stage: GenerationStage; message: string; itineraryId?: number | string; };
 
 function waitForNextPoll(signal: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
@@ -15,7 +17,7 @@ function waitForNextPoll(signal: AbortSignal) {
 
 /** Facade for the existing create → dates → generate → poll flow. */
 export async function generateItinerary(destination: Destination, preferences: TripPreferenceUpsertInput, signal: AbortSignal, onProgress: (progress: Progress) => void) {
-  onProgress({ message: "Criando a estrutura inicial do roteiro…" });
+  onProgress({ stage: "preparing", message: "Criando a estrutura inicial do roteiro…" });
   const created = await apiRequest<ApiSuccessResponse<Itinerary>>("/api/itineraries/", {
     method: "POST", body: JSON.stringify({ destination: destination.id, title: destination.name, trip_preferences: preferences,
       duration_days: preferences.preferred_trip_length_days, currency_code: preferences.currency_code,
@@ -23,7 +25,7 @@ export async function generateItinerary(destination: Destination, preferences: T
   });
   const itinerary = created.data;
   if (!itinerary?.id) throw new Error("Não foi possível identificar o roteiro criado. Confira seus roteiros antes de tentar novamente.");
-  const report = (message: string) => onProgress({ message, itineraryId: itinerary.id });
+  const report = (message: string) => onProgress({ stage: "generating", message, itineraryId: itinerary.id });
   report("Solicitando a geração do roteiro…");
   await apiRequest(`/api/itineraries/${itinerary.id}/generate/`, { method: "POST", signal });
   for (let attempt = 0; attempt < 30; attempt += 1) {
@@ -31,7 +33,7 @@ export async function generateItinerary(destination: Destination, preferences: T
     report("Organizando os dias e atividades. Você pode acompanhar também em Seus roteiros.");
     const response = await apiRequest<ApiSuccessResponse<Itinerary>>(`/api/itineraries/${itinerary.id}/`, { signal });
     if (!response.data) throw new Error("Não foi possível carregar o roteiro criado.");
-    if (response.data.generation_status === "ready") return response.data;
+    if (response.data.generation_status === "ready") { onProgress({ stage: "ready", message: "Roteiro pronto", itineraryId: itinerary.id }); return response.data; }
     if (response.data.generation_status === "failed") throw new Error("A geração falhou. Abra o roteiro para conferir o estado salvo.");
     if (attempt < 29) await waitForNextPoll(signal);
   }

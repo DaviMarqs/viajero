@@ -1,3 +1,4 @@
+import { validateTripMetadata } from '../itineraries/trip-generation-context';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -51,6 +52,7 @@ export class ProfilesService {
 
   async upsertTripPreference(userId: number, dto: UpdateTripPreferenceDto): Promise<UserTripPreference> {
     const current = await this.getTripPreference(userId);
+    validateTripMetadata(dto.metadata ?? current?.metadata, dto.preferred_trip_length_days ?? current?.preferred_trip_length_days ?? 1);
     if (!current && REQUIRED_TRIP_FIELDS.some((field) => dto[field] === undefined)) {
       throw new BadRequestException('Informe orcamento e duracao da viagem antes de salvar.');
     }

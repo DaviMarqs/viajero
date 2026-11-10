@@ -21,6 +21,8 @@ export function TripReview({ destination, preferences, onEdit, onChangeDestinati
     { title: "Destino", value: [destination.name, destination.country].filter(Boolean).join(", "), edit: onChangeDestination },
     { title: "Orçamento da viagem", value: `${amount(preferences.budget_min)} a ${amount(preferences.budget_max)}`, step: "budget" },
     { title: "Período", value: `${period}${preferences.metadata.flexible_dates ? ` · ${month}` : ""}`, step: "timing" },
+    { title: "Chegada e partida", value: `${preferences.metadata.arrival_time || "Chegada não informada"} / ${preferences.metadata.departure_time || "Partida não informada"} · horário local do destino`, step: "timing" },
+    { title: "Jantar", value: preferences.metadata.dinner_preference ? choice("dinner", preferences.metadata.dinner_preference) : "Não informado", step: "dinner" },
     { title: "Companhia", value: choice("companionship", preferences.companionship), step: "companionship" },
     { title: "Hospedagem", value: choice("stay", preferences.hotel_level), step: "stay" },
     { title: "Deslocamento", value: choice("transport", preferences.transportation_style), step: "transport" },

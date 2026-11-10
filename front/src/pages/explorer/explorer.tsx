@@ -86,7 +86,7 @@ export default function Explorer({
     </section>
     <section className="reference-panel space-y-6">
       <div className="page-header"><div className="space-y-2"><h2 className="section-title">Explorar por categorias</h2><p className="text-sm text-muted-foreground">Encontre o destino perfeito para seu gosto.</p></div><Button variant="travel" onClick={() => update("categoria", "")}>Ver todas</Button></div>
-      <div className="category-collection"><TravelCollection label="Categorias">{categories.map(tag => {
+      <div className="category-collection"><TravelCollection label="Categorias" progressPagination>{categories.map(tag => {
         const destination = destinations.find(item => destinationCategories(item).includes(tag));
         const photoPoi = destination?.pois?.find(poi => poi.tags?.some(item => travelTagLabel(item.name) === tag) && typeof poi.metadata?.image_url === "string");
         const photo = typeof photoPoi?.metadata?.image_url === "string" ? photoPoi.metadata.image_url : destination ? destinationCardData(destination).image : undefined;

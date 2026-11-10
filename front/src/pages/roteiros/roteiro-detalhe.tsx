@@ -1,3 +1,5 @@
+import { ItineraryHeader } from "@/features/itineraries/itinerary-header";
+import { tripMilestones } from "@/features/itineraries/trip-milestones";
 import { TabStrip } from "@/components/motion/tab-strip";
 import { DayTabLabel } from "@/components/ui/day-tab-label";
 import { Feedback, PageSkeleton } from "@/components/ui/feedback";
@@ -140,16 +142,16 @@ export default function RoteiroDetalhePage() {
   return (
     <section className="page-content itinerary-detail" data-editing={isEditing}>
       <Breadcrumbs current={itinerary.title} parent={{ label: "Roteiros", to: "/roteiros" }} />
-      <header className="page-header">
-        <div className="space-y-3">
-          <h1 className="page-title">Viagem · {itinerary.title}</h1>
-          <p className="text-muted-foreground">
-            {visual.country || "País não informado"} · {itinerary.duration_days ? `${itinerary.duration_days} dias` : "Duração a definir"} · {formatDate(itinerary.start_date)} — {formatDate(itinerary.end_date)}
+      <ItineraryHeader key={itinerary.id}>{compact => <>
+        <div className="itinerary-header-identity space-y-3">
+          <h1 className="page-title itinerary-header-title">Viagem · {itinerary.title}</h1>
+          <p className="itinerary-header-context text-muted-foreground">
+            {visual.location} · {visual.country || "País não informado"} · {itinerary.duration_days ? `${itinerary.duration_days} dias` : "Duração a definir"} · {formatDate(itinerary.start_date)} — {formatDate(itinerary.end_date)}
           </p>
         </div>
-        <div className="action-bar">
+        <div className="itinerary-header-actions action-bar">
           <span
-            className="status-badge"
+            className="status-badge itinerary-header-extra"
             data-status={itinerary.generation_status}
           >
             {itineraryStatus(itinerary.generation_status)}
@@ -172,18 +174,18 @@ export default function RoteiroDetalhePage() {
             !isEditing &&
             !program.busy &&
             (itinerary.generation_status === "ready" || itinerary.generation_status === "failed") && (
-              <RegenerateItineraryButton
+              <div className="itinerary-header-extra"><RegenerateItineraryButton
                 itinerary={itinerary}
                 onRegenerated={(next) => {
                   setItinerary(next);
                   setSelectedDay(0);
                 }}
-              />
+              /></div>
             )}
-          <FavoriteItineraryButton itineraryId={itinerary.id} />
+          <FavoriteItineraryButton itineraryId={itinerary.id} compact={compact} />
           {itinerary.generation_status === "ready" &&
             (!itinerary.is_owner || tripHasEnded(itinerary.end_date)) && (
-              <Button asChild variant="ghost">
+              <Button asChild variant="ghost" className="itinerary-header-extra">
                 <a href="#avaliacoes">
                   <Star aria-hidden="true" />
                   {itinerary.is_owner
@@ -193,7 +195,8 @@ export default function RoteiroDetalhePage() {
               </Button>
             )}
         </div>
-      </header>
+        {days[selectedDay] && <div className="itinerary-header-summary"><strong>{isEditing ? "Editando" : "Programação"} · Dia {days[selectedDay].day_number} · <DayTabLabel start={itinerary.start_date} day={days[selectedDay].day_number} /></strong><span>{daily.activities ? `${daily.activities} atividades` : "Dia livre"}</span><span>Visitas{daily.missingDurations ? " informadas" : ""}: {daily.visitMinutes ? `${Math.floor(daily.visitMinutes / 60)}h ${daily.visitMinutes % 60}min` : "Não informado"}</span><span>Custo conhecido: {daily.activities && daily.missingCosts === daily.activities ? "Não informado" : money(daily.knownCost, itinerary.currency_code || "BRL")}{daily.missingCosts > 0 && daily.missingCosts < daily.activities ? " (parcial)" : ""}</span></div>}
+      </>}</ItineraryHeader>
       {isEditing && <section className="edit-mode-panel space-y-4" aria-label="Modo de edição">
         <div><h2 className="text-lg">Modo de edição ativado</h2><p className="mt-1 text-sm text-muted-foreground">Cada alteração é salva automaticamente. Arraste pela alça ou use as setas para reordenar, leve uma atividade para outro dia ou remova. Os horários são recalculados pela duração das visitas, com 30 minutos entre atividades.</p></div>
         <ItineraryDetailsEditor itinerary={itinerary} titleDraft={program.titleDraft} disabled={program.undoing} onTitleChange={program.editTitle} onStartDateCommit={program.editStartDate} />
@@ -201,15 +204,17 @@ export default function RoteiroDetalhePage() {
       <div className="itinerary-layout">
         <section className="space-y-6" aria-label="Programação da viagem">
           <TabStrip label="Dias do roteiro" selected={selectedDay}>
-            {days.map((day, index) => <button key={day.id} type="button" role="tab" tabIndex={selectedDay === index ? 0 : -1} id={`day-tab-${index}`} aria-controls={`day-panel-${index}`} aria-selected={selectedDay === index} onClick={() => setSelectedDay(index)} onKeyDown={event => { const next = event.key === "ArrowRight" ? (index + 1) % days.length : event.key === "ArrowLeft" ? (index + days.length - 1) % days.length : event.key === "Home" ? 0 : event.key === "End" ? days.length - 1 : null; if (next != null) { event.preventDefault(); setSelectedDay(next); event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`#day-tab-${next}`)?.focus(); } }}><DayTabLabel start={itinerary.start_date} day={day.day_number} /></button>)}
+            {days.map((day, index) => <button key={day.id} type="button" role="tab" tabIndex={selectedDay === index ? 0 : -1} id={`day-tab-${index}`} aria-controls={`day-panel-${index}`} aria-selected={selectedDay === index} onClick={() => setSelectedDay(index)} onKeyDown={event => { const next = event.key === "ArrowRight" ? (index + 1) % days.length : event.key === "ArrowLeft" ? (index + days.length - 1) % days.length : event.key === "Home" ? 0 : event.key === "End" ? days.length - 1 : null; if (next != null) { event.preventDefault(); setSelectedDay(next); event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`#day-tab-${next}`)?.focus(); } }}>Dia {day.day_number} · <DayTabLabel start={itinerary.start_date} day={day.day_number} /></button>)}
           </TabStrip>
           {days.length === 0 ? <Feedback title="Ainda não existem dias gerados para este roteiro." description={itinerary.generation_status === "generating" ? "A programação aparecerá aqui quando a geração terminar." : undefined} /> : days.map((day, index) => selectedDay === index ? <div key={day.id} role="tabpanel" id={`day-panel-${index}`} aria-labelledby={`day-tab-${index}`} hidden={selectedDay !== index} className="space-y-5">
-            <h2 className="section-title">{day.title}</h2>
+            <h2 className="section-title">Dia {day.day_number} · {day.title}</h2>
             {day.summary && <p className="text-sm leading-6 text-muted-foreground">{day.summary}</p>}
             <dl className="day-overview"><div><dt>Atividades</dt><dd>{daily.activities}</dd></div><div><dt>Tempo de visitas{daily.missingDurations ? " informado" : ""}</dt><dd>{daily.visitMinutes ? `${Math.floor(daily.visitMinutes / 60)}h ${daily.visitMinutes % 60}min` : "Não informado"}</dd></div><div><dt>Custo conhecido do dia</dt><dd>{daily.activities ? daily.missingCosts === daily.activities ? "—" : money(daily.knownCost, itinerary.currency_code || "BRL") : "Dia livre"}</dd></div></dl>
             {(daily.missingCosts > 0 || daily.missingDurations > 0) && <p className="text-sm text-muted-foreground">{daily.missingCosts > 0 && `${daily.missingCosts} atividades sem custo informado. `}{daily.missingDurations > 0 && `${daily.missingDurations} atividades sem duração informada.`}</p>}
             {daily.activities > 1 && <p className="text-xs text-muted-foreground">O tempo de visitas não inclui deslocamentos. Intervalos da programação não representam uma estimativa de trajeto real.</p>}
+            {tripMilestones(itinerary, day.day_number).filter(mark => mark.kind === "arrival").map(mark => <p key={mark.kind} className="trip-milestone"><strong>Chegada</strong> · {formatDate(mark.date)} · {mark.time || "Horário não informado"}</p>)}
             {isEditing ? <fieldset disabled={program.undoing}><DayEditor day={day} days={days} startDate={itinerary.start_date} destinationImage={visual.image} destinationName={visual.location} currency={itinerary.currency_code || "BRL"} onReorder={(from, to) => changeProgram(current => reorderEvent(current, day.day_number, from, to))} onMove={(event, target) => changeProgram(current => moveEvent(current, event.id, target), `Atividade movida para o dia ${target}.`)} onRemove={event => changeProgram(current => removeEvent(current, event.id), "Atividade removida.")} /></fieldset> : <ol className="space-y-5">{(day.events ?? []).map((event, eventIndex) => <ItineraryActivity key={event.id} event={event} index={eventIndex} currency={itinerary.currency_code || "BRL"} destinationImage={visual.image} destinationName={visual.location} />)}</ol>}
+            {tripMilestones(itinerary, day.day_number).filter(mark => mark.kind === "departure").map(mark => <p key={mark.kind} className="trip-milestone"><strong>Partida</strong> · {formatDate(mark.date)} · {mark.time || "Horário não informado"}</p>)}
             {!isEditing && !day.events?.length && <p className="text-muted-foreground">Nenhuma atividade neste dia.</p>}
           </div> : null)}
         </section>

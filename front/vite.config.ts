@@ -5,6 +5,11 @@ import path from "path"
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  server: {
+    watch: {
+      usePolling: process.env.WATCH_USE_POLLING === "true",
+    },
+  },
   plugins: [
     react(),
     tailwindcss(), // <-- É isso aqui que faz a mágica do v4 acontecer!

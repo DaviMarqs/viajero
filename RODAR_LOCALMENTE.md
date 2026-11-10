@@ -31,7 +31,10 @@ docker compose up --build
 Esse comando sobe três serviços em ordem: o PostgreSQL (`viajero-pg`), a API Nest (`http://localhost:8001`), que antes de subir aplica as migrations e carrega o seed só se o banco não tiver destinos, e o front (`http://localhost:5173`). Não precisa de Node nem de Python na máquina. A primeira vez demora alguns minutos baixando as imagens.
 
 - **IA:** antes de subir, crie o `backend-nest/.env` a partir do `backend-nest/.env.example` e preencha `GROQ_API_KEY` (passo 5). O Docker lê esse arquivo; sem ele tudo funciona com o gerador mock.
-- **Depois de `git pull` ou de mudar código:** rode o mesmo comando. O `--build` refaz as imagens; não há recarga automática dentro do Docker. Para desenvolver, prefira o passo a passo abaixo.
+- **Ao mudar código:** basta salvar. O Compose monta as pastas locais nos containers: o Vite atualiza o front automaticamente e o Nest recompila e reinicia a API. A observação usa polling para detectar alterações também no Docker Desktop/Windows.
+- **Depois de mudar dependências ou Dockerfiles:** rode `docker compose up --build -d -V`. O `-V` renova os volumes anônimos de dependências e compilação; o banco continua no volume nomeado `viajero-pgdata`. Para apenas ligar novamente, use `docker compose up -d`.
+- **Depois de adicionar migrations:** reinicie a API com `docker compose restart api` para aplicá-las. Mudanças em `backend-nest/.env` exigem recriar a API com `docker compose up -d --force-recreate api`.
+- **Imagens de produção:** os estágios finais dos Dockerfiles continuam disponíveis com `docker build -t viajero-web ./front` e `docker build -t viajero-api ./backend-nest`. O Compose usa o estágio `development`.
 - **Em segundo plano:** `docker compose up --build -d`. Logs: `docker compose logs -f api`. Parar: `docker compose down` (os dados continuam no volume `viajero-pgdata`).
 - **Já tinha o container `viajero-pg` criado com `docker run`** (versões antigas deste guia)? Remova uma vez com `docker rm -f viajero-pg`; os dados ficam no volume e o compose usa o mesmo volume.
 - **Porta 5432 ocupada** por um PostgreSQL da máquina? `DB_PORT=55432 docker compose up --build` (no PowerShell: `$env:DB_PORT="55432"; docker compose up --build`).

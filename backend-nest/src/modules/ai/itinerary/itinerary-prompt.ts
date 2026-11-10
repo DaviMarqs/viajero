@@ -73,6 +73,7 @@ export interface ItineraryContext {
   pois: Array<{ id: number; name: string; type: string; rating: string; visit_minutes: number }>;
   profile?: Record<string, unknown>;
   preferences?: {
+    arrival_time?: string; departure_time?: string; dinner_preference?: string;
     budget_min: string; budget_max: string; currency_code: string; preferred_trip_length_days: number;
     companionship: string | null; travel_month: string | null; hotel_level: string | null; transportation_style: string | null;
     dietary_preferences: string[]; accessibility_needs: string[]; interests: string[];
@@ -127,6 +128,9 @@ export function buildItineraryContext(
   }
   if (preferences) {
     context.preferences = {
+      ...(typeof preferences.metadata?.arrival_time === 'string' ? { arrival_time: preferences.metadata.arrival_time } : {}),
+      ...(typeof preferences.metadata?.departure_time === 'string' ? { departure_time: preferences.metadata.departure_time } : {}),
+      ...(typeof preferences.metadata?.dinner_preference === 'string' ? { dinner_preference: preferences.metadata.dinner_preference } : {}),
       budget_min: String(preferences.budget_min),
       budget_max: String(preferences.budget_max),
       currency_code: preferences.currency_code,
@@ -183,11 +187,21 @@ export function buildItineraryPrompt(context: ItineraryContext, template: Pick<P
         ? ` Mes da viagem: ${prefs.travel_month}.`
         : '';
 
+  const availability =
+    (prefs?.arrival_time ? ` No primeiro dia, nenhum evento pode começar antes de ${prefs.arrival_time}.` : '') +
+    (prefs?.departure_time ? ` No último dia, todos os eventos devem terminar até ${prefs.departure_time}.` : '');
+  const dinnerRules: Record<string, string> = {
+    all: ' Todos os jantares disponíveis devem ser em restaurante.',
+    none: ' Nenhum jantar deve ser em restaurante: planeje refeições na hospedagem, sem inventar sua estrutura ou tratar seu custo como zero.',
+    mixed: ' Alterne jantares em restaurante e na hospedagem. Conte os jantares compatéveis com a disponibilidade: metade arredondada para baixo será em restaurante e o restante na hospedagem.',
+  };
+  const dinnerRule = prefs?.dinner_preference ? dinnerRules[prefs.dinner_preference] ?? '' : '';
   let intro =
     'Voce e um planejador de viagens. ' +
     `Crie um roteiro de EXATAMENTE ${context.duration_days} dias para ${context.destination.name} (${context.destination.country}).` +
     (useBudgetTotal ? ` Orcamento total: ${context.budget_total} ${currency}.` : '') +
-    period +
+    period + availability + dinnerRule +
+    (availability ? " Use o horário local do destino, inclusive com datas flexíveis no primeiro/último dia. Priorize esses limites sobre a quantidade mínima de eventos; não inclua jantar fora da janela disponível." : "") +
     prefsHint +
     " Prefira eventos que referenciem POIs existentes via 'poi_id'. " +
     'Inclua tambem eventos de hospedagem (por dia), refeicoes e transporte com poi_id=null para que o custo seja realista. ' +

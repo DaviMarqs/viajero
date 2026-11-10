@@ -1,5 +1,5 @@
-export function PlanningSkeleton({ steps }: { steps: number }) {
-  return <div className="planning-page" role="status" aria-busy="true">
+export function PlanningSkeleton({ steps, className = "" }: { steps: number; className?: string }) {
+  return <div className={`planning-page ${className}`} role="status" aria-busy="true">
     <span className="sr-only">Carregando suas preferências…</span>
     <div className="planning-context" aria-hidden="true"><div className="skeleton-block h-6 w-48" /></div>
     <div className="planning-layout" aria-hidden="true">

@@ -9,6 +9,7 @@ import {
   Users,
   Heart,
   Baby,
+  Utensils,
 } from "lucide-react";
 import type {
   DropdownOption,
@@ -270,6 +271,16 @@ export const TRAVEL_PREFERENCES_STEPS: OnboardingStep[] = [
     ],
   },
 ];
+
+TRAVEL_PREFERENCES_STEPS.splice(4, 0, {
+  key: "dinner", label: "Jantar", title: "Como prefere jantar nesta viagem?",
+  sub: "Escolha entre restaurantes e refeições feitas na hospedagem.",
+  fields: [{ type: "cards", cards: [
+    { icon: Utensils, title: "Todos os dias", desc: "Jantar em restaurante todos os dias disponíveis.", value: "all" },
+    { icon: Hotel, title: "Nenhum dia", desc: "Fazer os jantares na hospedagem.", value: "none" },
+    { icon: Wallet, title: "Meio a meio", desc: "Alternar restaurantes e hospedagem. Se sobrar um jantar, será na hospedagem.", value: "mixed" },
+  ] }],
+});
 
 export const TRAVEL_PREFERENCES_SIDEBAR = {
   title: "Configure suas preferências de viagem",

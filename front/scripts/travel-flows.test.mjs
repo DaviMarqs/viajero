@@ -1,3 +1,6 @@
+import { tripMilestones } from "../src/features/itineraries/trip-milestones.ts";
+import { collectionPagination } from "../src/lib/collection-pagination.ts";
+import { readFileSync } from "node:fs";
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { localizedDestination, matchesDestinationQuery } from "../src/lib/destination-language.ts";
@@ -26,6 +29,20 @@ import {
 } from "../src/features/itineraries/program-sync.ts";
 
 const storage = new Map();
+test("category pagination tracks quarters with at most five reachable markers", () => {
+  const positions = Array.from({ length: 21 }, (_, index) => index * 100);
+  assert.deepEqual(collectionPagination(positions, 0), { indexes: [0, 5, 10, 15, 20], active: 0 });
+  for (const [offset, active] of [[499, 0], [500, 1], [999, 1], [1000, 2], [1500, 3], [1998, 4], [2000, 4]]) {
+    assert.equal(collectionPagination(positions, offset).active, active);
+  }
+  assert.deepEqual(collectionPagination([], 0), { indexes: [0], active: 0 });
+  assert.deepEqual(collectionPagination([0], 0), { indexes: [0], active: 0 });
+  assert.deepEqual(collectionPagination([0, 100], 100), { indexes: [0, 1], active: 1 });
+  assert.deepEqual(collectionPagination([0, 100, 200], 100), { indexes: [0, 1, 2], active: 1 });
+  assert.equal(collectionPagination([0, 100, 200, 300, 400, 450], 450).active, 4);
+  assert.equal(collectionPagination([0, 100], 2000).active, 1);
+  assert.equal(collectionPagination(positions, -10).active, 0);
+});
 globalThis.localStorage = {
   getItem: (key) => storage.get(key) ?? null,
   setItem: (key, value) => storage.set(key, value),
@@ -266,4 +283,33 @@ test("trip review becomes available after the full return day, never before", ()
   );
   assert.equal(tripHasEnded(null), false);
   assert.equal(tripHasEnded("invalid"), false);
+});
+
+
+test("planning draft preserves dinner step and optional availability", () => {
+  const snapshot = { currentIndex: 7, fieldValues: { arrival_time: "16:00", departure_time: "10:00" }, cardSelections: { dinner: [2] }, tagValues: {} };
+  assert.equal(savePlanningDraft(987, { snapshot }), true);
+  assert.deepEqual(readPlanningDraft(987)?.snapshot, snapshot);
+  clearPlanningDraft(987);
+});
+
+
+test("legacy draft indexes follow the original step keys", () => {
+  for (let index = 0; index < 8; index++) {
+    const value = { snapshot: { currentIndex: index, fieldValues: {}, cardSelections: { dinner: [2] }, tagValues: {} } };
+    localStorage.setItem(planningDraftKey(1), JSON.stringify({ version: 1, updatedAt: Date.now(), value }));
+    assert.equal(readPlanningDraft(1)?.snapshot.currentIndex, [0, 1, 2, 3, 5, 6, 7, 4][index]);
+  }
+});
+
+test("arrival and departure are separate markers on a single day", () => {
+ const trip = { days: [{ day_number: 1 }], start_date: "2026-11-12", end_date: "2026-11-12", metadata: { trip_preferences: { metadata: { arrival_time: "09:00", departure_time: "18:00" } } } };
+ assert.deepEqual(tripMilestones(trip, 1).map(mark => mark.time), ["09:00", "18:00"]);
+ assert.equal(tripMilestones(trip, 2).length, 0);
+ assert.equal(tripMilestones({ days: [{ day_number: 1 }] }, 1)[0].time, undefined);
+});
+test("day labels keep UTF-8 separators and accents", () => {
+ const source = readFileSync(new URL("../src/pages/roteiros/roteiro-detalhe.tsx", import.meta.url), "utf8");
+ assert.ok(source.includes("Dia {day.day_number} \u00b7"));
+ assert.ok(!source.includes("Programa??o"));
 });

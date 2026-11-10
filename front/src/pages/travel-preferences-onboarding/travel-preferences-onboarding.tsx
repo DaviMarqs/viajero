@@ -59,6 +59,8 @@ function buildSnapshotFromPreferences(
         preferences.preferred_trip_length_days,
       ),
       travel_month: preferences.travel_month,
+      arrival_time: preferences.metadata?.arrival_time,
+      departure_time: preferences.metadata?.departure_time,
       start_date: preferences.metadata?.start_date,
       end_date: preferences.metadata?.end_date,
     },
@@ -74,6 +76,7 @@ function buildSnapshotFromPreferences(
       timing: getCardIndexes("timing", [
         String(Boolean(preferences.metadata?.flexible_dates)),
       ]),
+      dinner: getCardIndexes("dinner", [preferences.metadata?.dinner_preference ?? ""]),
       stay: getCardIndexes("stay", [preferences.hotel_level]),
       transport: getCardIndexes("transport", [
         preferences.transportation_style,
@@ -144,9 +147,11 @@ export default function TravelPreferencesOnboarding() {
   const flexibleDatesValue = getCardValues("timing")[0] === "true";
   const fixedDuration = tripDuration(fieldValues.start_date, fieldValues.end_date);
   const validBudget = !!fieldValues.budget_min?.trim() && !!fieldValues.budget_max?.trim() && currencyStringToNumber(fieldValues.budget_min) <= currencyStringToNumber(fieldValues.budget_max) && currencyStringToNumber(fieldValues.budget_max) > 0;
-  const canAdvance = currentStep.key === "budget" ? hasSelection() && validBudget : currentStep.key === "timing" && !flexibleDatesValue
+  const timingDuration = flexibleDatesValue ? Number(fieldValues.preferred_trip_length_days) : fixedDuration;
+  const validTimes = ![fieldValues.arrival_time, fieldValues.departure_time].some(time => time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) && !(timingDuration === 1 && fieldValues.arrival_time && fieldValues.departure_time && fieldValues.departure_time <= fieldValues.arrival_time);
+  const canAdvance = (currentStep.key === "budget" ? hasSelection() && validBudget : currentStep.key === "timing" && !flexibleDatesValue
     ? getCardValues("timing").length > 0 && fixedDuration != null && fixedDuration <= 60
-    : hasSelection();
+    : hasSelection()) && (currentStep.key !== "timing" || validTimes);
   const displayDuration = flexibleDatesValue ? Number(fieldValues.preferred_trip_length_days) : fixedDuration;
   const dailyMoney = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: fieldValues.currency_code || "BRL" }).format(value);
   const visibleStep = currentStep.key === "timing" && !flexibleDatesValue ? { ...currentStep, fields: currentStep.fields.filter(field => field.type === "cards") } : currentStep;
@@ -213,6 +218,16 @@ export default function TravelPreferencesOnboarding() {
       },
     };
 
+    const { arrival_time: arrival, departure_time: departure } = fieldValues;
+    if ([arrival, departure].some(time => time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) ||
+      (tripLength === 1 && arrival && departure && departure <= arrival)) {
+      setSubmitError("Revise os horários: em uma viagem de um dia, a partida deve ser após a chegada."); return;
+    }
+    const dinner = getCardValues("dinner")[0];
+    if (dinner !== "all" && dinner !== "none" && dinner !== "mixed") {
+      setSubmitError("Escolha como deseja jantar nesta viagem."); return;
+    }
+    payload.metadata = { ...payload.metadata, ...(arrival ? { arrival_time: arrival } : {}), ...(departure ? { departure_time: departure } : {}), dinner_preference: dinner };
     setSubmitError(null);
     try {
       const savedPreferences = await save(payload);
@@ -237,7 +252,7 @@ export default function TravelPreferencesOnboarding() {
     }
   }
 
-  if (loading) return <PlanningSkeleton steps={TRAVEL_PREFERENCES_STEPS.length} />;
+  if (loading) return <PlanningSkeleton steps={TRAVEL_PREFERENCES_STEPS.length} className="trip-planning-page" />;
 
   if (error) {
     return (
@@ -288,7 +303,7 @@ export default function TravelPreferencesOnboarding() {
     );
   }
 
-  return <div className="planning-page">
+  return <div className="planning-page trip-planning-page">
     <div className="planning-context"><span className="planning-destination">{destination?.name || "Destino a definir"}</span><span className="planning-data">{flexibleDatesValue ? (TRAVEL_PREFERENCES_STEPS.flatMap(step => step.fields).flatMap(field => field.type === "dropdown" && field.key === "travel_month" ? field.options : []).find(option => option.value === fieldValues.travel_month)?.label || "Mês a definir") : planningPeriod(fieldValues.start_date, fieldValues.end_date)}</span><span className="planning-data">{!flexibleDatesValue && fixedDuration ? `${fixedDuration} dias` : fieldValues.preferred_trip_length_days ? `${fieldValues.preferred_trip_length_days} dias · flexíveis` : "Duração a definir"}</span><Link to="/destinos" className="planning-exit">Sair</Link></div>
     <div className="planning-layout">
       <PlanningSteps steps={TRAVEL_PREFERENCES_STEPS} currentIndex={currentIndex} fieldValues={fieldValues} tagValues={tagValues} cardSelections={cardSelections} onSelect={setCurrentStep} />
@@ -297,6 +312,8 @@ export default function TravelPreferencesOnboarding() {
         <StepTransition step={currentIndex}><header className="planning-heading"><p className="text-xs text-muted-foreground">{currentStep.label} · Etapa {currentIndex + 1} de {TRAVEL_PREFERENCES_STEPS.length}</p><h2 ref={headingRef} tabIndex={-1}>{planningQuestion(currentStep.key, currentStep.title)}</h2><p className="text-sm text-muted-foreground">{currentStep.key === "timing" ? "Escolha como tratar as datas desta viagem." : currentStep.key === "budget" ? "Defina uma faixa de gasto para esta viagem." : currentStep.key === "needs" ? "Indique os cuidados que a viagem precisa considerar." : currentStep.sub}</p></header>
         <div className={`planning-controls planning-step-card ${currentStep.key === "timing" ? "planning-period-card" : ""}`}><OnboardingStepFields currentStep={visibleStep} selectedCards={selectedCards} fieldValues={fieldValues} tagValues={tagValues} onToggleCard={toggleCard} onSetField={(key, value) => { if (key === "budget_min" || key === "budget_max") setBudgetTouched(true); setField(key, value); }} onSetTags={setTags} prefilled={!!preferences && !restored?.snapshot} fieldErrors={{ budget_max: fieldValues.budget_min && fieldValues.budget_max && !validBudget ? "O máximo deve ser maior que zero e igual ou superior ao mínimo. Ajuste este valor." : undefined }} />{currentStep.key === "timing" && getCardValues("timing")[0] === "false" && <TripCalendar start={fieldValues.start_date ?? ""} end={fieldValues.end_date ?? ""} onChange={(start, end) => { setField("start_date", start); setField("end_date", end); }} />}
 
+{currentStep.key === "timing" && <fieldset className="space-y-3"><legend className="text-sm">Horários no destino (opcionais)</legend><p className="text-xs text-muted-foreground">Horário local do destino. Com datas flexíveis, valem para o primeiro e o último dia.</p>{(["arrival_time", "departure_time"] as const).map(key => <label key={key} className="flex flex-wrap items-center gap-3 text-sm">{key === "arrival_time" ? "Horário de chegada" : "Horário de partida"}<input type="time" className="rounded-md border border-border bg-background p-3" value={fieldValues[key] ?? ""} onChange={event => setField(key, event.target.value)} /></label>)}</fieldset>}
+{currentStep.key === "timing" && !validTimes && <p role="alert" className="text-sm text-destructive">Revise os horários. Em uma viagem de um dia, a partida deve ser após a chegada.</p>}
 {currentStep.key === "timing" && flexibleDatesValue && <span className="field-support">Posso adaptar o período se isso melhorar preço ou experiência.</span>}</div>
         {currentStep.key === "budget" && <p className="field-support planning-data">{validBudget && fieldValues.currency_code && displayDuration && displayDuration > 0 && displayDuration <= 60 ? <>≈ <AnimatedNumber value={currencyStringToNumber(fieldValues.budget_min ?? "") / displayDuration} format={dailyMoney} animate={budgetTouched} /> a <AnimatedNumber value={currencyStringToNumber(fieldValues.budget_max ?? "") / displayDuration} format={dailyMoney} animate={budgetTouched} /> por dia · total ÷ {displayDuration} dias</> : "A referência por dia aparece ao informar os valores e a duração."}</p>}
         {currentIndex === 0 && <p className="field-support planning-dna-note">Estas escolhas valem só para esta viagem. Seu DNA de viajante continua no perfil.</p>}

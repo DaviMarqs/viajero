@@ -1,6 +1,7 @@
+import { GenerationProgress, type GenerationStage } from "@/features/itineraries/generation-progress";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { MapPin, Sparkles, Check } from "lucide-react";
+import { ArrowRight, MapPin, Sparkles, Check } from "lucide-react";
 import { localizedDestination } from "@/lib/destination-language";
 import { apiRequest } from "@/lib/api";
 import { generateItinerary } from "@/features/itineraries/generation-service";
@@ -54,7 +55,7 @@ export default function RoteiroCriacaoPage() {
   const [busy, setBusy] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState("");
+  const [progress, setProgress] = useState<GenerationStage>("preparing");
   const [draftError, setDraftError] = useState("");
   const [createdId, setCreatedId] = useState<number | string | undefined>();
   const controller = useRef<AbortController | null>(null);
@@ -118,6 +119,7 @@ export default function RoteiroCriacaoPage() {
     }
     if (!reviewing) { setReviewing(true); return; }
     locked.current = true;
+    setProgress("preparing");
     setGenerating(true);
     setError(null);
     const request = new AbortController();
@@ -128,7 +130,7 @@ export default function RoteiroCriacaoPage() {
         tripPreferences,
         request.signal,
         (next) => {
-          setProgress(next.message);
+          setProgress(next.stage);
           if (next.itineraryId) { setCreatedId(next.itineraryId); clearPlanningDraft(user?.id); }
         },
       );
@@ -168,7 +170,7 @@ export default function RoteiroCriacaoPage() {
         {restored?.destination && !passed?.destination && !createdId && selected && !wantsSuggestion && <div className="flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm text-strong">Seu planejamento foi retomado neste navegador.</p><Button variant="ghost" size="sm" onClick={() => { clearPlanningDraft(user?.id); setTripPreferences(undefined); setReviewing(false); setSelected(null); setResults(null); setMode(null); setQuery(""); }}>Descartar rascunho</Button></div>}
         {draftError && <p role="status" className="text-sm text-destructive">{draftError}</p>}
         {!mode ? (
-          <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 md:gap-6">
             {[
               {
                 key: "suggest" as const,
@@ -176,6 +178,7 @@ export default function RoteiroCriacaoPage() {
                 description:
                   "Receba uma recomendação com base no seu DNA de viajante.",
                 icon: Sparkles,
+                action: "Descobrir meu destino",
               },
               {
                 key: "search" as const,
@@ -183,23 +186,31 @@ export default function RoteiroCriacaoPage() {
                 description:
                   "Pesquise um destino para planejar sua próxima viagem.",
                 icon: MapPin,
+                action: "Buscar um destino",
               },
-            ].map(({ key, title, description, icon: Icon }) => (
+            ].map(({ key, title, description, icon: Icon, action }) => (
               <button
                 key={key}
+                type="button"
                 onClick={() => {
                   setMode(key);
                   setResults(null);
                   setSelected(null);
                   if (key === "suggest") void search(undefined, key);
                 }}
-                className="choice-button space-y-4 rounded-card border border-border bg-surface p-6 text-left hover:border-line-strong"
+                className="choice-button group flex min-w-0 cursor-pointer flex-col items-start gap-6 rounded-card border border-border bg-surface p-6 text-left hover:border-accent focus-visible:border-accent"
               >
-                <span className="inline-flex text-muted-foreground">
-                  <Icon aria-hidden="true" />
+                <span className="inline-flex rounded-control bg-muted p-3 text-accent">
+                  <Icon className="size-6" aria-hidden="true" />
                 </span>
-                <h2 className="text-2xl">{title}</h2>
-                <p className="text-strong">{description}</p>
+                <span className="space-y-2">
+                  <span className="block text-2xl font-semibold text-ink">{title}</span>
+                  <span className="block text-muted-foreground">{description}</span>
+                </span>
+                <span className="mt-auto flex w-full items-center justify-between gap-3 border-t border-border pt-4 text-sm font-medium text-accent">
+                  {action}
+                  <ArrowRight className="size-5 shrink-0 motion-safe:transition-transform motion-safe:group-hover:translate-x-1 motion-safe:group-focus-visible:translate-x-1" aria-hidden="true" />
+                </span>
               </button>
             ))}
           </div>
@@ -280,11 +291,7 @@ export default function RoteiroCriacaoPage() {
               </div>
             )}
             {generating && (
-              <Feedback
-                kind="loading"
-                title="Montando seu roteiro"
-                description={progress}
-              />
+              <GenerationProgress stage={progress} />
             )}
             {!generating && !createdId && !busy && !reviewing && (
               <div className="space-y-4">
