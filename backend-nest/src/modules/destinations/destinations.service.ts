@@ -5,7 +5,7 @@ import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity
 import { Destination, DestinationCostProfile, PointOfInterest } from './entities';
 import { Itinerary, ItineraryDailyEvent } from '../itineraries/entities';
 import { LlmJob } from '../ai/entities';
-import { matchesDestinationQuery, normalizeDestinationText, portugueseCountry, portuguesePlaceName } from './destination-language';
+import { matchesDestinationPlace, normalizeDestinationText, portugueseCountry, portuguesePlaceName } from './destination-language';
 import { CreateDestinationDto } from './dto/create-destination.dto';
 import { UpdateDestinationDto } from './dto/destination-write.dto';
 import { CreatePoiDto, UpdatePoiDto } from './dto/poi-write.dto';
@@ -93,12 +93,12 @@ export class DestinationsService {
   }
 
   async search(input: { q?: string; country?: string; city?: string }): Promise<Destination[]> {
-    // Search original names and Portuguese aliases without accents; never create duplicate cities for a translated query.
+    // Procura pelo nome do lugar (original e em portugues, sem acento); nunca cria cidade duplicada por traducao.
     let results = await this.destinations.find({
       relations: { cost_profile: true, pois: { tags: true } },
       order: { average_rating: 'DESC', name: 'ASC' },
     });
-    if (input.q?.trim()) results = results.filter(item => matchesDestinationQuery(item, input.q!));
+    if (input.q?.trim()) results = results.filter(item => matchesDestinationPlace(item, input.q!));
     if (input.country) results = results.filter(item => normalizeDestinationText(portugueseCountry(item.country)) === normalizeDestinationText(portugueseCountry(input.country!)));
     if (input.city) results = results.filter(item => normalizeDestinationText(portuguesePlaceName(item.city)) === normalizeDestinationText(portuguesePlaceName(input.city!)));
     return results.slice(0, 20);

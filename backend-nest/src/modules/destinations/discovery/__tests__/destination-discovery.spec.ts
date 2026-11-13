@@ -69,7 +69,7 @@ describe('mergeDiscovery', () => {
     );
     expect(merged).toMatchObject({ name: 'Lisboa', country: 'Portugal', summary: 'Resumo do guia', bestSeason: 'Primavera', heroImageUrl: 'https://img.test/h.jpg', hasData: true });
     expect(merged.pois.map((poi) => poi.name)).toEqual(['Torre de Belem', 'Alfama']);
-    expect(merged.sources).toEqual({ firecrawl: true, gemini: true, groq: false });
+    expect(merged.sources).toEqual({ firecrawl: true, gemini: true, groq: false, deepseek: false });
   });
 
   it('sem nenhuma fonte usa a busca como nome e marca sem dados', () => {
@@ -115,6 +115,16 @@ describe('fetchWikipediaThumbnail', () => {
     await expect(fetchWikipediaThumbnail('X', {}, onlyBare({ ...photo('d'), type: 'disambiguation', description: 'cidade' }) as never)).resolves.toBe('');
   });
 
+  it('sem foto utilizavel (so bandeira svg) usa a imagem do mesmo artigo em ingles', async () => {
+    const flag = { originalimage: { source: 'https://thumb.wikimedia.org/a/Flag_of_Vienna.svg/960px-Flag_of_Vienna.svg.png' }, description: 'capital e maior cidade da Austria' };
+    const fetchFn = jest.fn((url: string) => {
+      if (url.includes('prop=langlinks')) return page({ query: { pages: [{ langlinks: [{ lang: 'en', title: 'Vienna' }] }] } });
+      if (url.includes('en.wikipedia.org/api/rest_v1/page/summary/Vienna')) return page(photo('vienna'));
+      return page(flag);
+    });
+    await expect(fetchWikipediaThumbnail('Viena', { country: 'Áustria' }, fetchFn as never)).resolves.toBe('https://upload.wikimedia.org/vienna.jpg');
+  });
+
   it('limita miniaturas da Wikimedia a 1280px', () => {
     expect(limitWikimediaWidth('https://thumb.wikimedia.org/a/b/X.jpg/3840px-X.jpg?utm_source=pt')).toBe('https://thumb.wikimedia.org/a/b/X.jpg/1280px-X.jpg?utm_source=pt');
     expect(limitWikimediaWidth('https://upload.wikimedia.org/a/b/X.jpg')).toBe('https://upload.wikimedia.org/a/b/X.jpg');
@@ -126,6 +136,10 @@ describe('fetchWikipediaThumbnail', () => {
     expect(looksLikePlace({ description: 'militar brasileiro', extract: 'Atuou no Brasil colonial.' }, ['Brasil'])).toBe(false);
     expect(looksLikePlace({ description: 'municipio brasileiro do estado de Minas Gerais' }, ['Minas Gerais', 'Brasil'])).toBe(true);
     expect(looksLikePlace({ description: 'cidade do Japao' }, ['Brasil'])).toBe(false);
+    // Pais em portugues x Wikipedia em ingles/outra descricao: Bologna ficava sem foto.
+    expect(looksLikePlace({ description: 'Capital and largest city of Emilia-Romagna, Italy' }, ['', 'Itália'])).toBe(true);
+    expect(looksLikePlace({ description: 'comuna italiana', extract: 'Bolonha e uma comuna italiana, capital da Emilia-Romagna.' }, ['Itália'])).toBe(true);
+    expect(looksLikePlace({ description: 'cidade do Japao' }, ['Itália'])).toBe(false);
   });
 });
 

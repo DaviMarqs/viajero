@@ -30,10 +30,23 @@ export function destinationSearchTerms(destination: SearchableDestination): stri
   const localized = metadata?.name_pt;
   return [name, portuguesePlaceName(name), city ?? '', portuguesePlaceName(city ?? ''), country ?? '', portugueseCountry(country ?? ''), summary ?? '', typeof localized === 'string' ? localized : '', ...aliases, ...(destination.pois ?? []).flatMap(poi => (poi.tags ?? []).map(tag => tag.name))];
 }
-export function matchesDestinationQuery(destination: SearchableDestination, query: string): boolean {
-  const terms = normalizeDestinationText(query).split(/\s+/).filter(Boolean);
-  const haystack = normalizeDestinationText(destinationSearchTerms(destination).join(' '));
-  return terms.every(term => haystack.includes(term));
+/** Nomes que identificam o lugar (nome, cidade e pais, originais e em portugues): sem resumo nem tags. */
+function destinationPlaceTerms(destination: SearchableDestination): string[] {
+  const { name, city, country, metadata } = destination;
+  const localized = metadata?.name_pt;
+  return [name, portuguesePlaceName(name), city ?? '', portuguesePlaceName(city ?? ''), country ?? '', portugueseCountry(country ?? ''), typeof localized === 'string' ? localized : ''];
+}
+
+/**
+ * A busca da criacao de roteiro procura o lugar, nao o assunto: cada termo precisa ser inicio de uma palavra
+ * do nome/cidade/pais. Antes valia substring no resumo, e "Roma" casava com "Emilia-Romanha" (Bologna),
+ * devolvendo destinos errados e impedindo a descoberta de Roma.
+ */
+export function matchesDestinationPlace(destination: SearchableDestination, query: string): boolean {
+  const terms = normalizeDestinationText(query).split(/[^a-z0-9]+/).filter(Boolean);
+  if (terms.length === 0) return false;
+  const words = normalizeDestinationText(destinationPlaceTerms(destination).join(' ')).split(/[^a-z0-9]+/).filter(Boolean);
+  return terms.every((term) => words.some((word) => word.startsWith(term)));
 }
 export function localizedDestination<T extends SearchableDestination>(destination: T): T {
   return { ...destination,

@@ -47,7 +47,7 @@ export interface MergedDiscovery {
   sourceUrls: string[];
   extractedMeta: Record<string, unknown>;
   scrapeFailures: Array<{ url: string; error: string }>;
-  sources: { firecrawl: boolean; gemini: boolean; groq: boolean };
+  sources: { firecrawl: boolean; gemini: boolean; groq: boolean; deepseek: boolean };
   llmSource: string;
   llmModel: string;
   hasData: boolean;
@@ -83,7 +83,7 @@ export function mergeDiscovery(firecrawl: AggregatedExtraction | null, llm: Enri
     sourceUrls: firecrawl?.sourceUrls ?? [],
     extractedMeta: meta,
     scrapeFailures: firecrawl?.failures ?? [],
-    sources: { firecrawl: firecrawl !== null, gemini: llmHasData && llm.source === 'gemini', groq: llmHasData && llm.source === 'groq' },
+    sources: { firecrawl: firecrawl !== null, gemini: llmHasData && llm.source === 'gemini', groq: llmHasData && llm.source === 'groq', deepseek: llmHasData && llm.source === 'deepseek' },
     llmSource: llm.source,
     llmModel: llm.model,
     hasData: Boolean(summary) || pois.length > 0,
