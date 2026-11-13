@@ -1,6 +1,6 @@
 # Viajero Backend NestJS
 
-Backend principal do Viajero, usado pelo front. Nasceu como migração funcional do backend Django/DRF (`../backend`) e hoje cobre todos os recursos dele, inclusive a IA: geração de roteiro com LLM (Groq/Gemini), descoberta de destinos com Firecrawl + LLM e sugestão de destino pelo perfil. O Nest também é o dono do schema: migrations TypeORM, seed e importação dos dados antigos do Django. O `../backend` (Django) é legado e não é necessário para rodar.
+Backend principal do Viajero, usado pelo front. Nasceu como migração funcional do backend Django/DRF (`../backend`) e hoje cobre todos os recursos dele, inclusive a IA: geração de roteiro com LLM (Groq/Gemini/DeepSeek), descoberta de destinos com Firecrawl + LLM e sugestão de destino pelo perfil. O Nest também é o dono do schema: migrations TypeORM, seed e importação dos dados antigos do Django. O `../backend` (Django) é legado e não é necessário para rodar.
 
 ## Requisitos
 
@@ -41,12 +41,13 @@ IA (todas opcionais; o `.env.example` traz os padrões):
 
 | Variável | Padrão | Uso |
 |---|---|---|
-| `DEFAULT_LLM_PROVIDER` | `groq` | Provedor da geração de roteiro: `groq`, `gemini` ou `mock`. O outro provedor com chave entra como reserva |
+| `DEFAULT_LLM_PROVIDER` | `groq` | Provedor da geração de roteiro: `groq`, `gemini`, `deepseek` ou `mock`. Os outros provedores com chave entram como reserva |
 | `GROQ_API_KEY` | vazio | Chave do Groq. Sem ela (e sem Gemini) o roteiro sai do gerador mock |
 | `GROQ_MODEL` | `openai/gpt-oss-120b` | Modelo do Groq. O antigo `llama-3.3-70b-versatile` foi removido pelo Groq |
 | `GROQ_REASONING_EFFORT` | `low` para gpt-oss | `off` não envia o parâmetro (modelos que não aceitam) |
 | `GROQ_TIMEOUT` / `GROQ_ITINERARY_TIMEOUT` | 20 / 40 s | Timeout das chamadas curtas e da geração de roteiro |
 | `GROQ_MAX_TOKENS` | 8192 | Limite de resposta padrão (o roteiro calcula o seu pela duração) |
+| `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL`, `DEEPSEEK_API_URL`, `DEEPSEEK_TIMEOUT`, `DEEPSEEK_ITINERARY_TIMEOUT`, `DEEPSEEK_MAX_TOKENS`, `DEEPSEEK_THINKING` | vazio, `deepseek-flash`, `https://api.deepseek.com`, 30, 90, 8192, `false` | DeepSeek (API compatível com OpenAI, pré-paga). Sem saldo (HTTP 402) cai no próximo provedor. Passo a passo em [../docs/CONFIGURAR_IA_DEEPSEEK.md](../docs/CONFIGURAR_IA_DEEPSEEK.md) |
 | `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_TIMEOUT`, `GEMINI_ITINERARY_TIMEOUT`, `GEMINI_MAX_TOKENS` | vazio, `gemini-2.5-flash-lite`, 20, 40, 8192 | Mesmo papel para o Gemini |
 | `FIRECRAWL_API_KEY` | vazio | Liga o Firecrawl na descoberta de destinos |
 | `FIRECRAWL_SEARCH_LIMIT` | 2 | URLs buscadas por destino |

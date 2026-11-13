@@ -1,6 +1,9 @@
 import { Logger } from '@nestjs/common';
 import { GroqProvider } from '../groq.provider';
 import { GeminiProvider } from '../gemini.provider';
+import { DeepseekProvider } from '../deepseek.provider';
+import { LlmService } from '../llm.service';
+import { ConfigService } from '@nestjs/config';
 import { LlmAuthError, LlmQuotaError, LlmResponseError, LlmTimeoutError } from '../llm.errors';
 import { LlmProvider, rateLimitWaitMs, sendWithRateLimitRetry } from '../llm-provider';
 import { requestLlmJson } from '../llm.service';
@@ -129,5 +132,67 @@ describe('requestLlmJson', () => {
     const groq = provider('groq', new LlmTimeoutError('lento'));
     await expect(requestLlmJson([groq], { label: 't', prompt: 'P', schema: {}, parse: (p) => p }, logger)).rejects.toBeInstanceOf(LlmTimeoutError);
     await expect(requestLlmJson([], { label: 't', prompt: 'P', schema: {}, parse: (p) => p }, logger)).rejects.toThrow('Nenhum provedor de IA configurado.');
+  });
+});
+
+describe('DeepseekProvider', () => {
+  const dsConfig = { apiKey: 'key', model: 'deepseek-flash', baseUrl: 'https://ds.test', timeoutMs: 1000, longTimeoutMs: 2000, maxTokens: 4096, thinking: false };
+
+  it('envia max_tokens, desliga o pensamento e parseia o JSON', async () => {
+    const fetchFn = reply(200, { choices: [{ message: { content: '{"ok": true}' }, finish_reason: 'stop' }] });
+    await expect(new DeepseekProvider(dsConfig, fetchFn).generateJson('Prompt', { type: 'object' }, { maxOutputTokens: 100 })).resolves.toEqual({ ok: true });
+    const [url, init] = fetchFn.mock.calls[0];
+    expect(url).toBe('https://ds.test/chat/completions');
+    const body = JSON.parse(init.body);
+    expect(body.model).toBe('deepseek-flash');
+    expect(body.max_tokens).toBe(100);
+    expect(body.max_completion_tokens).toBeUndefined();
+    expect(body.thinking).toEqual({ type: 'disabled' });
+    expect(body.response_format).toEqual({ type: 'json_object' });
+    expect(body.messages[0].content).toContain('JSON');
+    expect(init.headers.Authorization).toBe('Bearer key');
+  });
+
+  it('liga o pensamento quando configurado', async () => {
+    const fetchFn = reply(200, { choices: [{ message: { content: '{}' } }] });
+    await new DeepseekProvider({ ...dsConfig, thinking: true }, fetchFn).generateJson('p', {});
+    expect(JSON.parse(fetchFn.mock.calls[0][1].body).thinking).toEqual({ type: 'enabled' });
+  });
+
+  it('traduz erros: 402 (sem saldo) e 429 viram cota, 401 credencial, vazio/cortado resposta invalida', async () => {
+    await expect(new DeepseekProvider(dsConfig, reply(402, 'Insufficient Balance')).generateJson('p', {})).rejects.toBeInstanceOf(LlmQuotaError);
+    await expect(new DeepseekProvider(dsConfig, reply(429, 'busy')).generateJson('p', {})).rejects.toBeInstanceOf(LlmQuotaError);
+    await expect(new DeepseekProvider(dsConfig, reply(401, 'bad key')).generateJson('p', {})).rejects.toBeInstanceOf(LlmAuthError);
+    await expect(new DeepseekProvider(dsConfig, reply(200, { choices: [{ message: { content: '   ' } }] })).generateJson('p', {})).rejects.toBeInstanceOf(LlmResponseError);
+    await expect(new DeepseekProvider(dsConfig, reply(200, { choices: [{ message: { content: '{"a":' }, finish_reason: 'length' }] })).generateJson('p', {})).rejects.toBeInstanceOf(LlmResponseError);
+  });
+
+  it('sem chave falha antes de chamar a API', async () => {
+    const fetchFn = jest.fn();
+    await expect(new DeepseekProvider({ ...dsConfig, apiKey: '' }, fetchFn).generateJson('p', {})).rejects.toBeInstanceOf(LlmAuthError);
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+});
+
+describe('LlmService com DeepSeek', () => {
+  const service = (env: Record<string, string>) => new LlmService(new ConfigService(env));
+  const keys = (providers: LlmProvider[]) => providers.map((p) => p.key);
+
+  it('so com chave do DeepSeek e DEFAULT_LLM_PROVIDER=deepseek, a cadeia do roteiro e o DeepSeek', () => {
+    const llm = service({ DEFAULT_LLM_PROVIDER: 'deepseek', DEEPSEEK_API_KEY: 'k' });
+    expect(llm.hasAny()).toBe(true);
+    expect(keys(llm.itineraryChain())).toEqual(['deepseek']);
+    expect(llm.itineraryChain()[0].model).toBe('deepseek-flash');
+  });
+
+  it('deepseek principal vai na frente; nos outros casos entra como reserva no fim', () => {
+    const all = { DEEPSEEK_API_KEY: 'd', GROQ_API_KEY: 'g', GEMINI_API_KEY: 'm' };
+    expect(keys(service({ ...all, DEFAULT_LLM_PROVIDER: 'deepseek' }).itineraryChain())).toEqual(['deepseek', 'groq', 'gemini']);
+    expect(keys(service({ ...all, DEFAULT_LLM_PROVIDER: 'groq' }).itineraryChain())).toEqual(['groq', 'gemini', 'deepseek']);
+    expect(keys(service({ ...all, DEFAULT_LLM_PROVIDER: 'groq' }).chain(['gemini', 'groq']))).toEqual(['gemini', 'groq', 'deepseek']);
+  });
+
+  it('mock ignora o DeepSeek no roteiro', () => {
+    expect(service({ DEFAULT_LLM_PROVIDER: 'mock', DEEPSEEK_API_KEY: 'k' }).itineraryChain()).toEqual([]);
   });
 });

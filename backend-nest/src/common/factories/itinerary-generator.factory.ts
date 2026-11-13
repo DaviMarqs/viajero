@@ -4,7 +4,7 @@ import { LlmService } from '../../modules/ai/llm/llm.service';
 
 /**
  * Escolhe o gerador pelo DEFAULT_LLM_PROVIDER (paridade com o `get_generator` do Django):
- * `groq`/`gemini` com chave -> LLM (o outro provedor configurado entra como reserva); sem chave ou `mock` -> mock.
+ * `groq`/`gemini`/`deepseek` com chave -> LLM (os outros provedores configurados entram como reserva); sem chave ou `mock` -> mock.
  */
 @Injectable()
 export class ItineraryGeneratorFactory {

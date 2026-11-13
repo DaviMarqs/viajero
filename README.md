@@ -21,7 +21,7 @@ O passo a passo completo (pré-requisitos, banco, API, front, primeiro uso, test
 docker compose up --build    # app em http://localhost:5173, API em http://localhost:8001
 ```
 
-Sobe o PostgreSQL, a API Nest (que cria as tabelas pelas migrations e carrega o seed num banco sem destinos) e o front. Para a IA, crie antes o `backend-nest/.env` a partir do `.env.example` e preencha `GROQ_API_KEY`.
+Sobe o PostgreSQL, a API Nest (que cria as tabelas pelas migrations e carrega o seed num banco sem destinos) e o front. Para a IA, crie antes o `backend-nest/.env` a partir do `.env.example` e preencha uma chave de IA (`GROQ_API_KEY` ou `DEEPSEEK_API_KEY`).
 
 **Para desenvolver (recarga automática)**, com Docker e Node 20.19+ instalados:
 
@@ -33,10 +33,10 @@ cd front && npm ci && npm run dev                                           # ou
 | Pasta | O que é |
 |---|---|
 | `backend/` | Django + DRF: **legado**, não é usado para rodar. Serve de referência e para exportar dados antigos (`dumpdata`) |
-| `backend-nest/` | API (NestJS) usada pelo front e dona do schema (migrations e seed), com a IA: roteiros com Groq/Gemini, descoberta de destinos com Firecrawl e sugestão por perfil |
+| `backend-nest/` | API (NestJS) usada pelo front e dona do schema (migrations e seed), com a IA: roteiros com Groq/Gemini/DeepSeek, descoberta de destinos com Firecrawl e sugestão por perfil |
 | `front/` | React + Vite |
 
 ## Notas
 
-- **IA:** preencha `GROQ_API_KEY` (e, se quiser, `GEMINI_API_KEY` e `FIRECRAWL_API_KEY`) em `backend-nest/.env`. Sem chaves o app funciona com gerador determinístico. Detalhes em [backend-nest/README.md](./backend-nest/README.md#ia).
+- **IA:** preencha `GROQ_API_KEY` (ou `DEEPSEEK_API_KEY`, veja [docs/CONFIGURAR_IA_DEEPSEEK.md](./docs/CONFIGURAR_IA_DEEPSEEK.md); e, se quiser, `GEMINI_API_KEY` e `FIRECRAWL_API_KEY`) em `backend-nest/.env`. Sem chaves o app funciona com gerador determinístico. Detalhes em [backend-nest/README.md](./backend-nest/README.md#ia).
 - **Migrações:** o schema é do Nest (`backend-nest/src/database/migrations`). Mudou uma entity? Crie uma migration com `npm run migration:create` e escreva o SQL. Detalhes e importação do SQLite antigo em [backend-nest/README.md](./backend-nest/README.md#banco-migrations-seed-e-dados-antigos).

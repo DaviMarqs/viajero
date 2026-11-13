@@ -1,6 +1,6 @@
 import { LlmProviderError, LlmResponseError, LlmTimeoutError } from './llm.errors';
 
-export type LlmProviderKey = 'groq' | 'gemini';
+export type LlmProviderKey = 'groq' | 'gemini' | 'deepseek';
 export type JsonObject = Record<string, unknown>;
 export type FetchFn = typeof fetch;
 

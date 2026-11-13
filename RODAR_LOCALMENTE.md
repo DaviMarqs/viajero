@@ -46,7 +46,7 @@ Navegador ──► Front React/Vite (5173) ──► API NestJS (8001) ──�
 | Parte | Pasta | Porta | Para que serve |
 |---|---|---|---|
 | PostgreSQL 16 | Docker | 5432 | Banco único do projeto |
-| NestJS | `backend-nest/` | 8001 | API usada pelo front e **dona do schema**: cria as tabelas (migrations TypeORM) e carrega os dados iniciais (seed). Inclui a IA (Groq/Gemini) e o Firecrawl |
+| NestJS | `backend-nest/` | 8001 | API usada pelo front e **dona do schema**: cria as tabelas (migrations TypeORM) e carrega os dados iniciais (seed). Inclui a IA (Groq/Gemini/DeepSeek) e o Firecrawl |
 | Django + DRF | `backend/` | — | **Legado**, não é preciso para rodar. Fica como referência e para exportar dados antigos (passo 10) |
 | React + Vite | `front/` | 5173 | Interface |
 
@@ -133,6 +133,8 @@ No `backend-nest/.env`, preencha pelo menos a `GROQ_API_KEY` (gratuita em https:
 - reconhece o destino digitado (ex.: "formiga" vira Formiga, MG; "asdfgh" é recusado com aviso);
 - descobre destinos que não estão no banco (resumo, melhor época, pontos de interesse, custos e foto da Wikipedia);
 - sugere um destino pelo DNA do viajante ("Gostaria de uma sugestão").
+
+Para usar o DeepSeek (pré-pago) no lugar do Groq, siga [docs/CONFIGURAR_IA_DEEPSEEK.md](./docs/CONFIGURAR_IA_DEEPSEEK.md) (criar conta, recarregar, gerar chave e configurar).
 
 Opcionais: `GEMINI_API_KEY` (reserva do Groq, ou provedor principal com `DEFAULT_LLM_PROVIDER=gemini`) e `FIRECRAWL_API_KEY` (dados de guias turísticos na descoberta de destinos). Sem nenhuma chave o app continua funcionando: o roteiro sai do gerador determinístico (textos em inglês) e a busca cria um destino básico. Cada dev usa a própria chave, e chave nunca vai para o git. Reinicie o Nest depois de mudar o `.env`.
 

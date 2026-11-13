@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { DeepseekProvider } from './deepseek.provider';
 import { GeminiProvider } from './gemini.provider';
 import { GroqProvider } from './groq.provider';
 import { JsonObject, LlmProvider, LlmProviderKey } from './llm-provider';
@@ -105,6 +106,21 @@ export class LlmService {
         }),
       );
     }
+    const deepseekKey = config.get<string>('DEEPSEEK_API_KEY', '').trim();
+    if (deepseekKey) {
+      this.providers.set(
+        'deepseek',
+        new DeepseekProvider({
+          apiKey: deepseekKey,
+          model: config.get<string>('DEEPSEEK_MODEL') || 'deepseek-flash',
+          baseUrl: (config.get<string>('DEEPSEEK_API_URL') || 'https://api.deepseek.com').replace(/\/+$/, ''),
+          timeoutMs: seconds(config.get<string>('DEEPSEEK_TIMEOUT'), 30),
+          longTimeoutMs: seconds(config.get<string>('DEEPSEEK_ITINERARY_TIMEOUT'), 90),
+          maxTokens: positiveInt(config.get<string>('DEEPSEEK_MAX_TOKENS'), 8192),
+          thinking: ['1', 'true', 'on', 'enabled'].includes((config.get<string>('DEEPSEEK_THINKING') ?? '').trim().toLowerCase()),
+        }),
+      );
+    }
     const geminiKey = config.get<string>('GEMINI_API_KEY', '').trim();
     if (geminiKey) {
       this.providers.set(
@@ -125,14 +141,19 @@ export class LlmService {
     return this.providers.size > 0;
   }
 
-  /** Provedores configurados (com chave), na ordem pedida. */
+  /**
+   * Provedores configurados (com chave), na ordem pedida. O DeepSeek entra no fim como reserva e, com
+   * DEFAULT_LLM_PROVIDER=deepseek, passa para a frente em todas as cadeias.
+   */
   chain(order: LlmProviderKey[]): LlmProvider[] {
-    return order.map((key) => this.providers.get(key)).filter((provider): provider is LlmProvider => provider !== undefined);
+    const rest = order.filter((key) => key !== 'deepseek');
+    const keys: LlmProviderKey[] = this.defaultProvider === 'deepseek' ? ['deepseek', ...rest] : [...rest, 'deepseek'];
+    return keys.map((key) => this.providers.get(key)).filter((provider): provider is LlmProvider => provider !== undefined);
   }
 
   /**
    * Provedores para gerar roteiro, conforme DEFAULT_LLM_PROVIDER (paridade com o Django):
-   * `mock` -> nenhum (gerador deterministico); `gemini`/`groq` -> o escolhido e o outro como reserva.
+   * `mock` -> nenhum (gerador deterministico); `gemini`/`groq`/`deepseek` -> o escolhido primeiro e os demais como reserva.
    * Sem nenhuma chave, a lista sai vazia e o roteiro cai no mock.
    */
   itineraryChain(): LlmProvider[] {
