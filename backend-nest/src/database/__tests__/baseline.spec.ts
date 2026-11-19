@@ -1,10 +1,14 @@
 import { EntityMetadata } from 'typeorm';
 import { BASELINE_CREATE_TABLES, BASELINE_TABLES } from '../migrations/1793275200000-Baseline';
+import { ITINERARY_DETAILS_COLUMNS } from '../migrations/1795564800000-ItineraryDetails';
 import { loadEntityMetadatas } from './entity-metadata';
 
 // Divergencias conhecidas entre entidade e schema (a entidade nao e usada pela API hoje).
 // RefreshToken.user nao tem @JoinColumn({ name: 'user_id' }), entao o TypeORM espera "userId".
 const KNOWN_COLUMN_GAPS = new Set(['users_refreshtoken.userId']);
+
+// Colunas criadas por migrations posteriores a baseline.
+const COLUMNS_FROM_LATER_MIGRATIONS = new Set(ITINERARY_DETAILS_COLUMNS.map(({ table, column }) => `${table}.${column}`));
 
 function baselineColumns(): Map<string, Set<string>> {
   const tables = new Map<string, Set<string>>();
@@ -38,6 +42,15 @@ describe('migration baseline', () => {
         .map((column) => `${metadata.tableName}.${column.databaseName}`)
         .filter((name) => !tables.get(name.split('.')[0])?.has(name.split('.')[1])),
     );
-    expect(missing.filter((name) => !KNOWN_COLUMN_GAPS.has(name))).toEqual([]);
+    expect(missing.filter((name) => !KNOWN_COLUMN_GAPS.has(name) && !COLUMNS_FROM_LATER_MIGRATIONS.has(name))).toEqual([]);
+  });
+
+  it('as colunas das migrations posteriores existem nas entidades e nao estao na baseline', () => {
+    const tables = baselineColumns();
+    const entityColumns = new Set(metadatas.flatMap((metadata) => metadata.columns.map((column) => `${metadata.tableName}.${column.databaseName}`)));
+    for (const name of COLUMNS_FROM_LATER_MIGRATIONS) {
+      expect(entityColumns.has(name)).toBe(true);
+      expect(tables.get(name.split('.')[0])?.has(name.split('.')[1])).toBe(false);
+    }
   });
 });

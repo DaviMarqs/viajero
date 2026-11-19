@@ -93,6 +93,10 @@ export class ItineraryDay {
   @Column({ name: 'estimated_cost', type: 'decimal', precision: 10, scale: 2, default: 0 })
   estimated_cost!: string;
 
+  /** DayDetails (area, plano B, alternativas, dicas, data); migration ItineraryDetails. */
+  @Column({ type: 'jsonb', default: () => "'{}'" })
+  details!: Record<string, unknown>;
+
   @OneToMany(() => ItineraryDailyEvent, (event) => event.itinerary_day)
   events!: Relation<ItineraryDailyEvent[]>;
 }
@@ -127,6 +131,10 @@ export class ItineraryDailyEvent {
 
   @Column({ name: 'order_index', type: 'integer', default: 0 })
   order_index!: number;
+
+  /** EventDetails (tipo, local, dica, reserva, deslocamento); migration ItineraryDetails. */
+  @Column({ type: 'jsonb', default: () => "'{}'" })
+  details!: Record<string, unknown>;
 }
 
 @Entity('itineraries_favoriteitinerary')

@@ -2,12 +2,8 @@ import type { GeneratedItinerary } from '../itinerary-generators';
 import type { JsonObject } from '../llm/llm-provider';
 import { LlmResponseError } from '../llm/llm.errors';
 import { formatCost, parseCost } from './itinerary-costs';
+import { asObjects, normalizeEventDetails, text } from './itinerary-details';
 
-type RawObject = Record<string, unknown>;
-
-const asObjects = (value: unknown): RawObject[] =>
-  Array.isArray(value) ? value.filter((item): item is RawObject => !!item && typeof item === 'object' && !Array.isArray(item)) : [];
-const text = (value: unknown, max: number) => (typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '').slice(0, max);
 
 /** "9:00", "09:00" e "09:00:00" viram "09:00"; o resto vira undefined. */
 export function normalizeClock(value: unknown): string | undefined {
@@ -25,7 +21,7 @@ function chronological<T extends { start_time?: string }>(events: T[]): T[] {
   return [...events].sort((a, b) => (a.start_time as string).localeCompare(b.start_time as string));
 }
 
-function normalizePoiId(value: unknown, validPoiIds: Set<number>): number | undefined {
+export function normalizePoiId(value: unknown, validPoiIds: Set<number>): number | undefined {
   const id = typeof value === 'number' ? value : typeof value === 'string' && /^\d+$/.test(value.trim()) ? Number(value) : NaN;
   return Number.isInteger(id) && validPoiIds.has(id) ? id : undefined;
 }
@@ -63,6 +59,7 @@ export function normalizeItineraryPayload(
               estimated_cost: formatCost(parseCost(event.estimated_cost)),
               start_time: startTime,
               end_time: startTime && endTime && endTime > startTime ? endTime : undefined,
+              details: normalizeEventDetails(event),
             };
           })
           .filter((event) => event.title),

@@ -26,6 +26,7 @@ export interface ProgramEventSource {
   start_time: string | null;
   end_time: string | null;
   poi?: { id: number | string; estimated_visit_minutes?: number | null } | null;
+  details?: Record<string, unknown> | null;
 }
 
 export interface ProgramDaySource {
@@ -34,6 +35,7 @@ export interface ProgramDaySource {
   title: string;
   summary: string;
   estimated_cost: string | number;
+  details?: Record<string, unknown> | null;
   events: ProgramEventSource[];
 }
 
@@ -82,6 +84,8 @@ export interface ProgramSnapshotEvent {
   start_time: string | null;
   end_time: string | null;
   poi_id: number | null;
+  /** Ausente em snapshots gravados antes da coluna details. */
+  details?: Record<string, unknown>;
 }
 
 export interface ProgramSnapshotDay {
@@ -89,6 +93,7 @@ export interface ProgramSnapshotDay {
   title: string;
   summary: string;
   estimated_cost: string;
+  details?: Record<string, unknown>;
   events: ProgramSnapshotEvent[];
 }
 
@@ -108,13 +113,14 @@ export interface RestoredEventFields {
   start_time: string | null;
   end_time: string | null;
   poi_id: number | null;
+  details?: Record<string, unknown>;
 }
 
 export interface ProgramRestorePlan {
   updates: Array<{ id: number; day_id: number; fields: RestoredEventFields }>;
   creates: Array<{ day_id: number; fields: RestoredEventFields }>;
   deletes: number[];
-  days: Array<{ id: number; title: string; summary: string; estimated_cost: string }>;
+  days: Array<{ id: number; title: string; summary: string; estimated_cost: string; details?: Record<string, unknown> }>;
   itinerary: { title: string; start_date: string | null; end_date: string | null; budget_total: string };
 }
 
@@ -229,6 +235,9 @@ export function applyProgramLayout(days: ProgramDaySource[], layout: ProgramLayo
   };
 }
 
+const hasDetails = (details: Record<string, unknown> | null | undefined): details is Record<string, unknown> =>
+  !!details && typeof details === 'object' && Object.keys(details).length > 0;
+
 export function buildProgramSnapshot(itinerary: ProgramItineraryFields, days: ProgramDaySource[]): ProgramSnapshot {
   return {
     title: itinerary.title,
@@ -242,6 +251,7 @@ export function buildProgramSnapshot(itinerary: ProgramItineraryFields, days: Pr
         title: day.title,
         summary: day.summary ?? '',
         estimated_cost: fromCents(toCents(day.estimated_cost)),
+        ...(hasDetails(day.details) ? { details: day.details } : {}),
         events: [...day.events]
           .sort((a, b) => a.order_index - b.order_index)
           .map((event) => ({
@@ -253,6 +263,7 @@ export function buildProgramSnapshot(itinerary: ProgramItineraryFields, days: Pr
             start_time: event.start_time ?? null,
             end_time: event.end_time ?? null,
             poi_id: event.poi ? toId(event.poi.id) : null,
+            ...(hasDetails(event.details) ? { details: event.details } : {}),
           })),
       })),
   };
@@ -335,7 +346,13 @@ export function planProgramRestore(days: ProgramDaySource[], snapshot: ProgramSn
   };
   for (const day of snapshot.days) {
     const dayId = dayIds.get(day.day_number) as number;
-    plan.days.push({ id: dayId, title: day.title, summary: day.summary ?? '', estimated_cost: fromCents(toCents(day.estimated_cost)) });
+    plan.days.push({
+      id: dayId,
+      title: day.title,
+      summary: day.summary ?? '',
+      estimated_cost: fromCents(toCents(day.estimated_cost)),
+      ...(day.details ? { details: day.details } : {}),
+    });
     for (const event of day.events) {
       const fields: RestoredEventFields = {
         title: event.title,
@@ -345,6 +362,7 @@ export function planProgramRestore(days: ProgramDaySource[], snapshot: ProgramSn
         start_time: event.start_time ?? null,
         end_time: event.end_time ?? null,
         poi_id: event.poi_id ?? null,
+        ...(event.details ? { details: event.details } : {}),
       };
       const id = toId(event.id);
       if (currentIds.has(id) && !restoredIds.has(id)) {

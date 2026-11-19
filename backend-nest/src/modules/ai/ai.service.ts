@@ -120,7 +120,11 @@ export class AiService {
         ...result.metadata,
       };
       // Os eventos sao todos trocados: o historico do desfazer (#50) deixa de valer.
-      itinerary.metadata = withoutProgramHistory(itinerary.metadata);
+      // O guia antigo sai quando a nova geracao nao trouxe guia (prompt unico ou pesquisa que falhou).
+      const metadata = withoutProgramHistory(itinerary.metadata);
+      if (result.guide) metadata.trip_guide = result.guide;
+      else delete metadata.trip_guide;
+      itinerary.metadata = metadata;
       await manager.save(itinerary);
 
       // As FKs do Django sao NO ACTION: eventos saem antes dos dias.
@@ -141,6 +145,7 @@ export class AiService {
             title: dayData.title,
             summary: dayData.summary,
             estimated_cost: dayData.estimated_cost ?? dayData.events.reduce((total, event) => total + Number(event.estimated_cost), 0).toFixed(2),
+            details: { ...(dayData.details ?? {}) },
           }),
         );
         for (const event of dayData.events) {
@@ -154,6 +159,7 @@ export class AiService {
               start_time: event.start_time ?? null,
               end_time: event.end_time ?? null,
               poi: event.poi_id ? ({ id: event.poi_id } as PointOfInterest) : null,
+              details: { ...(event.details ?? {}) },
             }),
           );
         }

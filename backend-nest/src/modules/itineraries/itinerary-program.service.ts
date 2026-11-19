@@ -18,6 +18,7 @@ import {
 
 // jsonb livre: o tipo do update do TypeORM nao aceita Record<string, unknown> direto.
 const asMetadata = (metadata: Record<string, unknown>) => metadata as QueryDeepPartialEntity<Itinerary['metadata']>;
+const asJson = (value: Record<string, unknown>) => value as QueryDeepPartialEntity<Record<string, unknown>>;
 
 /**
  * Edicao da programacao no servidor (#50): aplica o layout enviado pelo front e desfaz pelo historico
@@ -68,15 +69,25 @@ export class ItineraryProgramService {
 
       if (plan.deletes.length > 0) await manager.delete(ItineraryDailyEvent, plan.deletes);
       for (const { id: eventId, day_id, fields } of plan.updates) {
-        const { poi_id, ...values } = fields;
-        await manager.update(ItineraryDailyEvent, { id: eventId }, { ...values, itinerary_day: { id: day_id }, poi: poiFor(poi_id) });
+        const { poi_id, details, ...values } = fields;
+        await manager.update(ItineraryDailyEvent, { id: eventId }, {
+          ...values,
+          ...(details ? { details: asJson(details) } : {}),
+          itinerary_day: { id: day_id },
+          poi: poiFor(poi_id),
+        });
       }
       for (const { day_id, fields } of plan.creates) {
         const { poi_id, ...values } = fields;
         await manager.save(manager.create(ItineraryDailyEvent, { ...values, itinerary_day: { id: day_id } as ItineraryDay, poi: poiFor(poi_id) }));
       }
       for (const day of plan.days) {
-        await manager.update(ItineraryDay, { id: day.id }, { title: day.title, summary: day.summary, estimated_cost: day.estimated_cost });
+        await manager.update(ItineraryDay, { id: day.id }, {
+          title: day.title,
+          summary: day.summary,
+          estimated_cost: day.estimated_cost,
+          ...(day.details ? { details: asJson(day.details) } : {}),
+        });
       }
       await manager.update(Itinerary, { id }, { ...plan.itinerary, metadata: asMetadata(popped.metadata) });
       return {

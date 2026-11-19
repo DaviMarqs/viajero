@@ -7,6 +7,10 @@ import { LlmProvider } from './llm/llm-provider';
 import { LlmService } from './llm/llm.service';
 import { ITINERARY_SCHEMA, buildItineraryContext, buildItineraryPrompt } from './itinerary/itinerary-prompt';
 import { normalizeItineraryPayload } from './itinerary/itinerary-normalizer';
+import type { DayDetails, EventDetails, TripGuide } from './itinerary/itinerary-details';
+import { applyCostSources } from './itinerary/cost-sources';
+import { enrichPlaces } from './itinerary/place-enrichment';
+import type { PlaceChain } from './itinerary/places/place-provider';
 
 export interface GeneratedItinerary {
   title: string;
@@ -17,8 +21,20 @@ export interface GeneratedItinerary {
     title: string;
     summary: string;
     estimated_cost?: string;
-    events: Array<{ title: string; description: string; estimated_cost: string; order_index: number; poi_id?: number; start_time?: string; end_time?: string }>;
+    details?: DayDetails;
+    events: Array<{
+      title: string;
+      description: string;
+      estimated_cost: string;
+      order_index: number;
+      poi_id?: number;
+      start_time?: string;
+      end_time?: string;
+      details?: EventDetails;
+    }>;
   }>;
+  /** Guia pratico da viagem (so o pipeline em etapas gera). */
+  guide?: TripGuide;
   metadata: Record<string, unknown>;
 }
 
@@ -36,7 +52,7 @@ export abstract class BaseItineraryGenerator {
 
 /** Gera o roteiro com o LLM (Groq/Gemini), tentando os provedores na ordem recebida. */
 export class LlmItineraryGenerator extends BaseItineraryGenerator {
-  constructor(private readonly llm: LlmService, private readonly providers: LlmProvider[]) {
+  constructor(private readonly llm: LlmService, private readonly providers: LlmProvider[], private readonly places?: PlaceChain) {
     super();
   }
 
@@ -62,7 +78,11 @@ export class LlmItineraryGenerator extends BaseItineraryGenerator {
           strict: !attempt.final,
         }),
     });
+    applyCostSources(value, {});
+    const places = await enrichPlaces(value, { pois: input.pois, destination: input.itinerary.destination, places: this.places });
     value.metadata = {
+      places: { looked_up: places.looked_up, found: places.found, images: places.images, websites: places.websites, providers: places.providers },
+      pipeline: 'single',
       generator: provider.key,
       model: provider.model,
       template_key: input.promptTemplate?.key ?? null,
@@ -88,6 +108,7 @@ export class MockItineraryGenerator extends BaseItineraryGenerator {
         estimated_cost: String(20 + eventIndex * 15),
         order_index: eventIndex,
         poi_id: Number(poi.id),
+        details: { kind: 'attraction' as const, ...(poi.address ? { location: poi.address } : {}) },
         start_time: `${String(9 + eventIndex * 3).padStart(2, '0')}:00`,
         end_time: `${String(9 + eventIndex * 3 + Math.floor(Math.min(Math.max(poi.estimated_visit_minutes || 90, 30), 150) / 60)).padStart(2, '0')}:${String(Math.min(Math.max(poi.estimated_visit_minutes || 90, 30), 150) % 60).padStart(2, '0')}`,
       }));

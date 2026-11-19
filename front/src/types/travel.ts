@@ -34,6 +34,75 @@ export interface Destination {
   points_of_interest?: Poi[] | null;
 }
 
+/** Tipo do evento gerado pela IA (backend: itinerary-details.ts). */
+export type EventKind = "attraction" | "meal" | "transport" | "lodging" | "activity" | "shopping" | "nightlife" | "free_time";
+
+/** De onde veio o valor do evento (backend: cost-sources.ts). */
+export interface CostSource {
+  basis: string;
+  label: string;
+  reference?: string;
+  travelers?: number;
+  source_url?: string;
+  adjusted?: { original: string; factor: number };
+}
+
+export interface PlaceLink {
+  kind: "maps" | "website" | "reviews" | "osm";
+  label: string;
+  url: string;
+}
+
+export interface EventDetails {
+  kind?: EventKind;
+  location?: string;
+  tip?: string;
+  booking_required?: boolean;
+  booking_note?: string;
+  transit_to_next?: { mode: string; minutes?: number; note?: string };
+  place_name?: string;
+  cost_source?: CostSource;
+  links?: PlaceLink[];
+  image_url?: string;
+  image_credit?: { label: string; url?: string };
+  coordinates?: { lat: number; lon: number };
+  rating?: { value: number; scale: number; provider: string };
+  price_tier?: { tier: number; provider: string };
+}
+
+export interface DayAlternative {
+  title: string;
+  description?: string;
+  estimated_cost?: string;
+}
+
+export interface DayDetails {
+  date?: string;
+  weekday?: string;
+  theme?: string;
+  area?: string;
+  rain_plan?: string;
+  alternatives?: DayAlternative[];
+  tips?: string[];
+}
+
+export interface TripGuide {
+  overview?: string;
+  weather?: string;
+  getting_around?: string;
+  neighborhoods?: Array<{ name: string; description?: string }>;
+  money?: string;
+  safety?: string;
+  etiquette?: string;
+  packing?: string[];
+  phrases?: string[];
+  local_events?: string[];
+  documents_health?: string;
+  cost_benchmarks?: Record<string, string>;
+  cost_benchmarks_source?: string;
+  sources?: string[];
+}
+
 export interface ItineraryEvent {
   [key: string]: unknown;
   id: number | string;
@@ -45,6 +114,7 @@ export interface ItineraryEvent {
   order_index?: number | null;
   itinerary_day?: number | string | null;
   poi?: Destination | Record<string, unknown> | null;
+  details?: EventDetails | null;
 }
 
 export interface ItineraryDay {
@@ -55,6 +125,7 @@ export interface ItineraryDay {
   summary?: string | null;
   estimated_cost?: number | string | null;
   itinerary?: number | string | null;
+  details?: DayDetails | null;
   events: ItineraryEvent[];
 }
 

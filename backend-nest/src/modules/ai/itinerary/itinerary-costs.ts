@@ -52,7 +52,15 @@ export function applyBudgetPrecision(result: GeneratedItinerary, preferences: Bu
 
     if (target !== null && total > 0) {
       const factor = target / total;
-      for (const event of events()) event.estimated_cost = formatCost(parseCost(event.estimated_cost) * factor);
+      for (const event of events()) {
+        const original = parseCost(event.estimated_cost);
+        event.estimated_cost = formatCost(original * factor);
+        // A origem do valor mostra a referencia e o ajuste ("R$ 9,06 · referencia R$ 9,00, ajustado ao orcamento").
+        const source = event.details?.cost_source;
+        if (source && original > 0) {
+          event.details = { ...event.details, cost_source: { ...source, adjusted: { original: formatCost(original), factor: Math.round(factor * 10_000) / 10_000 } } };
+        }
+      }
       total = target;
     }
   }

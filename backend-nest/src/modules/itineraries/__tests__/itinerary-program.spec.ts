@@ -241,3 +241,25 @@ describe('datas x duracao', () => {
     expect(() => assertDatesMatchDuration(null, null, 4)).not.toThrow();
   });
 });
+
+describe('details no snapshot (IA de roteiros)', () => {
+  it('guarda e restaura details de dias e eventos; details vazios ficam de fora', () => {
+    const days = program();
+    days[0].details = { area: 'Baixa', rain_plan: 'Museu' };
+    days[0].events[0].details = { kind: 'attraction', tip: 'Chegue cedo' };
+    days[0].events[1].details = {};
+    const snapshot = buildProgramSnapshot(itinerary, days);
+    expect(snapshot.days[0].details).toEqual({ area: 'Baixa', rain_plan: 'Museu' });
+    expect(snapshot.days[0].events[0].details).toEqual({ kind: 'attraction', tip: 'Chegue cedo' });
+    expect('details' in snapshot.days[0].events[1]).toBe(false);
+    expect('details' in snapshot.days[1]).toBe(false);
+
+    // Evento 1 removido depois do snapshot: e recriado com os detalhes.
+    const current = program();
+    current[0].events = current[0].events.filter((item) => item.id !== '1');
+    const plan = planProgramRestore(current, snapshot);
+    expect(plan.creates[0].fields.details).toEqual({ kind: 'attraction', tip: 'Chegue cedo' });
+    expect(plan.days[0].details).toEqual({ area: 'Baixa', rain_plan: 'Museu' });
+    expect(plan.updates.find((item) => item.id === 2)?.fields.details).toBeUndefined();
+  });
+});

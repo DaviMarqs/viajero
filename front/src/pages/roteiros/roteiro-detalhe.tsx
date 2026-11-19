@@ -24,7 +24,8 @@ import { tripHasEnded } from "@/features/itineraries/itinerary-editing";
 import { ItineraryActivity } from "@/features/itineraries/itinerary-activity";
 import { FavoriteItineraryButton } from "@/features/itineraries/favorite-itinerary-button";
 import { RegenerateItineraryButton } from "@/features/itineraries/regenerate-itinerary-button";
-import { dayInsights } from "@/features/itineraries/itinerary-insights";
+import { costByKind, dayInsights, tripGuideOf } from "@/features/itineraries/itinerary-insights";
+import { DayExtras, TripGuideCard } from "@/features/itineraries/trip-guide";
 import { clearLegacyPrograms, moveEvent, removeEvent, reorderEvent } from "@/features/itineraries/program-sync";
 import { useItineraryProgram } from "@/features/itineraries/use-itinerary-program";
 
@@ -130,6 +131,9 @@ export default function RoteiroDetalhePage() {
   const days = itinerary.days ?? [];
   const visual = itineraryPresentation(itinerary, destinations);
   const daily = dayInsights(days[selectedDay]);
+  const currency = itinerary.currency_code || "BRL";
+  const categories = costByKind(days);
+  const guide = tripGuideOf(itinerary.metadata);
   const canEdit = itinerary.is_owner === true && itinerary.generation_status === "ready";
   const isEditing = editing && canEdit;
   function changeProgram(change: Parameters<typeof program.changeDays>[0], toast?: string) {
@@ -206,6 +210,7 @@ export default function RoteiroDetalhePage() {
           {days.length === 0 ? <Feedback title="Ainda não existem dias gerados para este roteiro." description={itinerary.generation_status === "generating" ? "A programação aparecerá aqui quando a geração terminar." : undefined} /> : days.map((day, index) => selectedDay === index ? <div key={day.id} role="tabpanel" id={`day-panel-${index}`} aria-labelledby={`day-tab-${index}`} hidden={selectedDay !== index} className="space-y-5">
             <h2 className="section-title">{day.title}</h2>
             {day.summary && <p className="text-sm leading-6 text-muted-foreground">{day.summary}</p>}
+            {!isEditing && <DayExtras details={day.details} currency={currency} />}
             <dl className="day-overview"><div><dt>Atividades</dt><dd>{daily.activities}</dd></div><div><dt>Tempo de visitas{daily.missingDurations ? " informado" : ""}</dt><dd>{daily.visitMinutes ? `${Math.floor(daily.visitMinutes / 60)}h ${daily.visitMinutes % 60}min` : "Não informado"}</dd></div><div><dt>Custo conhecido do dia</dt><dd>{daily.activities ? daily.missingCosts === daily.activities ? "—" : money(daily.knownCost, itinerary.currency_code || "BRL") : "Dia livre"}</dd></div></dl>
             {(daily.missingCosts > 0 || daily.missingDurations > 0) && <p className="text-sm text-muted-foreground">{daily.missingCosts > 0 && `${daily.missingCosts} atividades sem custo informado. `}{daily.missingDurations > 0 && `${daily.missingDurations} atividades sem duração informada.`}</p>}
             {daily.activities > 1 && <p className="text-xs text-muted-foreground">O tempo de visitas não inclui deslocamentos. Intervalos da programação não representam uma estimativa de trajeto real.</p>}
@@ -217,8 +222,12 @@ export default function RoteiroDetalhePage() {
           <div className="budget-panel space-y-5">
             <h2 className="text-xl">Sua viagem</h2>
             <div className="space-y-2"><p className="text-sm text-muted-foreground">Custo conhecido das atividades</p><p className="text-2xl font-medium tabular-nums">{itinerary.budget_total == null || itinerary.budget_total === "" ? "—" : money(itinerary.budget_total, itinerary.currency_code || "BRL")}</p></div>
+            {categories.length > 1 && <dl className="space-y-2 text-sm" aria-label="Custo por categoria">
+              {categories.map(item => <div key={item.kind} className="flex justify-between gap-3"><dt className="text-muted-foreground">{item.label}</dt><dd className="font-mono tabular-nums">{money(item.total, currency)}</dd></div>)}
+            </dl>}
             <p className="text-xs text-muted-foreground">Este valor não representa o orçamento completo da viagem. Custos ausentes não são tratados como zero.</p>
           </div>
+          {guide && <TripGuideCard guide={guide} currency={currency} />}
           {itinerary.summary && <p className="text-sm leading-6 text-muted-foreground">{itinerary.summary}</p>}
         </aside>
       </div>

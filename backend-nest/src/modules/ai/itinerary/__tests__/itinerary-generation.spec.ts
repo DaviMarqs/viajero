@@ -99,7 +99,7 @@ describe('normalizeItineraryPayload', () => {
           {
             title: 'Belem',
             events: [
-              { poi_id: 1, title: 'Torre', description: 'Visita', start_time: '9:00', end_time: '10:30', estimated_cost: 'R$ 50', order_index: 3 },
+              { poi_id: 1, title: 'Torre', description: 'Visita', start_time: '9:00', end_time: '10:30', estimated_cost: 'R$ 50', order_index: 3, kind: 'Passeio', location: 'Belem', tip: 'Chegue cedo' },
               { poi_id: 99, title: 'Outro', description: '', start_time: '11:00', end_time: '10:00', estimated_cost: 10 },
               { poi_id: '2', title: 'Mercado', start_time: 'meio-dia' },
               { title: '' },
@@ -114,9 +114,12 @@ describe('normalizeItineraryPayload', () => {
     expect(result.title).toBe('Lisboa a dois');
     expect(result.days).toHaveLength(2);
     expect(result.days[0].events).toEqual([
-      { poi_id: 1, title: 'Torre', description: 'Visita', estimated_cost: '50.00', start_time: '09:00', end_time: '10:30', order_index: 0 },
-      { poi_id: undefined, title: 'Outro', description: '', estimated_cost: '10.00', start_time: '11:00', end_time: undefined, order_index: 1 },
-      { poi_id: 2, title: 'Mercado', description: '', estimated_cost: '0.00', start_time: undefined, end_time: undefined, order_index: 2 },
+      {
+        poi_id: 1, title: 'Torre', description: 'Visita', estimated_cost: '50.00', start_time: '09:00', end_time: '10:30', order_index: 0,
+        details: { kind: 'attraction', location: 'Belem', tip: 'Chegue cedo' },
+      },
+      { poi_id: undefined, title: 'Outro', description: '', estimated_cost: '10.00', start_time: '11:00', end_time: undefined, order_index: 1, details: {} },
+      { poi_id: 2, title: 'Mercado', description: '', estimated_cost: '0.00', start_time: undefined, end_time: undefined, order_index: 2, details: {} },
     ]);
   });
 
